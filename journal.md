@@ -182,3 +182,25 @@ type errors in the pinned Iris `COFESolver` and `MaxPrefixList` modules, plus
 code-139 compiler exits in `CodeLib.IEEE32.Exec` and `CodeLib.RustStd.Frame`.
 All modules changed by this work and all direct dependents used by the
 verification pass.
+
+## 2026-09-01: NaN and infinity specifications
+
+- Added `CodeLib.IEEE32.SpecialValues` as a separately buildable codelib root.
+- Proved the exponent, fraction, sign, and classification equations for the
+  canonical NaN and both signed infinities.
+- Proved that sign negation and absolute value preserve NaN classification;
+  addition and subtraction canonicalize any NaN operand.
+- Proved finite/infinity addition and subtraction identities, same-sign
+  infinity addition, opposite-sign infinity subtraction, and the invalid
+  cases `+inf + -inf` and `inf - inf`, which return the canonical NaN.
+- Derived the infinity constant's field equations through the ordinary
+  encoder, with only kernel-decided equality for the two concrete encodings.
+
+### Validation
+
+- `lake build CodeLib.IEEE32.SpecialValues` passed under Lean 4.34.0-rc2.
+
+### Next work
+
+Prove the exact round-to-nearest overflow threshold and lift it to finite
+addition and subtraction.
