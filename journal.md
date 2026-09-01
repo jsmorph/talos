@@ -136,3 +136,49 @@ inputs, then apply them to the associativity-gap expression.
 Lift the unsigned magnitude theorem to signed addition, subtraction, and
 absolute value; prove the associativity-gap bound; then compose it with the
 symbolic termination theorem.
+
+## 2026-09-01: End-to-end associativity-gap verification
+
+- Proved signed rounding, finite addition, sign negation, subtraction, and
+  absolute-value specifications from the unsigned rounding theorem.
+- Expressed sign negation and absolute value through the verified field
+  encoder.  This preserves exponent, fraction, and NaN payload bits by
+  construction and keeps the operations directly accessible to proofs.
+- Proved `assocGap_scaled_spec`: for finite inputs whose magnitudes are at most
+  one, the complete result is finite, nonnegative, and below `2^129` integer
+  units of `2^-149`.
+- The error accounting uses at most one `2^126`-unit rounding error for each
+  of the two additions on each association path and one for the final
+  subtraction.  Thus the gap is at most `5 * 2^126`, strictly below `2^129`.
+- Defined the real-valued `epsilon` as `2^-20` and proved
+  `assocGap_output_lt_epsilon` for the exact interpreter result.
+- Strengthened the arbitrary-input symbolic execution theorem to
+  `assocGap_terminates_lt_epsilon`, a fuel-independent `TerminatesWith`
+  theorem whose returned value is finite and below epsilon.
+
+### Validation
+
+- `lake build CodeLib.IEEE32.Roundoff` passed under Lean 4.34.0-rc2.
+- Rebuilding after the final proof-friendly sign-field definition compiled
+  `Interpreter.Wasm.SmallStep` successfully in 339 seconds.
+- `lake build Interpreter.Wasm.Examples.IEEE32
+  Interpreter.Wasm.Examples.FloatAssociativity` passed after all arithmetic
+  changes, rechecking the 8,232 native differential comparisons and the WAT
+  examples.
+- Added and passed 4,096 full-width checks each showing that the proof-friendly
+  negation and absolute-value implementations exactly equal sign-bit flip and
+  sign-bit clear, respectively.
+- `#print axioms` for both final numerical theorems reports only `propext`,
+  `Classical.choice`, and `Quot.sound`.  There is no `sorryAx`, no native
+  floating-point bridge axiom, and no dependency on `CodeLib.IEEE32.Exec`.
+
+### Outstanding repository issue
+
+The previously recorded code-139 compiler crash in the unchanged
+`Interpreter.Wasm.Examples.MemReplace` still prevents claiming a successful
+default interpreter-wide build.  A final default codelib build also reached
+and replayed `CodeLib.IEEE32.Roundoff`, then failed in unchanged targets:
+type errors in the pinned Iris `COFESolver` and `MaxPrefixList` modules, plus
+code-139 compiler exits in `CodeLib.IEEE32.Exec` and `CodeLib.RustStd.Frame`.
+All modules changed by this work and all direct dependents used by the
+verification pass.

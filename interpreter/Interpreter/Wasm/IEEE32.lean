@@ -51,12 +51,11 @@ def encodeFinite
 
 /-- Flip a binary32 sign without inspecting or changing the other fields. -/
 def negate (x : UInt32) : UInt32 :=
-  if sign x then UInt32.ofNat (x.toNat - 2 ^ 31)
-  else UInt32.ofNat (x.toNat + 2 ^ 31)
+  encodeFinite (!sign x) (exponent x) (fraction x)
 
 /-- Clear a binary32 sign without inspecting or changing the other fields. -/
 def abs (x : UInt32) : UInt32 :=
-  if sign x then UInt32.ofNat (x.toNat - 2 ^ 31) else x
+  encodeFinite false (exponent x) (fraction x)
 
 /-- Round a positive integer quotient to nearest, resolving a tie toward an
 even quotient.  `shift` is positive at every call site. -/

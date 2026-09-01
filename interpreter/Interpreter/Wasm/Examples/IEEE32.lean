@@ -65,4 +65,14 @@ theorem differential_sub_agrees_with_native :
       (fun p => IEEE32.sub p.1 p.2 == nativeSub p.1 p.2) = true := by
   native_decide
 
+theorem differential_negate_agrees_with_bit_flip :
+    differentialCases.all
+      (fun p => IEEE32.negate p.1 == (p.1 ^^^ 0x80000000)) = true := by
+  native_decide
+
+theorem differential_abs_agrees_with_sign_clear :
+    differentialCases.all
+      (fun p => IEEE32.abs p.1 == (p.1 &&& 0x7FFFFFFF)) = true := by
+  native_decide
+
 end Wasm.Examples.IEEE32

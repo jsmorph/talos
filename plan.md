@@ -71,3 +71,12 @@ depend on the existing trusted axioms in `CodeLib.IEEE32.Exec`.
 Each buildable milestone will be committed and pushed to
 `origin/float-associativity-verification`.  Progress, decisions, commands,
 results, and outstanding work will be recorded in `journal.md`.
+
+## Completion status
+
+All seven milestones are complete on `float-associativity-verification`.
+The final public theorem is
+`CodeLib.IEEE32.assocGap_terminates_lt_epsilon`.  It combines the arbitrary-
+input symbolic execution trace with finite-input numerical hypotheses and
+proves that the returned binary32 value is finite and strictly below the fixed
+real tolerance `epsilon = 2^-20`.
