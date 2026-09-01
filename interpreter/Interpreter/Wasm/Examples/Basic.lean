@@ -32,6 +32,7 @@ import Interpreter.Wasm.Examples.UniversalHost
 import Interpreter.Wasm.Examples.DecoderImport
 import Interpreter.Wasm.Examples.DecoderImportedGlobal
 import Interpreter.Wasm.Examples.FloatOps
+import Interpreter.Wasm.Examples.FloatAssociativity
 import Interpreter.Wasm.Examples.Gcd
 import Interpreter.Wasm.Examples.SelectAbs
 import Interpreter.Wasm.Examples.GlobalInitExpr

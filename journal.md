@@ -21,3 +21,30 @@
 
 Add the WAT program, decoder checks, executable examples, and symbolic
 small-step execution theorem.
+
+## 2026-09-01: Decoded associativity-gap program
+
+- Added a hand-written WAT module exporting `assoc_gap(f32, f32, f32) -> f32`.
+- Added decidable checks for the decoded signature, export, and exact
+  instruction sequence.
+- Added an exact example using `1/2`, `1/4`, and `1/8`; its gap is positive
+  zero.
+- Added a rounding example using `1`, `2^-24`, and `2^-24`; its gap is
+  `2^-23` because ties-to-even discards the two addends when they are added to
+  one separately.
+
+### Validation
+
+- Installed the exact `v4.34.0-rc2` release locally because the workspace did
+  not provide Lean or Lake.
+- Supplied the executable path normally obtained from `/proc/self/exe`, which
+  this sandbox does not expose.  Lean reported commit
+  `6a10ac8c22beadecabdbb0919c2b50214762f91d`, and Lake reported Lean
+  `4.34.0-rc2`.
+- `lake build Interpreter.Wasm.Examples.FloatAssociativity` passed.  The first
+  build compiled the interpreter and downloaded the dependencies pinned in the
+  Lean 4.34 manifest.
+
+### Next work
+
+Add the symbolic execution and total-correctness theorems.
