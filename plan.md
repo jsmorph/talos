@@ -80,3 +80,11 @@ The final public theorem is
 input symbolic execution trace with finite-input numerical hypotheses and
 proves that the returned binary32 value is finite and strictly below the fixed
 real tolerance `epsilon = 2^-20`.
+
+## Exceptional-value extension
+
+The extension now also specifies and proves canonical NaN propagation,
+signed-infinity identities and invalid combinations, and overflow for finite
+addition and subtraction.  The overflow theorem uses the exact scaled
+round-to-nearest threshold `2^277 - 2^252`, corresponding to the real midpoint
+`2^128 - 2^103` above the largest finite binary32 value.

@@ -11,6 +11,8 @@ namespace CodeLib.IEEE32
 
 open Wasm
 
+set_option exponentiation.threshold 300
+
 /-! ## Classification -/
 
 theorem canonicalNaN_exponent :
@@ -172,5 +174,161 @@ theorem sub_finite_infinity (x : UInt32) (negative : Bool)
       Wasm.IEEE32.infinity (!negative) := by
   rw [Wasm.IEEE32.sub, negate_infinity]
   exact add_finite_infinity x (!negative) hx
+
+/-! ## Round-to-nearest overflow -/
+
+/-- The exact midpoint threshold for rounding to binary32 infinity under
+round-to-nearest, ties-to-even.  Dividing by `2^149` gives
+`2^128 - 2^103`, immediately above the largest finite binary32 value. -/
+def overflowThreshold : Nat := (2 ^ 25 - 1) * 2 ^ 252
+
+theorem overflowThreshold_eq :
+    overflowThreshold = 2 ^ 277 - 2 ^ 252 := by
+  norm_num [overflowThreshold]
+
+theorem roundShift_overflow_window {n : Nat}
+    (hlower : overflowThreshold ≤ n) (hupper : n < 2 ^ 277) :
+    Wasm.IEEE32.roundShift n 253 = 2 ^ 24 := by
+  have hunit : 0 < 2 ^ 253 := by positivity
+  have hbase : (2 ^ 24 - 1) * 2 ^ 253 ≤ overflowThreshold := by
+    norm_num [overflowThreshold]
+  have hquotLower : 2 ^ 24 - 1 ≤ n / 2 ^ 253 :=
+    (Nat.le_div_iff_mul_le hunit).2 (hbase.trans hlower)
+  have hquotUpper : n / 2 ^ 253 < 2 ^ 24 :=
+    (Nat.div_lt_iff_lt_mul hunit).2 (by
+      convert hupper using 1
+      all_goals norm_num)
+  have hquot : n / 2 ^ 253 = 2 ^ 24 - 1 := by omega
+  have hdecomp :
+      n % 2 ^ 253 + 2 ^ 253 * (n / 2 ^ 253) = n :=
+    Nat.mod_add_div n (2 ^ 253)
+  have hthresholdDecomp :
+      overflowThreshold =
+        (2 ^ 24 - 1) * 2 ^ 253 + 2 ^ 253 / 2 := by
+    norm_num [overflowThreshold]
+  have hremainder : 2 ^ 253 / 2 ≤ n % 2 ^ 253 := by omega
+  by_cases htie : n % 2 ^ 253 = 2 ^ 253 / 2
+  · norm_num at hquot htie
+    simp [Wasm.IEEE32.roundShift, hquot, htie]
+  · have habove : 2 ^ 253 / 2 < n % 2 ^ 253 := by omega
+    norm_num at hquot habove
+    simp [Wasm.IEEE32.roundShift, hquot, habove]
+    omega
+
+theorem roundScaledMagnitude_overflows_below_two_pow_277
+    (negative : Bool) (n : Nat) (hlower : overflowThreshold ≤ n)
+    (hupper : n < 2 ^ 277) :
+    Wasm.IEEE32.roundScaledMagnitude negative n =
+      Wasm.IEEE32.infinity negative := by
+  have hn : n ≠ 0 := by
+    have hpositive : 0 < overflowThreshold := by norm_num [overflowThreshold]
+    omega
+  have hthresholdLower : 2 ^ 276 ≤ overflowThreshold := by
+    norm_num [overflowThreshold]
+  have hlogLower : 276 ≤ Nat.log2 n :=
+    (Nat.le_log2 hn).2 (hthresholdLower.trans hlower)
+  have hlogUpper : Nat.log2 n < 277 := (Nat.log2_lt hn).2 hupper
+  have hlog : Nat.log2 n = 276 := by omega
+  have hround : Wasm.IEEE32.roundShift n (Nat.log2 n - 23) = 2 ^ 24 := by
+    rw [hlog]
+    norm_num
+    exact roundShift_overflow_window hlower hupper
+  have hroundNum : Wasm.IEEE32.roundShift n 253 = 16777216 := by
+    simpa [hlog] using hround
+  have hsmall23 : ¬n < 8388608 := by
+    have hpositive : 8388608 ≤ overflowThreshold := by
+      norm_num [overflowThreshold]
+    omega
+  have hsmall24 : ¬n < 16777216 := by
+    have hpositive : 16777216 ≤ overflowThreshold := by
+      norm_num [overflowThreshold]
+    omega
+  simp [Wasm.IEEE32.roundScaledMagnitude, hsmall23, hsmall24, hlog,
+    hroundNum]
+
+theorem roundScaledMagnitude_overflows_above_two_pow_277
+    (negative : Bool) (n : Nat) (hlower : 2 ^ 277 ≤ n) :
+    Wasm.IEEE32.roundScaledMagnitude negative n =
+      Wasm.IEEE32.infinity negative := by
+  have hn : n ≠ 0 := by
+    have hpositive : 0 < 2 ^ 277 := by positivity
+    omega
+  have hlogLower : 277 ≤ Nat.log2 n := (Nat.le_log2 hn).2 hlower
+  let shift := Nat.log2 n - 23
+  let rounded := Wasm.IEEE32.roundShift n shift
+  have hshift : 254 ≤ shift := by simp only [shift]; omega
+  have hsmall23 : ¬n < 8388608 := by
+    have : 8388608 ≤ 2 ^ 277 := by norm_num
+    omega
+  have hsmall24 : ¬n < 16777216 := by
+    have : 16777216 ≤ 2 ^ 277 := by norm_num
+    omega
+  by_cases hcarry : rounded = 2 ^ 24
+  · have hcarry' :
+        Wasm.IEEE32.roundShift n (Nat.log2 n - 23) = 2 ^ 24 := by
+      simpa [rounded, shift] using hcarry
+    simp [Wasm.IEEE32.roundScaledMagnitude, hsmall23, hsmall24, hcarry',
+      show 255 ≤ (Nat.log2 n - 23) + 2 by omega]
+  · have hcarry' :
+        ¬Wasm.IEEE32.roundShift n (Nat.log2 n - 23) = 2 ^ 24 := by
+      simpa [rounded, shift] using hcarry
+    have hcarryNum :
+        ¬Wasm.IEEE32.roundShift n (Nat.log2 n - 23) = 16777216 := by
+      norm_num at hcarry' ⊢
+      exact hcarry'
+    simp [Wasm.IEEE32.roundScaledMagnitude, hsmall23, hsmall24, hcarryNum,
+      show 255 ≤ (Nat.log2 n - 23) + 1 by omega]
+
+/-- Every exact magnitude at or above the IEEE-754 midpoint threshold rounds
+to the correctly signed infinity. -/
+theorem roundScaledMagnitude_overflows (negative : Bool) (n : Nat)
+    (h : overflowThreshold ≤ n) :
+    Wasm.IEEE32.roundScaledMagnitude negative n =
+      Wasm.IEEE32.infinity negative := by
+  by_cases hpower : n < 2 ^ 277
+  · exact roundScaledMagnitude_overflows_below_two_pow_277
+      negative n h hpower
+  · exact roundScaledMagnitude_overflows_above_two_pow_277
+      negative n (by omega)
+
+theorem add_overflow (a b : UInt32) (ha : Finite a) (hb : Finite b)
+    (h : overflowThreshold ≤
+      (Wasm.IEEE32.scaledValue a + Wasm.IEEE32.scaledValue b).natAbs) :
+    Wasm.IEEE32.add a b =
+      Wasm.IEEE32.infinity
+        (Wasm.IEEE32.scaledValue a + Wasm.IEEE32.scaledValue b < 0) := by
+  have hna := not_nan_of_finite ha
+  have hnb := not_nan_of_finite hb
+  have hia := not_infinite_of_finite ha
+  have hib := not_infinite_of_finite hb
+  let sum := Wasm.IEEE32.scaledValue a + Wasm.IEEE32.scaledValue b
+  have hthresholdPositive : 0 < overflowThreshold := by
+    norm_num [overflowThreshold]
+  have h' : overflowThreshold ≤ sum.natAbs := by
+    simpa only [sum] using h
+  have hsum : sum ≠ 0 := by
+    intro hzero
+    rw [hzero] at h'
+    simp at h'
+    omega
+  have hround := roundScaledMagnitude_overflows (sum < 0) sum.natAbs h'
+  simpa [Wasm.IEEE32.add, hna, hnb, hia, hib, sum, hsum] using hround
+
+theorem sub_overflow (a b : UInt32) (ha : Finite a) (hb : Finite b)
+    (h : overflowThreshold ≤
+      (Wasm.IEEE32.scaledValue a - Wasm.IEEE32.scaledValue b).natAbs) :
+    Wasm.IEEE32.sub a b =
+      Wasm.IEEE32.infinity
+        (Wasm.IEEE32.scaledValue a - Wasm.IEEE32.scaledValue b < 0) := by
+  have hneg := negate_spec b hb
+  have hadd := add_overflow a (Wasm.IEEE32.negate b) ha hneg.1
+    (by simpa only [hneg.2, sub_eq_add_neg] using h)
+  simpa only [Wasm.IEEE32.sub, hneg.2, sub_eq_add_neg] using hadd
+
+#print axioms add_nan_left
+#print axioms add_infinities_opposite_sign
+#print axioms roundScaledMagnitude_overflows
+#print axioms add_overflow
+#print axioms sub_overflow
 
 end CodeLib.IEEE32

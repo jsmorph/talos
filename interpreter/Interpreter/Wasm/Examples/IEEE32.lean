@@ -75,4 +75,28 @@ theorem differential_abs_agrees_with_sign_clear :
       (fun p => IEEE32.abs p.1 == (p.1 &&& 0x7FFFFFFF)) = true := by
   native_decide
 
+/-- The exact halfway increment above the largest finite positive value rounds
+to positive infinity; ties go to the even conceptual significand. -/
+theorem positive_overflow_tie_agrees_with_native :
+    IEEE32.add 0x7F7FFFFF 0x73000000 = 0x7F800000 ∧
+      nativeAdd 0x7F7FFFFF 0x73000000 = 0x7F800000 := by
+  native_decide
+
+/-- A quarter-ULP increment remains below the overflow midpoint and rounds
+back to the largest finite value. -/
+theorem below_positive_overflow_tie_agrees_with_native :
+    IEEE32.add 0x7F7FFFFF 0x72800000 = 0x7F7FFFFF ∧
+      nativeAdd 0x7F7FFFFF 0x72800000 = 0x7F7FFFFF := by
+  native_decide
+
+theorem negative_overflow_tie_agrees_with_native :
+    IEEE32.add 0xFF7FFFFF 0xF3000000 = 0xFF800000 ∧
+      nativeAdd 0xFF7FFFFF 0xF3000000 = 0xFF800000 := by
+  native_decide
+
+theorem subtraction_overflow_tie_agrees_with_native :
+    IEEE32.sub 0x7F7FFFFF 0xF3000000 = 0x7F800000 ∧
+      nativeSub 0x7F7FFFFF 0xF3000000 = 0x7F800000 := by
+  native_decide
+
 end Wasm.Examples.IEEE32

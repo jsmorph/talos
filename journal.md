@@ -204,3 +204,32 @@ verification pass.
 
 Prove the exact round-to-nearest overflow threshold and lift it to finite
 addition and subtraction.
+
+## 2026-09-01: Binary32 overflow specifications
+
+- Defined the exact round-to-nearest, ties-to-even overflow threshold as
+  `(2^25 - 1) * 2^252 = 2^277 - 2^252` scaled units.  In real values this is
+  `2^128 - 2^103`, the midpoint immediately above the largest finite binary32
+  value.
+- Proved that magnitudes from the midpoint up to `2^277` round their odd
+  maximal significand upward to infinity.
+- Proved independently that every magnitude at least `2^277` necessarily
+  packs an exponent field of at least 255 and therefore becomes infinity.
+- Combined the ranges in `roundScaledMagnitude_overflows`, preserving the sign
+  of the exact result.
+- Lifted the result to `add_overflow` and `sub_overflow` for finite operands.
+  Each theorem returns the correctly signed infinity when the exact scaled
+  result reaches the midpoint threshold.
+- Added executable checks at the positive and negative tie, for subtraction at
+  the tie, and immediately below the positive tie.  Both the pure model and
+  native `Float32` agree in all four cases.
+
+### Validation
+
+- `lake build CodeLib.IEEE32.SpecialValues` passed under Lean 4.34.0-rc2.
+- `lake build Interpreter.Wasm.Examples.IEEE32` passed with the new boundary
+  checks.
+- `#print axioms` for the NaN, infinity, rounder-overflow, addition-overflow,
+  and subtraction-overflow theorems reports only `propext`,
+  `Classical.choice`, and `Quot.sound` as applicable.  There is no `sorryAx`
+  and no dependency on the floating-point bridge axioms.
