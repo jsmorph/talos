@@ -1,3 +1,5 @@
+import Interpreter.Wasm.IEEE32
+
 /-! ## Floating-point values and operations
 
 Wasm `f32`/`f64` values are modelled by their **IEEE-754 bit patterns**
@@ -6,9 +8,11 @@ faithful representation: it preserves NaN payloads and the sign of zero,
 leaves `Value`'s derived `DecidableEq`/`BEq` intact, and matches the
 bit-level style the integer instructions already use.
 
-Numeric operations decode the bits to Lean's native `Float32` / `Float`
-(so `f32` arithmetic rounds in single precision), compute, and re-encode.
-Every numeric result funnels through one seam — `f32Canon` / `f64Canon` —
+Binary32 addition and subtraction use the pure integer implementation in
+`Interpreter.Wasm.IEEE32`, making their rounding semantics available to Lean
+proofs.  Other numeric operations currently decode the bits to Lean's native
+`Float32` / `Float`, compute, and re-encode.  Native numeric results funnel
+through one seam — `f32Canon` / `f64Canon` —
 which maps a NaN result to the *canonical* quiet NaN. Producing the
 canonical NaN is always a spec-conforming choice, and concentrating it in a
 single function is where finer NaN-payload propagation would later attach.
@@ -45,8 +49,8 @@ def f64Copysign (a b : UInt64) : UInt64 :=
 
 /-! ### Arithmetic -/
 
-def f32Add (a b : UInt32) : UInt32 := f32Canon (Float32.ofBits a + Float32.ofBits b).toBits
-def f32Sub (a b : UInt32) : UInt32 := f32Canon (Float32.ofBits a - Float32.ofBits b).toBits
+def f32Add (a b : UInt32) : UInt32 := IEEE32.add a b
+def f32Sub (a b : UInt32) : UInt32 := IEEE32.sub a b
 def f32Mul (a b : UInt32) : UInt32 := f32Canon (Float32.ofBits a * Float32.ofBits b).toBits
 def f32Div (a b : UInt32) : UInt32 := f32Canon (Float32.ofBits a / Float32.ofBits b).toBits
 def f64Add (a b : UInt64) : UInt64 := f64Canon (Float.ofBits a + Float.ofBits b).toBits

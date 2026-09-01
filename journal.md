@@ -71,3 +71,35 @@ Add the symbolic execution and total-correctness theorems.
 
 Define a pure binary32 value and rounding model that can support an axiom-free
 roundoff theorem and can be related directly to the interpreter operations.
+
+## 2026-09-01: Pure binary32 addition and subtraction
+
+- Added a proof-visible binary32 decomposition into sign, exponent, and
+  fraction fields.
+- Represented every finite value exactly as a signed integer multiple of
+  `2^-149`, so the pre-rounding addition is integer addition.
+- Implemented round-to-nearest, ties-to-even for the normal and subnormal
+  ranges, including significand carry and overflow to infinity.
+- Implemented IEEE special cases for signed zero, exact cancellation,
+  infinity, and canonical NaN.
+- Replaced the interpreter's native `Float32` implementations of `f32Add` and
+  `f32Sub` with the pure operations.  This also makes scalar and SIMD uses of
+  those operations proof-visible.
+- Added edge-case comparisons and 4,096 deterministic full-width comparisons
+  each for addition and subtraction against the native `Float32` operations.
+
+### Validation
+
+- `lake build Interpreter.Wasm.Examples.IEEE32
+  Interpreter.Wasm.Examples.FloatAssociativity` passed under Lean 4.34.0-rc2.
+  This checked all 8,232 differential cases and both end-to-end WAT examples.
+- A default `lake build` compiled the updated semantics, `FloatOps`,
+  `FloatAssociativity`, `SmallStep`, and the other reached Talos examples, but
+  did not complete because Lean exited with code 139 while compiling the
+  unrelated, unchanged `Interpreter.Wasm.Examples.MemReplace`.  Retrying that
+  single file in isolation reproduced the code-139 compiler crash.
+
+### Next work
+
+Prove the real-value decoding and rounding-error lemmas for bounded finite
+inputs, then apply them to the associativity-gap expression.
