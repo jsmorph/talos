@@ -48,3 +48,26 @@ small-step execution theorem.
 ### Next work
 
 Add the symbolic execution and total-correctness theorems.
+
+## 2026-09-01: Symbolic execution
+
+- Defined the symbolic raw-bit result as the exact composition of Talos
+  `f32Add`, `f32Sub`, and `f32Abs` operations.
+- Added an explicit configuration and related it to entry zero of the decoded
+  WAT module through `SmallStep.initConfig`.
+- Added a thirteen-transition relational trace for arbitrary input bit
+  patterns.
+- Packaged the trace as fuel-independent `SmallStep.TerminatesWith` and
+  `SmallStep.PartiallyMeets` theorems.
+
+### Validation
+
+- `lake build Interpreter.Wasm.Examples.FloatAssociativity` passed under the
+  exact Lean 4.34.0-rc2 toolchain.
+- The build rechecked the decoded-module connection, arbitrary-input trace,
+  termination theorem, and partial-correctness theorem.
+
+### Next work
+
+Define a pure binary32 value and rounding model that can support an axiom-free
+roundoff theorem and can be related directly to the interpreter operations.
