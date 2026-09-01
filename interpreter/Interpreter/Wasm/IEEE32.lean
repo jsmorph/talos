@@ -14,11 +14,11 @@ namespace Wasm.IEEE32
 
 def canonicalNaN : UInt32 := 0x7FC00000
 
-def sign (x : UInt32) : Bool := (x &&& 0x80000000) != 0
+def sign (x : UInt32) : Bool := decide (2 ^ 31 ≤ x.toNat)
 
-def exponent (x : UInt32) : Nat := ((x >>> 23) &&& 0xFF).toNat
+def exponent (x : UInt32) : Nat := x.toNat / 2 ^ 23 % 2 ^ 8
 
-def fraction (x : UInt32) : Nat := (x &&& 0x007FFFFF).toNat
+def fraction (x : UInt32) : Nat := x.toNat % 2 ^ 23
 
 def isNaN (x : UInt32) : Bool := exponent x == 0xFF && fraction x != 0
 
@@ -38,21 +38,29 @@ def scaledValue (x : UInt32) : Int :=
   let magnitude : Int := scaledMagnitude x
   if sign x then -magnitude else magnitude
 
-private def signMask (negative : Bool) : UInt32 :=
+def signMask (negative : Bool) : UInt32 :=
   if negative then 0x80000000 else 0
 
-private def infinity (negative : Bool) : UInt32 :=
+def infinity (negative : Bool) : UInt32 :=
   signMask negative ||| 0x7F800000
 
-private def encodeFinite
+def encodeFinite
     (negative : Bool) (exponentField fractionField : Nat) : UInt32 :=
-  signMask negative |||
-    (UInt32.ofNat exponentField <<< 23) |||
-    UInt32.ofNat fractionField
+  UInt32.ofNat
+    ((if negative then 2 ^ 31 else 0) + exponentField * 2 ^ 23 + fractionField)
+
+/-- Flip a binary32 sign without inspecting or changing the other fields. -/
+def negate (x : UInt32) : UInt32 :=
+  if sign x then UInt32.ofNat (x.toNat - 2 ^ 31)
+  else UInt32.ofNat (x.toNat + 2 ^ 31)
+
+/-- Clear a binary32 sign without inspecting or changing the other fields. -/
+def abs (x : UInt32) : UInt32 :=
+  if sign x then UInt32.ofNat (x.toNat - 2 ^ 31) else x
 
 /-- Round a positive integer quotient to nearest, resolving a tie toward an
 even quotient.  `shift` is positive at every call site. -/
-private def roundShift (n shift : Nat) : Nat :=
+def roundShift (n shift : Nat) : Nat :=
   let unit := 2 ^ shift
   let quotient := n / unit
   let remainder := n % unit
@@ -94,6 +102,6 @@ def add (a b : UInt32) : UInt32 :=
 
 /-- Pure binary32 subtraction, defined by flipping the subtrahend's sign before
 the IEEE-754 addition. -/
-def sub (a b : UInt32) : UInt32 := add a (b ^^^ 0x80000000)
+def sub (a b : UInt32) : UInt32 := add a (negate b)
 
 end Wasm.IEEE32

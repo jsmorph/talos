@@ -103,3 +103,36 @@ roundoff theorem and can be related directly to the interpreter operations.
 
 Prove the real-value decoding and rounding-error lemmas for bounded finite
 inputs, then apply them to the associativity-gap expression.
+
+## 2026-09-01: Axiom-free binary32 rounding bound
+
+- Re-expressed sign, exponent, fraction, finite encoding, negation, and
+  absolute value with `UInt32.toNat` arithmetic.  This is extensionally the
+  same bit representation, while exposing the field equations to ordinary
+  Lean arithmetic proofs.
+- Added `CodeLib.IEEE32.Roundoff` as a codelib root.
+- Proved the encoder's sign, exponent, fraction, finiteness, scaled-magnitude,
+  and signed scaled-value equations.
+- Proved bounds for round-to-nearest, ties-to-even, including the exact two
+  possible error directions.
+- Proved that `roundScaledMagnitude` returns a finite binary32 number whenever
+  the exact magnitude is below `2^151`, and that its error is at most `2^126`
+  units of `2^-149`.  The proof handles subnormal results, exact results,
+  ordinary rounding, and significand carry without floating-point axioms.
+- Removed an attempted bit-vector proof path after `bv_decide` triggered a Lean
+  code-139 crash in this environment; the committed proof uses standard
+  natural- and integer-arithmetic lemmas instead.
+
+### Validation
+
+- `lake build CodeLib.IEEE32.Roundoff` passed under Lean 4.34.0-rc2.
+- `lake build Interpreter.Wasm.Examples.IEEE32
+  Interpreter.Wasm.Examples.FloatAssociativity` passed again.  This rechecked
+  all 8,232 differential add/sub comparisons and the WAT examples after the
+  proof-oriented representation refinement.
+
+### Next work
+
+Lift the unsigned magnitude theorem to signed addition, subtraction, and
+absolute value; prove the associativity-gap bound; then compose it with the
+symbolic termination theorem.

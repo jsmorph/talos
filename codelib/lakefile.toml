@@ -22,6 +22,7 @@ roots = [
   # bridge axioms, which should not enter every downstream module's environment.
   # It is still a root so the codelib build keeps checking it.
   "CodeLib.IEEE32.Exec",
+  "CodeLib.IEEE32.Roundoff",
   "CodeLib.Examples.Gcd",
   "CodeLib.Examples.MergeSort.StdIO",
   "CodeLib.Examples.Quicksort.TotalProof",

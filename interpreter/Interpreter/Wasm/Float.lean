@@ -39,7 +39,7 @@ def f64Canon (b : UInt64) : UInt64 :=
 
 Defined directly on the bits, matching the spec; NaN payloads survive. -/
 
-def f32Abs (a : UInt32) : UInt32 := a &&& 0x7FFFFFFF
+def f32Abs (a : UInt32) : UInt32 := IEEE32.abs a
 def f64Abs (a : UInt64) : UInt64 := a &&& 0x7FFFFFFFFFFFFFFF
 def f32Neg (a : UInt32) : UInt32 := a ^^^ 0x80000000
 def f64Neg (a : UInt64) : UInt64 := a ^^^ 0x8000000000000000
