@@ -513,6 +513,108 @@ noncomputable def dot64Exact (first : UInt64 × UInt64)
   dot64ExactAcc
     (CodeLib.IEEE64.value first.1 * CodeLib.IEEE64.value first.2) rest
 
+/-- Every input word in a binary64 dot product is finite and has real
+magnitude at most one.  This is the common input domain of the primitive
+multiplication theorem used by the fold. -/
+def Dot64UnitInputs (terms : List (UInt64 × UInt64)) : Prop :=
+  ∀ term ∈ terms,
+    CodeLib.IEEE64.Finite term.1 ∧
+    CodeLib.IEEE64.Finite term.2 ∧
+    |CodeLib.IEEE64.value term.1| ≤ 1 ∧
+    |CodeLib.IEEE64.value term.2| ≤ 1
+
+/-- A uniform input envelope for a binary64 dot product.  The separate
+`leftBound` and `rightBound` parameters make the resulting aggregate budget
+usable for nonsymmetric kernels. -/
+def Dot64UniformInputs (leftBound rightBound : ℝ)
+    (terms : List (UInt64 × UInt64)) : Prop :=
+  ∀ term ∈ terms,
+    CodeLib.IEEE64.Finite term.1 ∧
+    CodeLib.IEEE64.Finite term.2 ∧
+    |CodeLib.IEEE64.value term.1| ≤ leftBound ∧
+    |CodeLib.IEEE64.value term.2| ≤ rightBound
+
+/-- Sum of the exact absolute product magnitudes.  This single aggregate is
+enough to bound every exact partial dot product without assuming a sign
+pattern. -/
+noncomputable def dot64AbsMass : List (UInt64 × UInt64) → ℝ
+  | [] => 0
+  | (a, b) :: terms =>
+      |CodeLib.IEEE64.value a * CodeLib.IEEE64.value b| +
+        dot64AbsMass terms
+
+/-- Absolute mass consumed by the first `count` terms. -/
+noncomputable def dot64PrefixMass
+    (terms : List (UInt64 × UInt64)) (count : Nat) : ℝ :=
+  dot64AbsMass (terms.take count)
+
+theorem dot64AbsMass_nonneg (terms : List (UInt64 × UInt64)) :
+    0 ≤ dot64AbsMass terms := by
+  induction terms with
+  | nil => simp [dot64AbsMass]
+  | cons term terms ih =>
+      rcases term with ⟨a, b⟩
+      simp only [dot64AbsMass]
+      positivity
+
+theorem dot64AbsMass_take_add_drop (terms : List (UInt64 × UInt64))
+    (count : Nat) :
+    dot64AbsMass (terms.take count) + dot64AbsMass (terms.drop count) =
+      dot64AbsMass terms := by
+  induction terms generalizing count with
+  | nil => simp [dot64AbsMass]
+  | cons term terms ih =>
+      cases count with
+      | zero => simp [dot64AbsMass]
+      | succ count =>
+          rcases term with ⟨a, b⟩
+          simp only [List.take_succ_cons, List.drop_succ_cons, dot64AbsMass]
+          rw [← ih count]
+          ring
+
+theorem dot64PrefixMass_le (terms : List (UInt64 × UInt64)) (count : Nat) :
+    dot64PrefixMass terms count ≤ dot64AbsMass terms := by
+  rw [dot64PrefixMass, ← dot64AbsMass_take_add_drop terms count]
+  exact le_add_of_nonneg_right (dot64AbsMass_nonneg (terms.drop count))
+
+theorem dot64UnitInputs_of_uniform
+    (leftBound rightBound : ℝ) (terms : List (UInt64 × UInt64))
+    (hleft : leftBound ≤ 1) (hright : rightBound ≤ 1)
+    (hinputs : Dot64UniformInputs leftBound rightBound terms) :
+    Dot64UnitInputs terms := by
+  intro term hterm
+  obtain ⟨hfiniteLeft, hfiniteRight, hboundLeft, hboundRight⟩ :=
+    hinputs term hterm
+  exact ⟨hfiniteLeft, hfiniteRight,
+    hboundLeft.trans hleft, hboundRight.trans hright⟩
+
+theorem dot64AbsMass_le_uniform
+    (leftBound rightBound : ℝ) (terms : List (UInt64 × UInt64))
+    (hleftNonneg : 0 ≤ leftBound) (hrightNonneg : 0 ≤ rightBound)
+    (hinputs : Dot64UniformInputs leftBound rightBound terms) :
+    dot64AbsMass terms ≤
+      (terms.length : ℝ) * (leftBound * rightBound) := by
+  induction terms with
+  | nil => simp [dot64AbsMass]
+  | cons term terms ih =>
+      rcases term with ⟨a, b⟩
+      have hhead := hinputs (a, b) (by simp)
+      have htail : Dot64UniformInputs leftBound rightBound terms := by
+        intro term hterm
+        exact hinputs term (by simp [hterm])
+      have hproduct :
+          |CodeLib.IEEE64.value a * CodeLib.IEEE64.value b| ≤
+            leftBound * rightBound := by
+        rw [abs_mul]
+        exact mul_le_mul hhead.2.2.1 hhead.2.2.2
+          (abs_nonneg _) hleftNonneg
+      have henvelopeNonneg : 0 ≤ leftBound * rightBound :=
+        mul_nonneg hleftNonneg hrightNonneg
+      have hrest := ih htail
+      simp only [dot64AbsMass, List.length_cons]
+      push_cast
+      nlinarith
+
 /-- Each recursive dot-product stage exposes its finite-input and magnitude
 hypotheses, plus safety of the accumulator produced for the tail. -/
 inductive Dot64Safe : UInt64 → List (UInt64 × UInt64) → Prop
@@ -585,6 +687,154 @@ theorem dot64_step_value_bound_of_headroom (accumulator a b : UInt64)
   have hstep := dot64_step_real_error accumulator a b haccumulator ha hb
     haccumulatorBound haBound hbBound hproductBound
   exact CodeLib.Numerical.abs_le_of_error_headroom hstep.2 hheadroom
+
+/-- An aggregate exact absolute-mass budget constructs the recursive safety
+trace needed by the modeled dot-product fold.  `exactAccumulator` and `error`
+describe the prefix already accumulated; the remaining absolute product mass
+and two primitive error units per remaining term reserve enough headroom for
+every later multiplication and addition. -/
+theorem dot64_safe_of_abs_mass_budget
+    (accumulator : UInt64) (terms : List (UInt64 × UInt64))
+    (exactAccumulator error : ℝ)
+    (haccumulator : CodeLib.IEEE64.Finite accumulator)
+    (haccumulatorError :
+      |CodeLib.IEEE64.value accumulator - exactAccumulator| ≤ error)
+    (hinputs : Dot64UnitInputs terms)
+    (hbudget :
+      |exactAccumulator| + error + dot64AbsMass terms +
+          (terms.length : ℝ) * (2 * f64Epsilon) ≤ 1) :
+    Dot64Safe accumulator terms := by
+  induction terms generalizing accumulator exactAccumulator error with
+  | nil => exact .nil haccumulator
+  | cons term terms ih =>
+      rcases term with ⟨a, b⟩
+      let productExact :=
+        CodeLib.IEEE64.value a * CodeLib.IEEE64.value b
+      let next := Wasm.IEEE64.add accumulator (Wasm.IEEE64.mul a b)
+      have hinput := hinputs (a, b) (by simp)
+      obtain ⟨ha, hb, haBound, hbBound⟩ := hinput
+      have htailInputs : Dot64UnitInputs terms := by
+        intro term hterm
+        exact hinputs term (by simp [hterm])
+      have herrorNonneg : 0 ≤ error :=
+        (abs_nonneg _).trans haccumulatorError
+      have hepsilonNonneg : 0 ≤ f64Epsilon := by
+        norm_num [f64Epsilon]
+      have hmassNonneg : 0 ≤ dot64AbsMass terms :=
+        dot64AbsMass_nonneg terms
+      have htailErrorNonneg :
+          0 ≤ (terms.length : ℝ) * (2 * f64Epsilon) := by
+        positivity
+      have hbudget' :
+          |exactAccumulator| + error + |productExact| +
+              dot64AbsMass terms + 2 * f64Epsilon +
+              (terms.length : ℝ) * (2 * f64Epsilon) ≤ 1 := by
+        change
+          |exactAccumulator| + error +
+                |CodeLib.IEEE64.value a * CodeLib.IEEE64.value b| +
+              dot64AbsMass terms + 2 * f64Epsilon +
+              (terms.length : ℝ) * (2 * f64Epsilon) ≤ 1
+        have h := hbudget
+        simp only [dot64AbsMass, List.length_cons, Nat.cast_add,
+          Nat.cast_one] at h
+        nlinarith
+      have haccumulatorHeadroom :
+          |exactAccumulator| + error ≤ 1 := by
+        nlinarith [abs_nonneg exactAccumulator, abs_nonneg productExact]
+      have haccumulatorBound :
+          |CodeLib.IEEE64.value accumulator| ≤ 1 :=
+        CodeLib.Numerical.abs_le_of_error_headroom
+          haccumulatorError haccumulatorHeadroom
+      have hproductHeadroom : |productExact| + f64Epsilon ≤ 1 := by
+        nlinarith [abs_nonneg exactAccumulator]
+      have hproductBound :
+          |CodeLib.IEEE64.value (Wasm.IEEE64.mul a b)| ≤ 1 := by
+        exact mul64_value_bound_of_headroom a b ha hb haBound hbBound
+          (by simpa [productExact] using hproductHeadroom)
+      have hstep := dot64_step_real_error accumulator a b
+        haccumulator ha hb haccumulatorBound haBound hbBound hproductBound
+      have hlocal :
+          |(CodeLib.IEEE64.value next -
+                (exactAccumulator + productExact)) -
+              (CodeLib.IEEE64.value accumulator - exactAccumulator)| ≤
+            2 * f64Epsilon := by
+        rw [show
+          (CodeLib.IEEE64.value next -
+                (exactAccumulator + productExact)) -
+              (CodeLib.IEEE64.value accumulator - exactAccumulator) =
+            CodeLib.IEEE64.value next -
+              (CodeLib.IEEE64.value accumulator + productExact) by ring]
+        simpa [next, productExact] using hstep.2
+      have hnextError :
+          |CodeLib.IEEE64.value next -
+              (exactAccumulator + productExact)| ≤
+            error + 2 * f64Epsilon :=
+        CodeLib.Numerical.sequential_perturbation
+          haccumulatorError hlocal
+      have hexactNextBound :
+          |exactAccumulator + productExact| ≤
+            |exactAccumulator| + |productExact| :=
+        abs_add_le _ _
+      have htailBudget :
+          |exactAccumulator + productExact| +
+                (error + 2 * f64Epsilon) + dot64AbsMass terms +
+              (terms.length : ℝ) * (2 * f64Epsilon) ≤ 1 := by
+        nlinarith
+      have htail := ih next (exactAccumulator + productExact)
+        (error + 2 * f64Epsilon) hstep.1 hnextError htailInputs htailBudget
+      exact .cons haccumulator ha hb haccumulatorBound haBound hbBound
+        hproductBound htail
+
+/-- A nonempty dot product whose total exact absolute mass plus its complete
+`2n - 1` primitive-error budget fits in the unit interval has a safe modeled
+execution.  The public condition mentions only exact input values. -/
+theorem dot64_safe_nonempty_of_abs_mass
+    (first : UInt64 × UInt64) (rest : List (UInt64 × UInt64))
+    (hinputs : Dot64UnitInputs (first :: rest))
+    (hbudget :
+      dot64AbsMass (first :: rest) +
+          (2 * (rest.length : ℝ) + 1) * f64Epsilon ≤ 1) :
+    Dot64Safe (Wasm.IEEE64.mul first.1 first.2) rest := by
+  have hfirst := hinputs first (by simp)
+  obtain ⟨hfirstLeft, hfirstRight, hfirstLeftBound,
+    hfirstRightBound⟩ := hfirst
+  have hrestInputs : Dot64UnitInputs rest := by
+    intro term hterm
+    exact hinputs term (by simp [hterm])
+  have hmul := CodeLib.IEEE64.mul_real_error first.1 first.2
+    hfirstLeft hfirstRight hfirstLeftBound hfirstRightBound
+  have hmulError :
+      |CodeLib.IEEE64.value (Wasm.IEEE64.mul first.1 first.2) -
+          CodeLib.IEEE64.value first.1 * CodeLib.IEEE64.value first.2| ≤
+        f64Epsilon := by
+    simpa [f64Epsilon, CodeLib.IEEE64.multiplicationEpsilon] using hmul.2
+  apply dot64_safe_of_abs_mass_budget
+    (Wasm.IEEE64.mul first.1 first.2) rest
+    (CodeLib.IEEE64.value first.1 * CodeLib.IEEE64.value first.2)
+    f64Epsilon hmul.1 hmulError hrestInputs
+  have h := hbudget
+  simp only [dot64AbsMass] at h
+  nlinarith
+
+/-- A convenient sufficient condition using uniform left/right operand
+envelopes.  It replaces the exact absolute mass with `n * A * B`. -/
+theorem dot64_safe_nonempty_of_uniform
+    (leftBound rightBound : ℝ)
+    (first : UInt64 × UInt64) (rest : List (UInt64 × UInt64))
+    (hleftNonneg : 0 ≤ leftBound) (hrightNonneg : 0 ≤ rightBound)
+    (hleftUnit : leftBound ≤ 1) (hrightUnit : rightBound ≤ 1)
+    (hinputs : Dot64UniformInputs leftBound rightBound (first :: rest))
+    (hbudget :
+      ((rest.length : ℝ) + 1) * (leftBound * rightBound) +
+          (2 * (rest.length : ℝ) + 1) * f64Epsilon ≤ 1) :
+    Dot64Safe (Wasm.IEEE64.mul first.1 first.2) rest := by
+  apply dot64_safe_nonempty_of_abs_mass first rest
+    (dot64UnitInputs_of_uniform leftBound rightBound (first :: rest)
+      hleftUnit hrightUnit hinputs)
+  have hmass := dot64AbsMass_le_uniform leftBound rightBound
+    (first :: rest) hleftNonneg hrightNonneg hinputs
+  simp only [List.length_cons, Nat.cast_add, Nat.cast_one] at hmass
+  nlinarith
 
 /-- Exact-real headroom constructs the explicit modeled dot-product safety
 trace. -/
@@ -891,6 +1141,14 @@ theorem dot4_program_real_error_of_headroom
 #print axioms horner3_program_real_error
 #print axioms horner3_program_real_error_of_headroom
 #print axioms dot64_step_real_error
+#print axioms dot64AbsMass_nonneg
+#print axioms dot64AbsMass_take_add_drop
+#print axioms dot64PrefixMass_le
+#print axioms dot64UnitInputs_of_uniform
+#print axioms dot64AbsMass_le_uniform
+#print axioms dot64_safe_of_abs_mass_budget
+#print axioms dot64_safe_nonempty_of_abs_mass
+#print axioms dot64_safe_nonempty_of_uniform
 #print axioms dot64Acc_real_error
 #print axioms dot64_real_error
 #print axioms dot64_safe_of_headroom
