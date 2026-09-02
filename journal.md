@@ -992,3 +992,26 @@ underflow-exclusion assumptions.
 
 Publish and fetch-verify this addition checkpoint, then add the adaptive
 relative/underflow multiplication layer.
+
+### Scale-aware binary64 multiplication checkpoint
+
+- Published and fetch-verified the scale-aware addition checkpoint as remote
+  commit `77b092d`; its fetched tree exactly matches the validated local tree.
+- Proved `roundDyadicMagnitude1074_adaptive_spec`, retaining the local exact
+  product scale instead of collapsing every case to the old absolute
+  `2^-52` bound.  Its integer result is relative at unit roundoff above the
+  least-normal threshold and bounded by half the least subnormal below it.
+- Lifted that result to `mul_real_adaptive_error`, the uniform mixed bound
+  `mul_real_mixed_error`, and the standard `mul_real_relative_error` under an
+  explicit exact-product normal-or-zero premise.  Finiteness, unit input
+  bounds, no-overflow headroom, and underflow exclusion remain visible rather
+  than hidden behind native evaluation.
+- `LD_PRELOAD=/tmp/lean_procself.so lake build CodeLib.IEEE64.Rounders
+  CodeLib.IEEE64.Operations` passed in 3,056 jobs under exact Lean 4.34.0-rc2.
+  The four new operation theorems and adaptive rounder theorem all report
+  exactly `[propext, Classical.choice, Quot.sound]`.
+
+### Next work
+
+Publish and fetch-verify this multiplication checkpoint, then add reusable
+format-independent geometric and `gamma` accumulation inequalities.
