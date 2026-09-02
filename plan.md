@@ -457,5 +457,12 @@ legacy `CodeLib.Generated` wrapper retains the full proof imports for existing
 modules.  This lets the exact artifact build without entering the unrelated
 pinned-Iris failure and keeps old generated proofs source-compatible.
 
+Two numerical prerequisites were also completed independently while the
+operational proof was being developed.  The aggregate layer now constructs
+`Dot64Safe` from either exact absolute mass or a uniform `n * A * B` envelope,
+and the total-list layer covers the exact empty branch as well as the
+nonempty `(2 * n - 1) * 2^-52` result.  These are checkpoints 4--5 support
+lemmas; their final attachment to WAT execution still waits for checkpoint 3.
+
 Checkpoint 3, the exact total loop execution theorem over arbitrary binary64
-bit patterns and read-only `Mem.words64` inputs, is next.
+bit patterns and read-only `Mem.words64` inputs, is in progress.

@@ -866,3 +866,31 @@ Publish and fetch-verify this artifact checkpoint, then prove the generated
 countdown loop with exact relational iteration traces and
 `terminatesWith_of_loop`, keeping all numerical assumptions out of the raw
 execution theorem.
+
+### Aggregate safety and total-list numerical prerequisites
+
+- Extended the generic binary64 dot-product development with exact absolute
+  mass, prefix mass, finite unit-input and uniform-envelope predicates, and
+  constructors for the recursive `Dot64Safe` invariant.  The public sufficient
+  conditions are either
+  `mass + (2 * n - 1) * epsilon <= 1` or the simpler
+  `n * A * B + (2 * n - 1) * epsilon <= 1` with explicit nonnegative unit
+  bounds on `A` and `B`.
+- Added the total-list modeled result used by the runtime kernel: the empty
+  list returns exact positive zero, while a nonempty list uses the existing
+  first-product/tail fold.  Proved equality of its exact target with the
+  conventional real sum, the empty/nonempty error budget, and finite/error
+  theorems under recursive, mass-budget, and uniform-envelope safety.
+- `lake build CodeLib.Numerical.Kernels` passed in 3,062 jobs under exact Lean
+  4.34.0-rc2.  Every new public theorem reports only `propext`,
+  `Classical.choice`, and `Quot.sound`; the proof-hole/axiom-declaration and
+  Git whitespace scans pass.
+- Published and fetch-verified the aggregate-safety tree as remote `dd92afb`
+  and the total-list interface tree as remote `52954a5`.  Each fetched remote
+  tree is byte-identical to its corresponding validated local commit tree.
+
+### Next work
+
+Finish the exact generated-loop termination theorem, then attach the
+total-list numerical result with `TerminatesWith.mono` so the operational and
+roundoff claims remain independently reusable.
