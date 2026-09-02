@@ -264,6 +264,7 @@ each phase:
 ### Current status
 
 Phase 1 is in progress.  The common binary64 scaled-magnitude packing theorem
-and the `2^-52` addition and subtraction results pass.  Multiplication,
-division, square root, and their decoded-WAT results remain in Phase 1.  Phases
-2 through 4 remain pending.
+and the `2^-52` addition, subtraction, and multiplication results pass.  The
+multiplication result is also attached to the existing decoded-WAT execution
+theorem.  Division, square root, and their decoded-WAT results remain in Phase
+1.  Phases 2 through 4 remain pending.

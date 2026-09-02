@@ -497,3 +497,19 @@ differential tests, and an example-program theorem.
 - `lake build CodeLib.IEEE64.Roundoff` passed under Lean 4.34.0-rc2.  Its
   public packing, addition, and subtraction theorems report only standard Lean
   logical axioms.
+
+### Binary64 multiplication checkpoint
+
+- Added the reusable binary64 dyadic-rounder contract.  A product small enough
+  to avoid overflow is finite, preserves its computed sign, and has
+  cleared-denominator error at most `2^2096`.
+- Proved `mul_real_error`: multiplying finite binary64 inputs whose absolute
+  values are at most one produces a finite result within `2^-52` of the exact
+  real product.
+- Attached the same bound to the existing decoded hand-written f64
+  multiplication WAT program through its fuel-independent termination theorem.
+- `lake build CodeLib.IEEE64.Operations` passed under exact Lean 4.34.0-rc2.
+  Axiom reports for the rounder, operation, and WAT theorems contain only
+  `propext`, `Classical.choice`, and `Quot.sound`.
+- Next: commit and push this checkpoint, then prove the corresponding binary64
+  rational-rounding and division contracts.
