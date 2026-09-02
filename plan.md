@@ -222,15 +222,18 @@ pushed before work proceeds to the next unit.
 4. **Complete and pushed:** exact rational ties-to-even rounding plus f32
    division and decoded-WAT `2^-23` real-error theorems (`8d5234c` remote
    checkpoint).
-5. **Complete; push in progress:** exact square-root midpoint rounding, packing
+5. **Complete and pushed:** exact square-root midpoint rounding, packing
    through the verified scaled-magnitude rounder, and operation/WAT real error
    bounds of `2^-23` for positive finite inputs at most one.  The interpreter
    square-root examples and regression suite and the CodeLib theorem root pass
-   under Lean 4.34.0-rc2, with only standard logical axioms reported.
-6. **In progress:** strengthen the cubic sine WAT example on a nontrivial input
-   interval by combining a real Taylor remainder with the proved f32 addition,
-   subtraction, multiplication, and division roundoff budgets.
-7. **Final validation:** build all affected interpreter and CodeLib roots with
+   under Lean 4.34.0-rc2, with only standard logical axioms reported
+   (`9f32c23` remote checkpoint).
+6. **Complete; push in progress:** reusable addition/subtraction real-error
+   contracts and the cubic sine theorem on `|x| ≤ 1/2`.  The proof combines a
+   `1/3200` real approximation bound with a conservative `3 * 2^-23` primitive
+   roundoff budget, proving both the operation result and decoded WAT program
+   stay strictly within `2^-11` of `Real.sin`.
+7. **In progress:** build all affected interpreter and CodeLib roots with
    exact Lean 4.34.0-rc2; inspect public theorem axiom reports; run
    `git diff --check`; update this plan and `journal.md`; commit and push the
    final tree.

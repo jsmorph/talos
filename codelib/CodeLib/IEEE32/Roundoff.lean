@@ -665,6 +665,88 @@ theorem scaled_abs_le_of_value_abs_le (x : UInt32)
     exact (div_le_one hpow).mp h
   exact_mod_cast hreal
 
+/-- Uniform absolute roundoff budget used by bounded binary32 addition and
+subtraction. -/
+noncomputable def arithmeticEpsilon : ℝ := 1 / (2 : ℝ) ^ 23
+
+/-- Bounded finite binary32 addition differs from exact real addition by at
+most one binary32 unit roundoff. -/
+theorem add_real_error (a b : UInt32) (ha : Finite a) (hb : Finite b)
+    (haBound : |value a| ≤ 1) (hbBound : |value b| ≤ 1) :
+    Finite (Wasm.IEEE32.add a b) ∧
+      |value (Wasm.IEEE32.add a b) - (value a + value b)| ≤
+        arithmeticEpsilon := by
+  have haScaled := scaled_abs_le_of_value_abs_le a haBound
+  have hbScaled := scaled_abs_le_of_value_abs_le b hbBound
+  have hsum :
+      |Wasm.IEEE32.scaledValue a + Wasm.IEEE32.scaledValue b| <
+        (2 ^ 151 : Int) := by
+    apply abs_lt.mpr
+    have hbudget : 2 * (2 ^ 149 : Int) < 2 ^ 151 := by norm_num
+    have haBounds := abs_le.mp haScaled
+    have hbBounds := abs_le.mp hbScaled
+    constructor <;> omega
+  have hs := add_spec a b ha hb (natAbs_lt_nat hsum)
+  constructor
+  · exact hs.1
+  · let z : Int :=
+      Wasm.IEEE32.scaledValue (Wasm.IEEE32.add a b) -
+        (Wasm.IEEE32.scaledValue a + Wasm.IEEE32.scaledValue b)
+    have hz : |z| ≤ (2 ^ 126 : Nat) := hs.2
+    have heq :
+        value (Wasm.IEEE32.add a b) - (value a + value b) =
+          (z : ℝ) / (2 : ℝ) ^ 149 := by
+      simp [value, z]
+      ring
+    rw [heq, abs_div,
+      abs_of_pos (by positivity : 0 < (2 : ℝ) ^ 149)]
+    apply (div_le_iff₀ (by positivity : 0 < (2 : ℝ) ^ 149)).2
+    have hzReal : |(z : ℝ)| ≤ (2 : ℝ) ^ 126 := by
+      exact_mod_cast hz
+    calc
+      |(z : ℝ)| ≤ (2 : ℝ) ^ 126 := hzReal
+      _ = arithmeticEpsilon * (2 : ℝ) ^ 149 := by
+        norm_num [arithmeticEpsilon]
+
+/-- Bounded finite binary32 subtraction differs from exact real subtraction
+by at most one binary32 unit roundoff. -/
+theorem sub_real_error (a b : UInt32) (ha : Finite a) (hb : Finite b)
+    (haBound : |value a| ≤ 1) (hbBound : |value b| ≤ 1) :
+    Finite (Wasm.IEEE32.sub a b) ∧
+      |value (Wasm.IEEE32.sub a b) - (value a - value b)| ≤
+        arithmeticEpsilon := by
+  have haScaled := scaled_abs_le_of_value_abs_le a haBound
+  have hbScaled := scaled_abs_le_of_value_abs_le b hbBound
+  have hdifference :
+      |Wasm.IEEE32.scaledValue a - Wasm.IEEE32.scaledValue b| <
+        (2 ^ 151 : Int) := by
+    apply abs_lt.mpr
+    have hbudget : 2 * (2 ^ 149 : Int) < 2 ^ 151 := by norm_num
+    have haBounds := abs_le.mp haScaled
+    have hbBounds := abs_le.mp hbScaled
+    constructor <;> omega
+  have hs := sub_spec a b ha hb (natAbs_lt_nat hdifference)
+  constructor
+  · exact hs.1
+  · let z : Int :=
+      Wasm.IEEE32.scaledValue (Wasm.IEEE32.sub a b) -
+        (Wasm.IEEE32.scaledValue a - Wasm.IEEE32.scaledValue b)
+    have hz : |z| ≤ (2 ^ 126 : Nat) := hs.2
+    have heq :
+        value (Wasm.IEEE32.sub a b) - (value a - value b) =
+          (z : ℝ) / (2 : ℝ) ^ 149 := by
+      simp [value, z]
+      ring
+    rw [heq, abs_div,
+      abs_of_pos (by positivity : 0 < (2 : ℝ) ^ 149)]
+    apply (div_le_iff₀ (by positivity : 0 < (2 : ℝ) ^ 149)).2
+    have hzReal : |(z : ℝ)| ≤ (2 : ℝ) ^ 126 := by
+      exact_mod_cast hz
+    calc
+      |(z : ℝ)| ≤ (2 : ℝ) ^ 126 := hzReal
+      _ = arithmeticEpsilon * (2 : ℝ) ^ 149 := by
+        norm_num [arithmeticEpsilon]
+
 /-- The exact result computed by the WAT body is finite and below `2^-20` for
 finite inputs whose real magnitudes are at most one. -/
 theorem assocGap_output_lt_epsilon (a b c : UInt32)
@@ -711,5 +793,7 @@ theorem assocGap_terminates_lt_epsilon (a b c : UInt32)
 
 #print axioms assocGap_output_lt_epsilon
 #print axioms assocGap_terminates_lt_epsilon
+#print axioms add_real_error
+#print axioms sub_real_error
 
 end CodeLib.IEEE32

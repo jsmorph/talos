@@ -420,3 +420,27 @@ differential tests, and an example-program theorem.
 - Next: push this checkpoint, then strengthen the cubic sine program from its
   fixed-input analytic result to a nontrivial interval theorem that combines a
   Taylor remainder with the primitive f32 roundoff budgets.
+
+## 2026-09-02: Nontrivial-interval sine checkpoint
+
+- Added reusable `add_real_error` and `sub_real_error` theorems.  Finite
+  operands of magnitude at most one produce finite results within `2^-23` of
+  exact real addition or subtraction.
+- Strengthened the cubic sine example from the exact input zero to every
+  finite binary32 input in `[-1/2, 1/2]`.
+- Proved the real approximation component using Mathlib's cubic sine bound:
+  `|(x - x^3 / 6) - sin x| ≤ 1/3200` throughout the interval.
+- Followed the WAT instruction order and composed the two multiplication
+  bounds, division-by-six bound, and final subtraction bound.  A conservative
+  floating-point contribution of `3 * 2^-23`, added to the analytic term, is
+  strictly less than the fixed `sineIntervalEpsilon = 2^-11`.
+- Added `sinResult_interval_error` for the executable IEEE32 expression and
+  `sin_small_program_interval_error` for the decoded program's
+  fuel-independent `SmallStep.TerminatesWith` execution.
+- `lake build CodeLib.IEEE32.Transcendental` passed in 3,170 jobs under exact
+  Lean 4.34.0-rc2.  Axiom reports for the reusable add/sub contracts, analytic
+  bound, result theorem, and WAT theorem contain only `propext`,
+  `Classical.choice`, and `Quot.sound`; no `sorryAx` or compatibility axiom is
+  present.
+- Next: push this checkpoint, then run the combined affected-root builds,
+  source scans, and local/remote tree verification for final delivery.
