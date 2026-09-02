@@ -498,3 +498,10 @@ The pure binary64 instantiation is also complete: it proves the standard
 `gamma(2*n-1,u)` forward bound using the canonical `dot64AbsMass`, plus a
 condition-number relative-error corollary for nonzero exact results.  Attaching
 these results to exact WAT execution remains the next publishable subcheckpoint.
+
+The deterministic artifact-regression portion of checkpoint 7 is complete.
+It now exercises every required runtime length and the signed-zero,
+subnormal, tie-to-even, cancellation, headroom, page-boundary, address-wrap,
+and out-of-bounds cases using exact result bit patterns.  These checks remain
+regression oracles only.  The proof/bound/build-cost evaluation summary waits
+until the WAT gamma attachment is complete.

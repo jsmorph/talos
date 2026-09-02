@@ -1063,3 +1063,28 @@ corollary.
 
 Publish and fetch-verify the pure modeled gamma checkpoint, then attach both
 gamma conclusions to the exact generated memory-backed WAT execution.
+
+### Expanded generated-artifact regression checkpoint
+
+- Published and fetch-verified the pure modeled gamma checkpoint as remote
+  commit `97a2092`; its fetched tree exactly matches the validated local tree.
+- Expanded `f64_dot/regression.mjs` to cover lengths `0`, `1`, `2`, `4`, `16`,
+  `64`, and `256`, exact powers of two, mixed signs and cancellation, signed
+  zero, gradual and signed underflow, the normal/subnormal boundary, a
+  binade tie-to-even case, and exact aggregate-headroom boundaries.
+- Added aligned page-crossing and final-slot successes plus left-, right-, and
+  tail-load out-of-bounds traps, a near-`2^32` physical-capacity trap, and a
+  footprint-crossing-the-address-end trap.  Expected results use hard-coded
+  raw binary64 bit patterns; JavaScript arithmetic is not a proof oracle.
+- Rebuilt with Rust 1.95.0, Cargo 1.95.0, wasm-tools 1.251.0, and the verifier
+  under Lean 4.34.0-rc2.  The artifact remains byte-identical: 219-byte Wasm
+  SHA-256 `fc820879306de5a9db9f4e7e4107ed0e01100f0dd49f5f878832bcc1cd8b4544`
+  and 1,396-byte WAT SHA-256
+  `b7d53a86879ff306e5332e0b6f12d7dd52f1717ed0d36b10b25883799b8f9d4b`.
+  `node --check`, the full Node regression suite, `git diff --check`, and a
+  clean status all pass.
+
+### Next work
+
+Publish and fetch-verify this regression checkpoint while the exact-WAT gamma
+and condition-number wrappers are completed.
