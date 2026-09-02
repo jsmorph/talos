@@ -600,3 +600,34 @@ differential tests, and an example-program theorem.
   `git diff --check` and the changed-source proof-hole scan pass.
 - Next: publish and fetch-verify this checkpoint, run combined affected-root
   validation, then record and publish the final validated state.
+
+### Quantitative kernel agenda completed
+
+- Published and fetch-verified the binary64 division checkpoint as remote
+  `995ecc0`, the binary64 square-root/all-operation-WAT checkpoint as
+  `0b5be82`, the reusable composition checkpoint as `f61206e`, and the
+  numerical-kernel checkpoint as `6bf47ba`.  Each fetched remote tree was
+  byte-identical to its validated local committed tree.
+- Reconfirmed the active compiler as Lean `4.34.0-rc2`, release commit
+  `6a10ac8c22beadecabdbb0919c2b50214762f91d`.
+- From `interpreter`, the combined final build passed these exact targets:
+  `Interpreter.Wasm.Examples.Float64AddSub`,
+  `Interpreter.Wasm.Examples.Float64Multiplication`,
+  `Interpreter.Wasm.Examples.Float64Division`,
+  `Interpreter.Wasm.Examples.Float64SquareRoot`, and
+  `Interpreter.Wasm.Examples.FloatNumericalKernels` (19 jobs).
+- From `codelib`, the combined final build passed these exact targets:
+  `CodeLib.IEEE64.Rounders`, `CodeLib.IEEE64.Operations`,
+  `CodeLib.Numerical.ErrorComposition`,
+  `CodeLib.IEEE32.Transcendental`, and `CodeLib.Numerical.Kernels` (3,181
+  jobs).
+- Final axiom output for the binary64 rational and square-root rounders; f64
+  arithmetic/WAT results; four composition lemmas; refactored sine theorem;
+  and f32 affine/f64 dot-product operation and WAT theorems contains only
+  `propext`, `Classical.choice`, and `Quot.sound`.  Native-decision axioms are
+  confined to explicitly concrete regression examples and are absent from all
+  new general results.
+- Scanning every Lean file changed since `166dac4` found no `sorry`, `admit`,
+  or axiom declaration.  `git diff 166dac4..HEAD --check` passed.  The ordered
+  quantitative binary64, reusable composition, numerical-kernel, and final
+  validation phases are complete.
