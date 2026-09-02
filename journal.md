@@ -823,3 +823,46 @@ ownership-preserving indexed `f64.load` and address-safety infrastructure.
 
 Publish and fetch-verify this checkpoint, then inspect and validate the exact
 Rust-generated WAT artifact before fixing the loop-state invariant.
+
+### Exact generated f64 dot-product artifact checkpoint
+
+- Added the dedicated `f64_dot` Rust crate and its generated Lean module.  The
+  exported ABI is `(i32, i32, i32) -> f64`, representing the two base pointers
+  and runtime length.  The final release artifact is 219 bytes with SHA-256
+  `fc820879306de5a9db9f4e7e4107ed0e01100f0dd49f5f878832bcc1cd8b4544`;
+  its 1,396-byte WAT has SHA-256
+  `b7d53a86879ff306e5332e0b6f12d7dd52f1717ed0d36b10b25883799b8f9d4b`.
+- The emitted function returns positive zero before any load when the length
+  is zero.  Otherwise it loads and multiplies element zero, then runs one
+  call-free countdown loop with two loads, one `f64.mul`, and one `f64.add`
+  for each tail element.  It contains no call, store, panic path, or loop
+  unrolling, so a nonempty length `n` executes exactly `2 * n - 1` floating
+  operations and matches the existing `IEEE64.dot64` fold.
+- Added ABI and module-shape guards in `Project.F64Dot.Spec`.  The generated
+  `Program.lean` retains the compile-time structural fidelity check against
+  the exact decoded WAT.  The committed `f64_dot/regression.mjs` check passed
+  under Node 24.19.0 for empty, one-term, and three-term inputs, the last valid
+  page slot, an out-of-bounds cross-page access, and a near-`2^32` address; the
+  two invalid cases trap.
+- Split generated artifact support into `CodeLib.GeneratedCore`, containing
+  only attributes, WAT decoding, syntax quotation, and fidelity checking, and
+  the legacy `CodeLib.Generated` compatibility wrapper.  The verifier now
+  emits the core import.  Existing generated modules retain their old wrapper
+  and proof surface; new artifacts no longer build unrelated Iris roots merely
+  to check their AST.  A temporarily migrated pre-existing FloatMinmax module
+  compiled through the core and was restored byte-for-byte afterward.
+- Artifact generation used Rust 1.95.0, Cargo 1.95.0, and wasm-tools 1.251.0.
+  `wasm-tools validate` and `cargo fmt --check` passed.  Under exact Lean
+  4.34.0-rc2, `lake build CodeLib.GeneratedCore` passed in 12 jobs,
+  `lake build verifier` passed in 52 jobs, and
+  `lake build Project.F64Dot.Program Project.F64Dot.Spec` passed in 15 jobs.
+  `git diff --check` and the changed-Lean proof-hole/axiom-declaration scan
+  pass.  This checkpoint introduces structural guards but no public theorem,
+  so there is no new theorem axiom report yet.
+
+### Next work
+
+Publish and fetch-verify this artifact checkpoint, then prove the generated
+countdown loop with exact relational iteration traces and
+`terminatesWith_of_loop`, keeping all numerical assumptions out of the raw
+execution theorem.

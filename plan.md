@@ -387,12 +387,14 @@ that rustc itself is verified.
    execution checks plus boundary and trap regressions.  If compiler output
    uses unsupported instructions, adjust the isolated crate/profile rather
    than weakening the semantic target.
-3. **Total loop execution.**  Prove the generated loop with
-   `twp_loop_wf_family`, indexed by the current array position and modeled
-   accumulator and measured by the remaining element count.  Its invariant
-   owns both arrays, preserves memory, proves `i <= n`, and identifies the
-   accumulator with the modeled prefix dot product.  Apply small-step heap
-   adequacy to obtain an axiom-clean, fuel-independent execution theorem.
+3. **Total loop execution.**  Prove the generated loop with finite relational
+   `SmallStep.Steps` traces for its exit and iteration branches, indexed by the
+   current array position, pointers, countdown, and modeled accumulator and
+   measured by the remaining element count.  Use `terminatesWith_of_loop` to
+   assemble those exact iterations into an axiom-clean, fuel-independent
+   execution theorem.  The invariant preserves both memory views, proves the
+   pointer/no-wrap equations, and identifies the accumulator with the modeled
+   prefix dot product.
 4. **Absolute numerical result.**  Prove the prefix/list algebra needed to
    connect the loop invariant to `dot64` and `dot64Exact`.  Compose the exact
    execution theorem with `dot64_real_error`, including an exact empty-list
@@ -443,5 +445,17 @@ branch because rebuilding its pinned Iris dependencies reproduces the existing
 The flagship execution proof will instead use explicit relational
 `SmallStep.Steps` iteration traces plus `terminatesWith_of_loop`.  This remains
 an authoritative, fuel-independent total-correctness proof and avoids coupling
-the numerical milestone to an unrelated dependency failure.  Checkpoint 2,
-generation and inspection of the exact compiled artifact, is in progress.
+the numerical milestone to an unrelated dependency failure.
+
+Checkpoint 2 is complete.  The dedicated Rust crate compiles to a 219-byte
+binary with one call-free countdown loop, no stores or panic paths, an exact
+positive-zero empty branch, and one initial multiplication followed by one
+multiplication and one addition per tail element.  Its generated Lean AST is
+checked against the decoded WAT by the existing fidelity guard.  Generated
+artifact support is now split into a small `CodeLib.GeneratedCore`, while the
+legacy `CodeLib.Generated` wrapper retains the full proof imports for existing
+modules.  This lets the exact artifact build without entering the unrelated
+pinned-Iris failure and keeps old generated proofs source-compatible.
+
+Checkpoint 3, the exact total loop execution theorem over arbitrary binary64
+bit patterns and read-only `Mem.words64` inputs, is next.

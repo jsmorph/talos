@@ -18,6 +18,7 @@ members = [
   "byte_echo",
   "xor",
   "mergesort",
+  "f64_dot",
 ]
 [profile.release]
 opt-level = 0
@@ -50,3 +51,8 @@ opt-level = 3
 
 [profile.release.package.xor]
 opt-level = 3
+
+# Keep the floating-point reduction in registers and avoid both opt-0
+# shadow-stack traffic and opt-3 loop unrolling.
+[profile.release.package.f64_dot]
+opt-level = "s"
