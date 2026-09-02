@@ -494,14 +494,18 @@ bound: relative `u` outside underflow, half a minimum subnormal below it, plus
 a mixed global corollary.  The format-independent numerical layer now proves
 the geometric accumulation inequalities and the standard
 `gamma(k,u) = k*u/(1-k*u)` conversion for sequential multiply/add traces.
-The pure binary64 instantiation is also complete: it proves the standard
-`gamma(2*n-1,u)` forward bound using the canonical `dot64AbsMass`, plus a
+The pure binary64 instantiation is also complete: it proves the conservative
+operation-count `gamma(2*n-1,u)` forward bound using the canonical `dot64AbsMass`, plus a
 condition-number relative-error corollary for nonzero exact results.  Attaching
-these results to exact WAT execution remains the next publishable subcheckpoint.
+these results to exact WAT execution is complete as well.  Raw recursive and
+aggregate-headroom forms preserve the exact returned word and complete store;
+the public generated-export specs use only the aggregate real condition and
+make normal-or-zero products, the gamma pole, and nonzero exact result (for the
+conditioned theorem) explicit.  Checkpoint 6 is complete.
 
 The deterministic artifact-regression portion of checkpoint 7 is complete.
 It now exercises every required runtime length and the signed-zero,
 subnormal, tie-to-even, cancellation, headroom, page-boundary, address-wrap,
 and out-of-bounds cases using exact result bit patterns.  These checks remain
 regression oracles only.  The proof/bound/build-cost evaluation summary waits
-until the WAT gamma attachment is complete.
+until the measured final validation report is complete.

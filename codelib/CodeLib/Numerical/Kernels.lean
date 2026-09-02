@@ -778,8 +778,9 @@ theorem dot64_relative_trace (accumulator : UInt64)
           · simp only [dot64ExactTerms, List.map_cons, dot64Acc]
             exact .cons hproduct.2 haddition.2 htail.2
 
-/-- A nonempty sequential binary64 dot product has the standard
-`gamma_(2n-1)` forward-error bound by its exact absolute product mass.
+/-- A nonempty sequential binary64 dot product has the conservative
+operation-count `gamma_(2n-1)` forward-error bound by its exact absolute
+product mass.  A more specialized termwise analysis may yield `gamma_n`.
 `hsafe` supplies finite, bounded intermediate operands (excluding overflow),
 while the normal-or-zero hypotheses exclude multiplication underflow. -/
 theorem dot64_real_gamma_error (first : UInt64 × UInt64)
@@ -818,7 +819,10 @@ theorem dot64_real_gamma_error (first : UInt64 × UInt64)
       dot64ExactAcc_eq_sequentialExactSum, dot64ExactTerms] using herror
 
 /-- Absolute-product mass divided by the magnitude of the exact dot product.
-This is the usual condition number for summation cancellation. -/
+For a nonzero exact result this is the usual condition number for summation
+cancellation.  Lean's real division assigns zero at a zero denominator, so
+clients should use this definition through a theorem carrying that explicit
+nonzero premise. -/
 noncomputable def dot64ConditionNumber (first : UInt64 × UInt64)
     (rest : List (UInt64 × UInt64)) : ℝ :=
   dot64AbsMass (first :: rest) / |dot64Exact first rest|
@@ -1259,6 +1263,107 @@ theorem dot64List_real_error_of_uniform
     (dot64ListSafe_of_uniform leftBound rightBound terms
       hleftNonneg hrightNonneg hleftUnit hrightUnit hinputs hbudget)
 
+/-- Total-list form of the binary64 dot-product operation-count gamma bound.
+The natural subtraction makes the operation count zero for the exact empty
+branch and `2n - 1` for every nonempty list.  Recursive safety excludes
+overflow, while `hnormalOrZero` excludes multiplication underflow without
+ruling out exact zero products. -/
+theorem dot64List_real_gamma_error
+    (terms : List (UInt64 × UInt64))
+    (hinputs : Dot64UnitInputs terms)
+    (hsafe : Dot64ListSafe terms)
+    (hnormalOrZero : Dot64NormalOrZeroProducts terms)
+    (hku : (((2 * terms.length - 1 : ℕ) : ℝ) *
+      CodeLib.IEEE64.unitRoundoff64) < 1) :
+    CodeLib.IEEE64.Finite (dot64List terms) ∧
+      |CodeLib.IEEE64.value (dot64List terms) - dot64ExactSum terms| ≤
+        CodeLib.Numerical.gamma (2 * terms.length - 1)
+          CodeLib.IEEE64.unitRoundoff64 * dot64AbsMass terms := by
+  cases terms with
+  | nil =>
+      simpa [dot64ListErrorBudget, dot64AbsMass,
+        CodeLib.Numerical.gamma] using
+        (dot64List_real_error [] hinputs hsafe)
+  | cons first rest =>
+      have hfirst := hinputs first (by simp)
+      obtain ⟨hfirstLeft, hfirstRight, hfirstLeftBound,
+        hfirstRightBound⟩ := hfirst
+      simp only [Dot64NormalOrZeroProducts] at hnormalOrZero
+      obtain ⟨hfirstNormalOrZero, hrestNormalOrZero⟩ := hnormalOrZero
+      have hcount : 2 * (first :: rest).length - 1 =
+          2 * rest.length + 1 := by
+        simp only [List.length_cons]
+        omega
+      rw [hcount] at hku
+      have hresult := dot64_real_gamma_error first rest
+        hfirstLeft hfirstRight hfirstLeftBound hfirstRightBound
+        hfirstNormalOrZero hsafe hrestNormalOrZero hku
+      rw [← dot64ExactList_eq_sum]
+      simpa only [dot64List, dot64ExactList, hcount] using hresult
+
+/-- Aggregate-headroom corollary of `dot64List_real_gamma_error`.  The exact
+absolute mass and primitive absolute-error reserve construct the recursive
+no-overflow trace used by the relative theorem. -/
+theorem dot64List_real_gamma_error_of_abs_mass
+    (terms : List (UInt64 × UInt64))
+    (hinputs : Dot64UnitInputs terms)
+    (hbudget :
+      dot64AbsMass terms + dot64ListErrorBudget terms ≤ 1)
+    (hnormalOrZero : Dot64NormalOrZeroProducts terms)
+    (hku : (((2 * terms.length - 1 : ℕ) : ℝ) *
+      CodeLib.IEEE64.unitRoundoff64) < 1) :
+    CodeLib.IEEE64.Finite (dot64List terms) ∧
+      |CodeLib.IEEE64.value (dot64List terms) - dot64ExactSum terms| ≤
+        CodeLib.Numerical.gamma (2 * terms.length - 1)
+          CodeLib.IEEE64.unitRoundoff64 * dot64AbsMass terms :=
+  dot64List_real_gamma_error terms hinputs
+    (dot64ListSafe_of_abs_mass terms hinputs hbudget)
+    hnormalOrZero hku
+
+/-- Total-list condition number: absolute exact product mass divided by the
+magnitude of the conventional exact real dot-product sum.  Its mathematical
+condition-number interpretation is restricted to the nonzero-exact-sum domain
+used by the conditioned theorems below. -/
+noncomputable def dot64ListConditionNumber
+    (terms : List (UInt64 × UInt64)) : ℝ :=
+  dot64AbsMass terms / |dot64ExactSum terms|
+
+/-- Total-list condition-number form of the operation-count gamma bound.  A
+nonzero exact sum is explicit; in particular, it rules out the empty branch. -/
+theorem dot64List_conditioned_relative_error
+    (terms : List (UInt64 × UInt64))
+    (hinputs : Dot64UnitInputs terms)
+    (hsafe : Dot64ListSafe terms)
+    (hnormalOrZero : Dot64NormalOrZeroProducts terms)
+    (hku : (((2 * terms.length - 1 : ℕ) : ℝ) *
+      CodeLib.IEEE64.unitRoundoff64) < 1)
+    (hexact : dot64ExactSum terms ≠ 0) :
+    |CodeLib.IEEE64.value (dot64List terms) / dot64ExactSum terms - 1| ≤
+      CodeLib.Numerical.gamma (2 * terms.length - 1)
+        CodeLib.IEEE64.unitRoundoff64 * dot64ListConditionNumber terms := by
+  have hgamma := (dot64List_real_gamma_error terms hinputs hsafe
+    hnormalOrZero hku).2
+  have hdiv := CodeLib.Numerical.division_by_exact_constant hexact hgamma
+  rw [div_self hexact] at hdiv
+  simpa [dot64ListConditionNumber, div_eq_mul_inv, mul_assoc] using hdiv
+
+/-- Aggregate-headroom condition-number corollary for total lists. -/
+theorem dot64List_conditioned_relative_error_of_abs_mass
+    (terms : List (UInt64 × UInt64))
+    (hinputs : Dot64UnitInputs terms)
+    (hbudget :
+      dot64AbsMass terms + dot64ListErrorBudget terms ≤ 1)
+    (hnormalOrZero : Dot64NormalOrZeroProducts terms)
+    (hku : (((2 * terms.length - 1 : ℕ) : ℝ) *
+      CodeLib.IEEE64.unitRoundoff64) < 1)
+    (hexact : dot64ExactSum terms ≠ 0) :
+    |CodeLib.IEEE64.value (dot64List terms) / dot64ExactSum terms - 1| ≤
+      CodeLib.Numerical.gamma (2 * terms.length - 1)
+        CodeLib.IEEE64.unitRoundoff64 * dot64ListConditionNumber terms :=
+  dot64List_conditioned_relative_error terms hinputs
+    (dot64ListSafe_of_abs_mass terms hinputs hbudget)
+    hnormalOrZero hku hexact
+
 /-- Exact-real headroom is a sufficient interface for the generic nonempty
 binary64 dot-product theorem. -/
 theorem dot64_real_error_of_headroom (first : UInt64 × UInt64)
@@ -1464,6 +1569,10 @@ theorem dot4_program_real_error_of_headroom
 #print axioms dot64List_real_error
 #print axioms dot64List_real_error_of_abs_mass
 #print axioms dot64List_real_error_of_uniform
+#print axioms dot64List_real_gamma_error
+#print axioms dot64List_real_gamma_error_of_abs_mass
+#print axioms dot64List_conditioned_relative_error
+#print axioms dot64List_conditioned_relative_error_of_abs_mass
 #print axioms dot64_safe_of_headroom
 #print axioms dot64_real_error_of_headroom
 #print axioms dot64ExactAcc_eq_sequentialExactSum

@@ -115,8 +115,118 @@ theorem provesNumerical : F64DotNumericalSpec := by
     wasm left right terms hleftView hrightView hleftFit hrightFit
       hleftCapacity hrightCapacity hinputs hbudget
 
+/-- Scale-aware numerical contract for the generated export.  The hypotheses
+state finite unit-bounded inputs, aggregate exact headroom sufficient for
+recursive no-overflow safety, normal-or-zero exact products (excluding
+multiplication underflow), and the `k*u < 1` gamma pole condition.  Counting
+one factor for each modeled multiplication and addition gives zero operations
+for the exact empty branch and `2n - 1` otherwise.
+
+Informal spec:
+Execute the exact generated dot-product WAT without changing the complete
+machine store, return the exact pure IEEE64 fold word, and bound its forward
+error by the operation-count estimate `gamma (2n - 1) 2^-53` times the exact
+absolute-product mass.
+-/
+@[spec_of "rust-exported" "f64_dot::dot"]
+def F64DotGammaSpec : Prop :=
+  ∀ (wasm : Store Unit) (left right : UInt32)
+      (terms : List (UInt64 × UInt64)),
+    wasm.mem.words64 left terms.length = terms.map Prod.fst →
+    wasm.mem.words64 right terms.length = terms.map Prod.snd →
+    left.toNat + 8 * terms.length ≤ UInt32.size →
+    right.toNat + 8 * terms.length ≤ UInt32.size →
+    left.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536 →
+    right.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536 →
+    CodeLib.Numerical.Kernels.Dot64UnitInputs terms →
+    CodeLib.Numerical.Kernels.dot64AbsMass terms +
+        CodeLib.Numerical.Kernels.dot64ListErrorBudget terms ≤ 1 →
+    CodeLib.Numerical.Kernels.Dot64NormalOrZeroProducts terms →
+    (((2 * terms.length - 1 : ℕ) : ℝ) *
+      CodeLib.IEEE64.unitRoundoff64) < 1 →
+    SmallStep.initConfig { module := «module», host := {} } 0 wasm
+        [.i32 (UInt32.ofNat terms.length), .i32 right, .i32 left] =
+        .ok (Proof.configFromStore wasm left right
+          (UInt32.ofNat terms.length)) ∧
+      SmallStep.TerminatesWith
+        (Proof.configFromStore wasm left right (UInt32.ofNat terms.length))
+        (fun values store =>
+          values = [.f64 (CodeLib.Numerical.Kernels.dot64List terms)] ∧
+            store = (Proof.configFromStore wasm left right
+              (UInt32.ofNat terms.length)).store ∧
+            CodeLib.IEEE64.Finite
+              (CodeLib.Numerical.Kernels.dot64List terms) ∧
+            |CodeLib.IEEE64.value
+                (CodeLib.Numerical.Kernels.dot64List terms) -
+                CodeLib.Numerical.Kernels.dot64ExactSum terms| ≤
+              CodeLib.Numerical.gamma (2 * terms.length - 1)
+                CodeLib.IEEE64.unitRoundoff64 *
+                  CodeLib.Numerical.Kernels.dot64AbsMass terms)
+
+/-- The gamma-times-absolute-mass contract attached to the exact generated
+Rust export. -/
+@[proves Project.F64Dot.Spec.F64DotGammaSpec]
+theorem provesGamma : F64DotGammaSpec := by
+  intro wasm left right terms hleftView hrightView hleftFit hrightFit
+    hleftCapacity hrightCapacity hinputs hbudget hnormalOrZero hku
+  exact Proof.f64Dot_export_terminates_gamma_error_of_abs_mass
+    wasm left right terms hleftView hrightView hleftFit hrightFit
+      hleftCapacity hrightCapacity hinputs hbudget hnormalOrZero hku
+
+/-- Condition-number numerical contract for the same generated export.  Its
+nonzero exact-sum premise is explicit, so the exact-zero empty branch is
+excluded rather than assigned an artificial relative error. -/
+@[spec_of "rust-exported" "f64_dot::dot"]
+def F64DotConditionedSpec : Prop :=
+  ∀ (wasm : Store Unit) (left right : UInt32)
+      (terms : List (UInt64 × UInt64)),
+    wasm.mem.words64 left terms.length = terms.map Prod.fst →
+    wasm.mem.words64 right terms.length = terms.map Prod.snd →
+    left.toNat + 8 * terms.length ≤ UInt32.size →
+    right.toNat + 8 * terms.length ≤ UInt32.size →
+    left.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536 →
+    right.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536 →
+    CodeLib.Numerical.Kernels.Dot64UnitInputs terms →
+    CodeLib.Numerical.Kernels.dot64AbsMass terms +
+        CodeLib.Numerical.Kernels.dot64ListErrorBudget terms ≤ 1 →
+    CodeLib.Numerical.Kernels.Dot64NormalOrZeroProducts terms →
+    (((2 * terms.length - 1 : ℕ) : ℝ) *
+      CodeLib.IEEE64.unitRoundoff64) < 1 →
+    CodeLib.Numerical.Kernels.dot64ExactSum terms ≠ 0 →
+    SmallStep.initConfig { module := «module», host := {} } 0 wasm
+        [.i32 (UInt32.ofNat terms.length), .i32 right, .i32 left] =
+        .ok (Proof.configFromStore wasm left right
+          (UInt32.ofNat terms.length)) ∧
+      SmallStep.TerminatesWith
+        (Proof.configFromStore wasm left right (UInt32.ofNat terms.length))
+        (fun values store =>
+          values = [.f64 (CodeLib.Numerical.Kernels.dot64List terms)] ∧
+            store = (Proof.configFromStore wasm left right
+              (UInt32.ofNat terms.length)).store ∧
+            CodeLib.IEEE64.Finite
+              (CodeLib.Numerical.Kernels.dot64List terms) ∧
+            |CodeLib.IEEE64.value
+                (CodeLib.Numerical.Kernels.dot64List terms) /
+                CodeLib.Numerical.Kernels.dot64ExactSum terms - 1| ≤
+              CodeLib.Numerical.gamma (2 * terms.length - 1)
+                CodeLib.IEEE64.unitRoundoff64 *
+                  CodeLib.Numerical.Kernels.dot64ListConditionNumber terms)
+
+/-- Export-linked condition-number corollary of the gamma-times-mass
+contract. -/
+@[proves Project.F64Dot.Spec.F64DotConditionedSpec]
+theorem provesConditioned : F64DotConditionedSpec := by
+  intro wasm left right terms hleftView hrightView hleftFit hrightFit
+    hleftCapacity hrightCapacity hinputs hbudget hnormalOrZero hku hexact
+  exact
+    Proof.f64Dot_export_terminates_conditioned_relative_error_of_abs_mass
+    wasm left right terms hleftView hrightView hleftFit hrightFit
+      hleftCapacity hrightCapacity hinputs hbudget hnormalOrZero hku hexact
+
 #print axioms proves
 #print axioms provesNumerical
+#print axioms provesGamma
+#print axioms provesConditioned
 #print axioms dotExport
 
 end Project.F64Dot.Spec

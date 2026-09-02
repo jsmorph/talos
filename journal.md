@@ -1088,3 +1088,37 @@ gamma conclusions to the exact generated memory-backed WAT execution.
 
 Publish and fetch-verify this regression checkpoint while the exact-WAT gamma
 and condition-number wrappers are completed.
+
+### Generated-WAT scale-aware gamma checkpoint
+
+- Published and fetch-verified the expanded artifact regressions as remote
+  commit `b7fa23b`; its fetched tree exactly matches the validated local tree.
+- Added empty-aware total-list gamma and condition-number theorems.  The
+  natural operation count is zero for the exact empty branch and `2*n - 1`
+  otherwise.  Both recursive-safety and exact absolute-mass headroom forms are
+  available; the latter constructs the former without exposing rounded
+  intermediate obligations.
+- Lifted both bounds through the existing exact generated-loop execution with
+  `TerminatesWith.mono`.  The direct and export-entry forms preserve the exact
+  `dot64List` result and equality of the complete machine store while adding
+  finiteness and either the gamma-times-mass forward bound or the conditioned
+  relative bound.
+- Replaced the public recursive-safety premise with
+  `dot64AbsMass terms + dot64ListErrorBudget terms <= 1` in
+  `F64DotGammaSpec` and `F64DotConditionedSpec`.  Normal-or-zero products,
+  `k*u < 1`, and the condition theorem's nonzero exact sum remain explicit.
+- `LD_PRELOAD=/tmp/lean_procself.so lake build Project.F64Dot.Spec` passed in
+  3,365 jobs under exact Lean 4.34.0-rc2.  Every new Kernels, Proof, and Spec
+  theorem reports exactly `[propext, Classical.choice, Quot.sound]`;
+  `dotExport` remains axiom-free.  Independent review found no soundness
+  blocker and confirmed the scale exponents, mass bridge, operation count,
+  zero/subnormal split, and condition-number algebra.
+- The documentation now calls `gamma_(2*n-1)` an operation-count bound.  It is
+  sound for the exact emitted multiply/add sequence but intentionally more
+  conservative than a future specialized termwise `gamma_n` analysis.
+
+### Next work
+
+Publish and fetch-verify this exact-WAT scale-aware checkpoint, then measure
+clean/warm proof and regression costs, record the assurance boundary and bound
+quality, run the combined final validation, and close checkpoint 7.
