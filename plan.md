@@ -329,3 +329,107 @@ and CodeLib builds pass with exact Lean 4.34.0-rc2; every new general theorem
 reports only standard logical axioms; the agenda-wide proof-hole and Git
 whitespace scans pass; and every substantive tree has been published and
 fetch-verified.
+
+## Runtime memory-backed f64 dot-product flagship (2026-09-02)
+
+The next milestone closes the arbitrary-memory-loop gap left by the scalable
+kernel agenda.  Its flagship result is a fuel-independent correctness and
+roundoff theorem for a runtime-length binary64 dot product over two read-only
+arrays in WebAssembly linear memory.  The final public theorem must connect
+the exact emitted WAT artifact to the existing pure IEEE64 list fold, prove
+termination and memory preservation, establish a finite result, and bound its
+distance from the exact real dot product.
+
+For a nonempty input of length `n`, the target implementation initializes the
+accumulator with the first rounded product and then performs `n - 1`
+multiply-add stages using separate `f64.mul` and `f64.add` instructions.  This
+matches the existing `dot64` model and its `(2 * n - 1) * 2^-52` absolute
+error budget.  The empty input returns exact positive zero.  WebAssembly core
+has no fused multiply-add instruction, so no contraction is permitted.
+
+### Public contract
+
+The hypotheses will keep machine safety separate from numerical safety:
+
+- the two logical lists have equal length `n` and are represented by the
+  memory words starting at the supplied base pointers;
+- every indexed address and eight-byte load is within linear memory, and all
+  32-bit pointer calculations are nonwrapping;
+- the input words are finite binary64 values with explicit magnitude bounds;
+- intermediate products and prefix accumulators satisfy either the existing
+  recursive safety predicate or a proved aggregate sufficient condition.
+
+The conclusion will be a `SmallStep.TerminatesWith` result stating that the
+returned word is the pure modeled dot fold, the read-only memory is unchanged,
+the word is finite, and, for nonempty inputs,
+
+```text
+|IEEE64.value result - exactDot inputs|
+  <= (2 * n - 1) * 2^-52.
+```
+
+The exact generated function is the proof target.  Reproducible Rust source,
+the pinned compiler, the emitted WAT, and the generated `Program.lean`
+fidelity check establish artifact provenance, but the theorem will not claim
+that rustc itself is verified.
+
+### Ordered checkpoints
+
+1. **Memory and load interface.**  Reuse `Mem.words64`, `array64At`, and the
+   separation-logic heap layer.  Generalize the existing indexed `u64` load
+   helper to an ownership-preserving `f64.load` theorem, and prove the required
+   slot-address, nonwrap, and physical-page bounds.  Add a two-array read-only
+   interface with explicit separation assumptions.
+2. **Exact artifact and regressions.**  Add the smallest dedicated Rust
+   binary64 dot-product crate supported by the pinned verifier pipeline,
+   inspect the exact compiler output, emit its `Program.lean`, and record the
+   artifact identity.  Add deterministic zero-, one-, and multi-element
+   execution checks plus boundary and trap regressions.  If compiler output
+   uses unsupported instructions, adjust the isolated crate/profile rather
+   than weakening the semantic target.
+3. **Total loop execution.**  Prove the generated loop with
+   `twp_loop_wf_family`, indexed by the current array position and modeled
+   accumulator and measured by the remaining element count.  Its invariant
+   owns both arrays, preserves memory, proves `i <= n`, and identifies the
+   accumulator with the modeled prefix dot product.  Apply small-step heap
+   adequacy to obtain an axiom-clean, fuel-independent execution theorem.
+4. **Absolute numerical result.**  Prove the prefix/list algebra needed to
+   connect the loop invariant to `dot64` and `dot64Exact`.  Compose the exact
+   execution theorem with `dot64_real_error`, including an exact empty-list
+   branch, to obtain the finite-result and `(2 * n - 1) * 2^-52` WAT theorem.
+5. **Aggregate safety.**  Replace per-stage rounded-value obligations at the
+   public boundary with sufficient exact-real conditions.  Provide an
+   absolute-mass condition and a uniform envelope corollary of the form
+   `n * A * B + (2 * n - 1) * epsilon <= 1`.  These results must construct the
+   existing recursive safety predicate and leave only proof-producing real or
+   rational arithmetic for concrete clients.
+6. **Scale-aware strengthening.**  Derive local normal-result relative
+   roundoff with `u = 2^-53` from the pure IEEE64 rounder, then prove the
+   standard dot-product bound
+   `gamma (2 * n - 1) * sum |a_i * b_i|`, where
+   `gamma k = k * u / (1 - k * u)` and `k * u < 1`.  State normality,
+   no-underflow, no-overflow, and nonzero-exact-result assumptions explicitly.
+   Add the corresponding condition-number relative-error corollary.  A mixed
+   subnormal term is a follow-up if it cannot be kept reviewable in the same
+   checkpoint; it must not weaken the already general absolute theorem.
+7. **Evaluation and final validation.**  Add reproducible tests at lengths
+   `0`, `1`, `2`, `4`, `16`, `64`, and `256`, covering exact powers of two,
+   mixed signs, cancellation, signed zero, subnormals, binade boundaries,
+   headroom boundaries, page-boundary loads, address wrap, and out-of-bounds
+   traps.  Record proof assurance, proven-bound quality, clean/warm build cost,
+   and regression cost separately.  Fixed-length external comparisons must
+   use the same non-fused expression and assumptions and must not imply that
+   another tool proves WAT control flow or memory semantics.
+
+Every checkpoint must build with exact Lean `4.34.0-rc2`, pass its focused
+interpreter and CodeLib targets, pass `git diff --check` and changed-source
+proof-hole scans, and include `#print axioms` for its public general theorems.
+Only `propext`, `Classical.choice`, and `Quot.sound` are permitted in those
+reports.  Native IEEE and independent-engine comparisons remain regression
+oracles, never theorem premises.  Each passing checkpoint is committed,
+published immediately, fetched, and verified by comparing the remote and
+local Git trees.
+
+### Current flagship status
+
+The agenda is recorded.  Implementation has not yet begun.

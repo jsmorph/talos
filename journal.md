@@ -759,3 +759,38 @@ differential tests, and an example-program theorem.
   `admit`, or axiom declaration.  `git diff 15e032d..HEAD --check` passes.
 - The scalable numerical-kernel agenda is complete.  Arbitrary-memory WAT
   loops remain the explicitly deferred follow-up.
+
+## 2026-09-02: Runtime f64 dot-product flagship started
+
+- Selected a runtime-length, read-only, memory-backed binary64 dot product as
+  the next flagship theorem.  This joins the existing arbitrary-list IEEE64
+  error proof to WebAssembly loop termination and linear-memory semantics.
+- Recorded seven independently publishable checkpoints in `plan.md`: memory
+  infrastructure, exact generated artifact, total loop execution, absolute
+  numerical correctness, aggregate safety, scale-aware relative error, and
+  reproducible evaluation/final validation.
+- The target nonempty result uses one multiplication for the initial
+  accumulator and one multiplication plus one addition for each remaining
+  element, giving the existing `(2 * n - 1) * 2^-52` absolute budget.  Empty
+  input returns exact positive zero.
+- Confirmed local commit `4d19fe3` and fetched remote commit `ac871c8` have the
+  same tree `9b726e1bbd306ef4bac4043fd77ae11d3a8281b8`.  Their commit IDs differ
+  because previous authenticated connector publications recreated commits on
+  the remote lineage; tree equality is the authoritative content check.
+- Confirmed remote commit `166dac41c96f011db4bcda92ae45b473eee13813`
+  exists with title `Prove binary64 multiplication error bound`.
+- Normal HTTPS Git credentials are unavailable in this environment.  The
+  authenticated GitHub connector identifies `jsmorph` and reports `admin`
+  permission on `jsmorph/talos`; connector-based Git-data publication and
+  post-fetch tree comparison will therefore continue.
+- The installed and selected compiler is exact Lean `4.34.0-rc2`, release
+  commit `6a10ac8c22beadecabdbb0919c2b50214762f91d`.  This container exposes a
+  PID namespace inconsistent with its `/proc` mount, so Lean cannot discover
+  its executable through `/proc/<pid>/exe`.  Builds use an uncommitted local
+  `LD_PRELOAD` compatibility shim that redirects only that lookup to the
+  equivalent `/proc/self/exe`; the compiler and repository are unchanged.
+
+### Next work
+
+Validate and publish this documentation checkpoint, then add the reusable
+ownership-preserving indexed `f64.load` and address-safety infrastructure.
