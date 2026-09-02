@@ -267,4 +267,7 @@ Phase 1 is complete.  Binary64 addition, subtraction, multiplication,
 division, and square root have finite `2^-52` real-error results on their
 explicit bounded domains.  Each operation is represented by decoded
 hand-written WAT with an explicit small-step trace and a fuel-independent
-execution/error theorem.  Phases 2 through 4 remain pending.
+execution/error theorem.  Phase 2 is complete: the format-independent error
+composition module covers sums, products, exact-constant division, and
+sequential Horner evaluation, and the f32 cubic sine proof consumes the new
+interface without changing its public result.  Phases 3 and 4 remain pending.

@@ -1,5 +1,6 @@
 import CodeLib.IEEE32.Division
 import CodeLib.IEEE32.Multiplication
+import CodeLib.Numerical.ErrorComposition
 import Interpreter.Wasm.Examples.FloatSinPolynomial
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -157,36 +158,33 @@ theorem sinResult_interval_error (x : UInt32) (hx : Finite x)
     simpa [u, arithmeticEpsilon] using hresult.2
   have hx3CubicError :
       |value x3 - value x ^ 3| ≤ 2 * u := by
-    rw [show value x3 - value x ^ 3 =
-      (value x3 - value x2 * value x) +
-        (value x2 - value x * value x) * value x by ring]
-    calc
-      |(value x3 - value x2 * value x) +
-          (value x2 - value x * value x) * value x| ≤
-          |value x3 - value x2 * value x| +
-            |(value x2 - value x * value x) * value x| := abs_add_le _ _
-      _ = |value x3 - value x2 * value x| +
-            |value x2 - value x * value x| * |value x| := by
-        rw [abs_mul]
-      _ ≤ u + u * 1 := by
-        exact add_le_add hx3Error
-          (mul_le_mul hx2Error hxOne (abs_nonneg _) (by positivity))
-      _ = 2 * u := by ring
+    have h := CodeLib.Numerical.horner_two_step
+      (x := value x) (a := value x) (b := 0) (c := 0)
+      (r₁ := value x2) (r₂ := value x3)
+      (e₁ := u) (e₂ := u) (M := 1)
+      hxOne (by simpa using hx2Error) (by simpa using hx3Error)
+    convert h using 1 <;> ring
+  have hx3DivCubicError :
+      |value x3 / 6 - value x ^ 3 / 6| ≤ (2 * u) / 6 := by
+    have h := CodeLib.Numerical.division_by_exact_constant
+      (x := value x3) (x₀ := value x ^ 3) (c := (6 : ℝ))
+      (e := 2 * u) (by norm_num) hx3CubicError
+    simpa using h
   have hquotientCubicError :
       |value quotient - value x ^ 3 / 6| ≤ 2 * u := by
-    rw [show value quotient - value x ^ 3 / 6 =
-      (value quotient - value x3 / 6) +
-        (value x3 - value x ^ 3) / 6 by ring]
+    have hsecond :
+        |(0 : ℝ) - (value x ^ 3 / 6 - value x3 / 6)| ≤
+          (2 * u) / 6 := by
+      rw [show (0 : ℝ) - (value x ^ 3 / 6 - value x3 / 6) =
+        value x3 / 6 - value x ^ 3 / 6 by ring]
+      exact hx3DivCubicError
+    have hsum := CodeLib.Numerical.sum_perturbations
+      (x := value quotient) (x₀ := value x3 / 6)
+      (y := 0) (y₀ := value x ^ 3 / 6 - value x3 / 6)
+      hquotientError hsecond
     calc
-      |(value quotient - value x3 / 6) +
-          (value x3 - value x ^ 3) / 6| ≤
-          |value quotient - value x3 / 6| +
-            |(value x3 - value x ^ 3) / 6| := abs_add_le _ _
-      _ = |value quotient - value x3 / 6| +
-            |value x3 - value x ^ 3| / 6 := by norm_num [abs_div]
-      _ ≤ u + (2 * u) / 6 :=
-        add_le_add hquotientError
-          (div_le_div_of_nonneg_right hx3CubicError (by norm_num))
+      |value quotient - value x ^ 3 / 6| ≤ u + (2 * u) / 6 := by
+        convert hsum using 1 <;> ring
       _ ≤ 2 * u := by
         have hu : 0 ≤ u := by positivity
         linarith

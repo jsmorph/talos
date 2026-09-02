@@ -35,6 +35,7 @@ roots = [
   "CodeLib.IEEE64.Conversions",
   "CodeLib.IEEE32.SIMD",
   "CodeLib.IEEE32.Transcendental",
+  "CodeLib.Numerical.ErrorComposition",
   "CodeLib.Examples.Gcd",
   "CodeLib.Examples.MergeSort.StdIO",
   "CodeLib.Examples.Quicksort.TotalProof",

@@ -560,3 +560,21 @@ differential tests, and an example-program theorem.
   five requested binary64 arithmetic operations.
 - Next: publish and fetch-verify this checkpoint, then add the reusable real
   error-composition layer and refactor the cubic sine proof to consume it.
+
+### Reusable error-composition checkpoint
+
+- Added `CodeLib.Numerical.ErrorComposition`, a format-independent real
+  inequality layer for sums of perturbations, products with explicit operand
+  magnitude budgets and the second-order term, division by an exact nonzero
+  constant, and two sequential Horner steps.
+- Added the new module to the CodeLib roots.  Refactored the existing f32 cubic
+  sine interval proof to use the Horner, exact-division, and perturbation-sum
+  results while preserving its finite-result and strict `2^-11` public bound.
+- `lake build CodeLib.Numerical.ErrorComposition` passed in 3,032 jobs and
+  `lake build CodeLib.IEEE32.Transcendental` passed in 3,171 jobs under exact
+  Lean 4.34.0-rc2.
+- Axiom reports for all four composition lemmas and the refactored sine result
+  and WAT theorems contain only `propext`, `Classical.choice`, and
+  `Quot.sound`.  `git diff --check` and the changed-source proof-hole scan pass.
+- Next: publish and fetch-verify this checkpoint, then verify decoded f32
+  affine/Horner and f64 dot-product numerical kernels.
