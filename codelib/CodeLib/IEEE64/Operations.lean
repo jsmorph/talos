@@ -1,4 +1,5 @@
 import CodeLib.IEEE64.Rounders
+import Interpreter.Wasm.Examples.Float64Division
 import Interpreter.Wasm.Examples.Float64Multiplication
 import Interpreter.Wasm.Examples.IEEE64
 import Mathlib.Tactic
@@ -13,6 +14,7 @@ set_option exponentiation.threshold 4096
 set_option maxRecDepth 8192
 
 open Wasm
+open Wasm.Float64Division
 open Wasm.Float64Multiplication
 
 theorem mul_nan_left {a : UInt64} (b : UInt64)
@@ -107,6 +109,144 @@ theorem mul_real_error (a b : UInt64) (ha : Finite a) (hb : Finite b)
       _ = multiplicationEpsilon * (2 : ℝ) ^ 2148 := by
         norm_num [multiplicationEpsilon]
 
+/-- Division of finite operands by a finite nonzero denominator is a single
+rational rounding of the exact quotient in the common `2^-1074` scale. -/
+theorem div_finite_rounder (a b : UInt64)
+    (ha : Finite a) (hb : Finite b)
+    (hb0 : Wasm.IEEE64.scaledMagnitude b ≠ 0) :
+    Wasm.IEEE64.div a b =
+      Wasm.IEEE64.roundRationalMagnitude
+        (Wasm.IEEE64.sign a != Wasm.IEEE64.sign b)
+        (Wasm.IEEE64.scaledMagnitude a * 2 ^ 1074)
+        (Wasm.IEEE64.scaledMagnitude b) := by
+  have hna := not_nan_of_finite ha
+  have hnb := not_nan_of_finite hb
+  have hia := not_infinite_of_finite ha
+  have hib := not_infinite_of_finite hb
+  by_cases ha0 : Wasm.IEEE64.scaledMagnitude a = 0
+  · simp [Wasm.IEEE64.div, hna, hnb, hia, hib, ha0, hb0,
+      Wasm.IEEE64.roundRationalMagnitude]
+  · simp [Wasm.IEEE64.div, hna, hnb, hia, hib, ha0, hb0]
+
+/-- Cleared-denominator integer error when the exact quotient magnitude is at
+most one. -/
+theorem div_scaled_error (a b : UInt64)
+    (ha : Finite a) (hb : Finite b)
+    (hb0 : Wasm.IEEE64.scaledMagnitude b ≠ 0)
+    (hab : Wasm.IEEE64.scaledMagnitude a ≤
+      Wasm.IEEE64.scaledMagnitude b) :
+    Finite (Wasm.IEEE64.div a b) ∧
+      |Wasm.IEEE64.scaledValue (Wasm.IEEE64.div a b) *
+          Wasm.IEEE64.scaledValue b -
+        Wasm.IEEE64.scaledValue a * (2 : Int) ^ 1074| ≤
+          Wasm.IEEE64.scaledMagnitude b * 2 ^ 1022 := by
+  let numerator := Wasm.IEEE64.scaledMagnitude a * 2 ^ 1074
+  let denominator := Wasm.IEEE64.scaledMagnitude b
+  have hbound : numerator ≤ denominator * 2 ^ 1074 := by
+    simp [numerator, denominator]
+    exact hab
+  have hs := roundRationalMagnitude_spec
+    (Wasm.IEEE64.sign a != Wasm.IEEE64.sign b)
+    numerator denominator hb0 hbound
+  have hdiv := div_finite_rounder a b ha hb hb0
+  rw [hdiv]
+  constructor
+  · exact hs.1
+  · have herr := hs.2.2
+    have hresultSign := hs.2.1
+    have habs (x y : Int) : |-x + y| = |x + -y| := by
+      rw [show -x + y = -(x + -y) by ring, abs_neg]
+    cases hsa : Wasm.IEEE64.sign a <;>
+      cases hsb : Wasm.IEEE64.sign b <;>
+      simp [numerator, denominator, hsa, hsb] at hresultSign <;>
+      simp [Wasm.IEEE64.scaledValue, hresultSign, hsa, hsb,
+        numerator, denominator] at herr ⊢
+    all_goals
+      first
+      | simpa [Int.natCast_mul, sub_eq_add_neg, add_comm] using herr
+      | rw [habs]
+        simpa [Int.natCast_mul, sub_eq_add_neg, add_comm] using herr
+
+noncomputable def divisionEpsilon : ℝ := 1 / (2 : ℝ) ^ 52
+
+/-- For finite inputs, a nonzero denominator, and quotient magnitude at most
+one, binary64 division has absolute real error at most `2^-52`. -/
+theorem div_real_error (a b : UInt64)
+    (ha : Finite a) (hb : Finite b)
+    (hb0 : Wasm.IEEE64.scaledMagnitude b ≠ 0)
+    (hab : Wasm.IEEE64.scaledMagnitude a ≤
+      Wasm.IEEE64.scaledMagnitude b) :
+    Finite (Wasm.IEEE64.div a b) ∧
+      |value (Wasm.IEEE64.div a b) - value a / value b| ≤
+        divisionEpsilon := by
+  have hs := div_scaled_error a b ha hb hb0 hab
+  constructor
+  · exact hs.1
+  · let z : Int :=
+      Wasm.IEEE64.scaledValue (Wasm.IEEE64.div a b) *
+          Wasm.IEEE64.scaledValue b -
+        Wasm.IEEE64.scaledValue a * (2 : Int) ^ 1074
+    have hz : |z| ≤ Wasm.IEEE64.scaledMagnitude b * 2 ^ 1022 := hs.2
+    have hbScaled : Wasm.IEEE64.scaledValue b ≠ 0 := by
+      intro h
+      apply hb0
+      rw [← natAbs_scaledValue]
+      simp [h]
+    have hbScaledReal : (Wasm.IEEE64.scaledValue b : ℝ) ≠ 0 := by
+      exact_mod_cast hbScaled
+    have heq :
+        value (Wasm.IEEE64.div a b) - value a / value b =
+          (z : ℝ) /
+            ((2 : ℝ) ^ 1074 * Wasm.IEEE64.scaledValue b) := by
+      simp [value, z]
+      field_simp
+      ring
+    have hbAbs :
+        |(Wasm.IEEE64.scaledValue b : ℝ)| =
+          Wasm.IEEE64.scaledMagnitude b := by
+      simp [Wasm.IEEE64.scaledValue]
+      split <;> simp
+    rw [heq, abs_div]
+    have hdenPos :
+        0 < |(2 : ℝ) ^ 1074 * Wasm.IEEE64.scaledValue b| := by
+      positivity
+    apply (div_le_iff₀ hdenPos).2
+    have hzReal :
+        |(z : ℝ)| ≤
+          (Wasm.IEEE64.scaledMagnitude b : ℝ) * 2 ^ 1022 := by
+      exact_mod_cast hz
+    calc
+      |(z : ℝ)| ≤
+          (Wasm.IEEE64.scaledMagnitude b : ℝ) * 2 ^ 1022 := hzReal
+      _ = divisionEpsilon *
+          |(2 : ℝ) ^ 1074 * Wasm.IEEE64.scaledValue b| := by
+        rw [abs_mul, abs_of_pos (by positivity : 0 < (2 : ℝ) ^ 1074),
+          hbAbs]
+        norm_num [divisionEpsilon]
+        ring
+
+theorem div_program_exact (a b : UInt64) :
+    SmallStep.TerminatesWith (divConfig a b)
+      (fun values _ => values = [.f64 (Wasm.IEEE64.div a b)]) :=
+  div_terminates a b
+
+/-- Fuel-independent correctness of decoded `f64.div`, including finiteness
+and its absolute real-error contract. -/
+theorem div_program_real_error (a b : UInt64)
+    (ha : Finite a) (hb : Finite b)
+    (hb0 : Wasm.IEEE64.scaledMagnitude b ≠ 0)
+    (hab : Wasm.IEEE64.scaledMagnitude a ≤
+      Wasm.IEEE64.scaledMagnitude b) :
+    SmallStep.TerminatesWith (divConfig a b)
+      (fun values _ =>
+        values = [.f64 (Wasm.IEEE64.div a b)] ∧
+          Finite (Wasm.IEEE64.div a b) ∧
+          |value (Wasm.IEEE64.div a b) - value a / value b| ≤
+            divisionEpsilon) := by
+  have hresult := div_real_error a b ha hb hb0 hab
+  exact (div_terminates a b).mono
+    (fun _values _store hvalues => ⟨hvalues, hresult.1, hresult.2⟩)
+
 theorem sqrt_special_values :
     Wasm.IEEE64.sqrt 0x8000000000000000 = 0x8000000000000000 ∧
     Wasm.IEEE64.sqrt 0x7FF0000000000000 = 0x7FF0000000000000 ∧
@@ -143,6 +283,10 @@ theorem arithmetic_examples :
 #print axioms mul_program_exact
 #print axioms mul_real_error
 #print axioms mul_program_real_error
+#print axioms div_finite_rounder
+#print axioms div_scaled_error
+#print axioms div_real_error
+#print axioms div_program_real_error
 #print axioms arithmetic_examples
 
 end CodeLib.IEEE64

@@ -1,4 +1,5 @@
 import CodeLib.IEEE64.Roundoff
+import CodeLib.IEEE32.Rounders
 
 /-!
 # Quantitative specifications for binary64 nonintegral rounders
@@ -98,6 +99,167 @@ private theorem roundedMagnitude_shifted (rounded shift : Nat)
       simp only [roundedMagnitude, if_neg hlarge]
       rw [hactualShift, roundShift_mul_two_pow _ _ hshiftPos]
       simp only [beq_iff_eq, if_neg hcarry]
+
+/-- A nonnegative rational no larger than `2^1074` scaled units rounds to a
+finite binary64 number.  Clearing the denominator, the packed magnitude has
+absolute error at most `denominator * 2^1022`, which is `2^-52` in real units
+after division by the common binary64 scale. -/
+theorem roundRationalMagnitude_spec (negative : Bool)
+    (numerator denominator : Nat) (hdenominator : denominator ≠ 0)
+    (hbound : numerator ≤ denominator * 2 ^ 1074) :
+    Finite
+        (Wasm.IEEE64.roundRationalMagnitude negative numerator denominator) ∧
+      Wasm.IEEE64.sign
+          (Wasm.IEEE64.roundRationalMagnitude negative numerator denominator) =
+        negative ∧
+      |((Wasm.IEEE64.scaledMagnitude
+              (Wasm.IEEE64.roundRationalMagnitude negative numerator denominator) *
+            denominator : Nat) : Int) - numerator| ≤
+        denominator * 2 ^ 1022 := by
+  by_cases hnumerator : numerator = 0
+  · subst numerator
+    cases negative <;>
+      norm_num [Wasm.IEEE64.roundRationalMagnitude, Finite,
+        Wasm.IEEE64.isFinite, Wasm.IEEE64.signMask,
+        Wasm.IEEE64.sign, Wasm.IEEE64.scaledMagnitude,
+        Wasm.IEEE64.exponent, Wasm.IEEE64.fraction,
+        UInt64.toNat_ofNat]
+  · let integerPart := numerator / denominator
+    have hdenominatorPos : 0 < denominator :=
+      Nat.pos_of_ne_zero hdenominator
+    have hintegerBound : integerPart ≤ 2 ^ 1074 := by
+      apply Nat.div_le_of_le_mul
+      simpa [integerPart, Nat.mul_comm] using hbound
+    let outputShift := Nat.log2 integerPart - 52
+    by_cases hzero : outputShift = 0
+    · have hlog : Nat.log2 integerPart ≤ 52 := by
+        simpa [outputShift, Nat.sub_eq_zero_iff_le] using hzero
+      have hintegerLt : integerPart < 2 ^ 53 := by
+        by_cases hintegerZero : integerPart = 0
+        · simp [hintegerZero]
+        · have hself :
+              integerPart < 2 ^ (Nat.log2 integerPart + 1) :=
+              Nat.lt_log2_self
+          have hp : 2 ^ (Nat.log2 integerPart + 1) ≤ 2 ^ 53 :=
+            Nat.pow_le_pow_right (by omega) (by omega)
+          exact hself.trans_le hp
+      let rounded :=
+        Wasm.IEEE32.roundQuotient numerator denominator
+      have hroundBounds :=
+        CodeLib.IEEE32.roundQuotient_bounds numerator denominator hdenominator
+      have hrounded : rounded ≤ 2 ^ 53 := by
+        change Wasm.IEEE32.roundQuotient numerator denominator ≤ 2 ^ 53
+        change numerator / denominator < 2 ^ 53 at hintegerLt
+        omega
+      have hpack := roundScaledMagnitude_exact negative rounded hrounded
+      have hactual :
+          Wasm.IEEE64.roundRationalMagnitude negative numerator denominator =
+            Wasm.IEEE64.roundScaledMagnitude negative rounded := by
+        simp [Wasm.IEEE64.roundRationalMagnitude, hnumerator, hdenominator,
+          integerPart, outputShift, hzero, rounded]
+      have herr :=
+        CodeLib.IEEE32.roundQuotient_int_error
+          numerator denominator hdenominator
+      rw [hactual]
+      refine ⟨hpack.1, hpack.2.2, ?_⟩
+      rw [hpack.2.1]
+      have herrorBound : denominator / 2 ≤ denominator * 2 ^ 1022 :=
+        (Nat.div_le_self denominator 2).trans
+          (Nat.le_mul_of_pos_right denominator (by positivity))
+      exact herr.trans (by exact_mod_cast herrorBound)
+    · have hshift : 0 < outputShift := by omega
+      have hintegerNe : integerPart ≠ 0 := by
+        intro h
+        apply hzero
+        simp [outputShift, h]
+      have hlogLower : 53 ≤ Nat.log2 integerPart := by
+        simp [outputShift] at hzero
+        omega
+      have hintegerLt : integerPart < 2 ^ 1075 :=
+        hintegerBound.trans_lt (by norm_num)
+      have hlogUpper : Nat.log2 integerPart < 1075 :=
+        (Nat.log2_lt hintegerNe).2 hintegerLt
+      have hshiftMax : outputShift ≤ 1022 := by
+        simp [outputShift]
+        omega
+      have hshiftEq : 52 + outputShift = Nat.log2 integerPart := by
+        simp [outputShift]
+        omega
+      let unitDenominator := denominator * 2 ^ outputShift
+      have hunitDenominator : unitDenominator ≠ 0 := by
+        simp [unitDenominator, hdenominator]
+      let rounded :=
+        Wasm.IEEE32.roundQuotient numerator unitDenominator
+      have hpowLower : 2 ^ 52 * 2 ^ outputShift ≤ integerPart := by
+        rw [pow_mul_pow, hshiftEq]
+        exact Nat.log2_self_le hintegerNe
+      have hpowUpper : integerPart < 2 ^ 53 * 2 ^ outputShift := by
+        rw [pow_mul_pow]
+        have heq : 53 + outputShift = Nat.log2 integerPart + 1 := by
+          rw [← hshiftEq]
+          omega
+        rw [heq]
+        exact Nat.lt_log2_self
+      have hquotientEq :
+          numerator / unitDenominator = integerPart / 2 ^ outputShift := by
+        simp [unitDenominator, integerPart, Nat.div_div_eq_div_mul]
+      have hquotientLower :
+          2 ^ 52 ≤ numerator / unitDenominator := by
+        rw [hquotientEq]
+        exact (Nat.le_div_iff_mul_le (by positivity)).2 hpowLower
+      have hquotientUpper :
+          numerator / unitDenominator < 2 ^ 53 := by
+        rw [hquotientEq]
+        exact (Nat.div_lt_iff_lt_mul (by positivity)).2 hpowUpper
+      have hroundBounds :=
+        CodeLib.IEEE32.roundQuotient_bounds
+          numerator unitDenominator hunitDenominator
+      have hroundedLower : 2 ^ 52 ≤ rounded := by
+        change 2 ^ 52 ≤
+          Wasm.IEEE32.roundQuotient numerator unitDenominator
+        omega
+      have hroundedUpper : rounded ≤ 2 ^ 53 := by
+        change Wasm.IEEE32.roundQuotient numerator unitDenominator ≤ 2 ^ 53
+        omega
+      have herrHalf :=
+        CodeLib.IEEE32.roundQuotient_int_error
+          numerator unitDenominator hunitDenominator
+      have hhalf : unitDenominator / 2 ≤ denominator * 2 ^ 1022 := by
+        calc
+          unitDenominator / 2 ≤ unitDenominator := Nat.div_le_self _ _
+          _ ≤ denominator * 2 ^ 1022 := by
+            apply Nat.mul_le_mul_left denominator
+            exact Nat.pow_le_pow_right (by omega) hshiftMax
+      have herr :
+          |((rounded * unitDenominator : Nat) : Int) - numerator| ≤
+            denominator * 2 ^ 1022 :=
+        herrHalf.trans (by exact_mod_cast hhalf)
+      let candidate := rounded * 2 ^ outputShift
+      have hrepresentable : roundedMagnitude candidate = candidate :=
+        roundedMagnitude_shifted rounded outputShift
+          hroundedLower hroundedUpper
+      have hcandidateMax : candidate < 2 ^ 1076 := by
+        calc
+          candidate ≤ 2 ^ 53 * 2 ^ 1022 :=
+            Nat.mul_le_mul hroundedUpper
+              (Nat.pow_le_pow_right (by omega) hshiftMax)
+          _ = 2 ^ 1075 := by rw [← pow_add]
+          _ < 2 ^ 1076 := Nat.pow_lt_pow_right (by omega) (by omega)
+      have hpack := roundScaledMagnitude_spec negative candidate hcandidateMax
+      have hsign := sign_roundScaledMagnitude negative candidate hcandidateMax
+      have hactual :
+          Wasm.IEEE64.roundRationalMagnitude negative numerator denominator =
+            Wasm.IEEE64.roundScaledMagnitude negative candidate := by
+        simp [Wasm.IEEE64.roundRationalMagnitude, hnumerator, hdenominator,
+          integerPart, outputShift, hzero, rounded, unitDenominator, candidate]
+      rw [hactual]
+      refine ⟨hpack.1, hsign, ?_⟩
+      rw [hpack.2.1, hrepresentable]
+      have hmagEq : candidate * denominator = rounded * unitDenominator := by
+        simp [candidate, unitDenominator]
+        ring
+      rw [hmagEq]
+      exact herr
 
 /-- A bounded exact dyadic product receives one ties-to-even rounding step.
 The cleared-denominator error is at most `2^2096`, equivalent to `2^-52`
@@ -237,5 +399,6 @@ theorem roundDyadicMagnitude1074_spec (negative : Bool) (n : Nat)
         Nat.mul_comm, Nat.mul_left_comm] using herr
 
 #print axioms roundDyadicMagnitude1074_spec
+#print axioms roundRationalMagnitude_spec
 
 end CodeLib.IEEE64

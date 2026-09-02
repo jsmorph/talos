@@ -513,3 +513,25 @@ differential tests, and an example-program theorem.
   `propext`, `Classical.choice`, and `Quot.sound`.
 - Next: commit and push this checkpoint, then prove the corresponding binary64
   rational-rounding and division contracts.
+
+### Binary64 division checkpoint
+
+- Recreated and proved `CodeLib.IEEE64.roundRationalMagnitude_spec`.  For a
+  nonzero denominator and numerator at most `denominator * 2^1074`, the result
+  is finite, preserves the requested sign, and has cleared-denominator scaled
+  error at most `denominator * 2^1022`.
+- Added a decoded hand-written `f64.div` WAT module, its explicit four-step
+  `SmallStep.Steps` trace, and a fuel-independent `TerminatesWith` theorem.
+- Added the finite-rounder equality, cleared-denominator error theorem,
+  `divisionEpsilon = 2^-52`, real division error theorem, and the corresponding
+  WAT execution/error theorem for finite inputs with a nonzero denominator and
+  quotient magnitude at most one.
+- `lake build CodeLib.IEEE64.Rounders` passed in 3,056 jobs under exact Lean
+  4.34.0-rc2.  `lake build Interpreter.Wasm.Examples.Float64Division` passed
+  in 15 jobs, and `lake build CodeLib.IEEE64.Operations` passed in 3,054 jobs.
+- Axiom reports for the rational rounder and all new general division theorems
+  contain only `propext`, `Classical.choice`, and `Quot.sound`.  The changed
+  sources contain no `sorry`, `admit`, or new axiom, and `git diff --check`
+  passes.
+- Next: publish and fetch-verify this checkpoint, then prove binary64 square
+  root and add the remaining direct f64 operation WAT examples.
