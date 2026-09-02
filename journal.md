@@ -380,3 +380,16 @@ differential tests, and an example-program theorem.
 - `lake build CodeLib.IEEE32.Division` passes in 3,051 jobs under exact Lean
   4.34.0-rc2.  Its rounder, operation, and fuel-independent program error
   theorems use only standard Lean logical axioms.
+- Pushed the division checkpoint as remote commit `8d5234c`; a fetch confirmed
+  that its Git tree is byte-identical to the local committed tree.
+- Proved the real half-output-unit contract for `roundSqrtIntegral` directly
+  from its integer midpoint-square comparison.  The theorem passes in about
+  six seconds and uses only standard logical axioms.
+- The first monolithic proof that exponent/fraction packing preserves the
+  square-root contract closed all elaboration goals, but Lean's kernel rejected
+  its deeply nested reduction term even with `maxRecDepth` raised from 8,192 to
+  65,536.  Axiom inspection exposed the rejected declaration; no `sorry` or
+  compatibility axiom was introduced.  The implementation is now being
+  factored through the existing exact `roundScaledMagnitude` packer to obtain a
+  smaller kernel-checkable proof term, after which the native and boundary
+  square-root suites will be rerun.

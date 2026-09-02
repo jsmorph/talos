@@ -208,3 +208,28 @@ quotient of magnitude at most one, the real error is at most `2^-23`, including
 through gradual underflow.  Integer square root and the interval sine proof
 remain the next proof work.  Every passing unit above will be committed and
 pushed before work proceeds to the next unit.
+
+### Current execution status (2026-09-02)
+
+1. **Complete and pushed:** proof-visible f64 integer conversions and example
+   program theorems (`8a4f27f` remote checkpoint).
+2. **Complete and pushed:** replacement of all five IEEE32 compatibility
+   axioms by proofs (`f45b4b4` remote checkpoint).
+3. **Complete and pushed:** exact dyadic rounding plus the f32 multiplication
+   `2^-23` real-error theorem (`45a7383` remote checkpoint).
+4. **Complete and pushed:** exact rational ties-to-even rounding plus f32
+   division and decoded-WAT `2^-23` real-error theorems (`8d5234c` remote
+   checkpoint).
+5. **In progress:** square root.  The exact integer-midpoint theorem is proved
+   and passes in isolation.  The hand-expanded exponent/fraction packing proof
+   closes its goals but produces a pathological kernel term, so the packer is
+   being factored through the already verified exact scaled-magnitude packer.
+   Next validation is the general real `2^-23` bound, the WAT termination
+   theorem, and the existing native/boundary regression suites.
+6. **Next:** strengthen the cubic sine WAT example on a nontrivial input
+   interval by combining a real Taylor remainder with the proved f32 addition,
+   subtraction, multiplication, and division roundoff budgets.
+7. **Final validation:** build all affected interpreter and CodeLib roots with
+   exact Lean 4.34.0-rc2; inspect public theorem axiom reports; run
+   `git diff --check`; update this plan and `journal.md`; commit and push the
+   final tree.
