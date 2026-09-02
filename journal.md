@@ -444,3 +444,28 @@ differential tests, and an example-program theorem.
   present.
 - Next: push this checkpoint, then run the combined affected-root builds,
   source scans, and local/remote tree verification for final delivery.
+
+## 2026-09-02: Strengthening agenda completed
+
+- Pushed the square-root checkpoint as `9f32c23` and the nontrivial-interval
+  sine checkpoint as `465aef5`.  After each update, a fetch confirmed the
+  remote Git tree was byte-identical to the local committed tree.
+- Confirmed the executable compiler directly reports Lean `4.34.0-rc2`
+  (release commit `6a10ac8c22beadecabdbb0919c2b50214762f91d`).
+- The combined interpreter validation passed
+  `Interpreter.Wasm.Examples.IEEE32`, `IEEE64`, `FloatOps`, multiplication,
+  division, square root, and the sine polynomial.  This covers the native
+  differential suites and all affected decoded WAT examples.
+- The combined CodeLib validation passed 3,180 jobs for IEEE64 conversions,
+  IEEE32 compatibility theorems, roundoff and rounders, multiplication,
+  division, square root, and transcendental specifications.
+- Axiom output reconfirmed that the five former declarations `beq_ax`,
+  `isNaN_ax`, `ble_ax`, `blt_ax`, and `satI32S_eq` depend on no axioms.  Every
+  new general numerical and execution theorem reports only standard Lean
+  logical axioms.  Native-oracle axioms occur only in the older explicitly
+  concrete regression examples and are not dependencies of the general
+  results.
+- The final source scan found no `sorry`, `admit`, or axiom declaration in the
+  affected semantics and specification files.  `git diff --check` passed.
+- All seven items in the current execution agenda are complete.  This final
+  documentation update records the validated state for the pushed branch.

@@ -207,9 +207,9 @@ division lift are also complete: for a nonzero finite denominator and a
 quotient of magnitude at most one, the real error is at most `2^-23`, including
 through gradual underflow.  The square-root contract is complete as well: on
 positive finite inputs at most one, both the operation and decoded WAT program
-are within `2^-23` of the exact real square root.  The interval sine theorem is
-the remaining proof work.  Every passing unit above will be committed and
-pushed before work proceeds to the next unit.
+are within `2^-23` of the exact real square root.  Finally, the cubic sine
+example has a combined analytic-plus-roundoff theorem on `|x| ≤ 1/2`.  All
+strengthening units are complete and pushed independently.
 
 ### Current execution status (2026-09-02)
 
@@ -228,12 +228,13 @@ pushed before work proceeds to the next unit.
    square-root examples and regression suite and the CodeLib theorem root pass
    under Lean 4.34.0-rc2, with only standard logical axioms reported
    (`9f32c23` remote checkpoint).
-6. **Complete; push in progress:** reusable addition/subtraction real-error
+6. **Complete and pushed:** reusable addition/subtraction real-error
    contracts and the cubic sine theorem on `|x| ≤ 1/2`.  The proof combines a
    `1/3200` real approximation bound with a conservative `3 * 2^-23` primitive
    roundoff budget, proving both the operation result and decoded WAT program
-   stay strictly within `2^-11` of `Real.sin`.
-7. **In progress:** build all affected interpreter and CodeLib roots with
-   exact Lean 4.34.0-rc2; inspect public theorem axiom reports; run
-   `git diff --check`; update this plan and `journal.md`; commit and push the
-   final tree.
+   stay strictly within `2^-11` of `Real.sin` (`465aef5` remote checkpoint).
+7. **Complete:** all affected interpreter and CodeLib roots build with exact
+   Lean 4.34.0-rc2.  Public theorem axiom reports and `git diff --check` pass.
+   The compatibility declarations are now theorems with no axiom dependencies,
+   and every new general numerical theorem is free of `sorryAx`, native-oracle
+   axioms, and floating-point bridge axioms.
