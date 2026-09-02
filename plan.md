@@ -319,4 +319,7 @@ recurrence.  Checkpoint 2 is complete: modeled IEEE32 Horner and nonempty
 IEEE64 dot-product folds now have exact real counterparts, recursive safety
 predicates, finiteness results, and accumulated-error theorems.  The fixed
 affine and two-term dot-product results are derived from the generic folds.
-Checkpoints 3 and 4 remain pending.
+Checkpoint 3 is complete: decoded unrolled WAT consumers cover a three-stage
+f32 Horner evaluation and a four-term f64 dot product, with explicit traces,
+fuel-independent termination, and error bounds supplied by the generic
+folds.  Checkpoint 4 remains pending.

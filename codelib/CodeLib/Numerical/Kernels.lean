@@ -251,6 +251,41 @@ theorem affine_program_real_error (a x b : UInt32)
   exact (affine_terminates a x b).mono
     (fun _values _store hvalues => ⟨hvalues, hresult.1, hresult.2⟩)
 
+/-- Fuel-independent correctness and the six-unit accumulated error bound for
+the decoded three-stage f32 Horner WAT program.  `hsafe` contains the finite
+and intermediate-magnitude hypotheses for all three modeled stages. -/
+theorem horner3_program_real_error (x c₃ c₂ c₁ c₀ : UInt32)
+    (hxBound : |CodeLib.IEEE32.value x| ≤ 1)
+    (hsafe : Horner32Safe x c₃ [c₂, c₁, c₀]) :
+    SmallStep.TerminatesWith (horner3Config x c₃ c₂ c₁ c₀)
+      (fun values _ =>
+        values = [.f32 (horner3Result x c₃ c₂ c₁ c₀)] ∧
+          CodeLib.IEEE32.Finite (horner3Result x c₃ c₂ c₁ c₀) ∧
+          |CodeLib.IEEE32.value (horner3Result x c₃ c₂ c₁ c₀) -
+              (((CodeLib.IEEE32.value c₃ * CodeLib.IEEE32.value x +
+                  CodeLib.IEEE32.value c₂) * CodeLib.IEEE32.value x +
+                CodeLib.IEEE32.value c₁) * CodeLib.IEEE32.value x +
+                CodeLib.IEEE32.value c₀)| ≤ 6 * f32Epsilon) := by
+  have hgeneric := horner32_real_error x c₃ [c₂, c₁, c₀] hxBound hsafe
+  have hfinite :
+      CodeLib.IEEE32.Finite (horner3Result x c₃ c₂ c₁ c₀) := by
+    simpa [horner32, horner3Result] using hgeneric.1
+  have herror :
+      |CodeLib.IEEE32.value (horner3Result x c₃ c₂ c₁ c₀) -
+          (((CodeLib.IEEE32.value c₃ * CodeLib.IEEE32.value x +
+              CodeLib.IEEE32.value c₂) * CodeLib.IEEE32.value x +
+            CodeLib.IEEE32.value c₁) * CodeLib.IEEE32.value x +
+            CodeLib.IEEE32.value c₀)| ≤ 6 * f32Epsilon := by
+    have h := hgeneric.2
+    simp only [horner32, horner32Exact, horner32Stages,
+      CodeLib.Numerical.exactHorner, List.map_cons, List.map_nil,
+      List.length_cons, List.length_nil] at h
+    norm_num at h
+    rw [show 6 * f32Epsilon = 3 * (2 * f32Epsilon) by ring]
+    simpa [horner3Result] using h
+  exact (horner3_terminates x c₃ c₂ c₁ c₀).mono
+    (fun _values _store hvalues => ⟨hvalues, hfinite, herror⟩)
+
 noncomputable def f64Epsilon : ℝ := 1 / (2 : ℝ) ^ 52
 
 /-- One binary64 dot-product accumulation stage contributes one multiplication
@@ -538,16 +573,63 @@ theorem dot_program_real_error (a₀ b₀ a₁ b₁ : UInt64)
   exact (dot_terminates a₀ b₀ a₁ b₁).mono
     (fun _values _store hvalues => ⟨hvalues, hresult.1, hresult.2⟩)
 
+/-- Fuel-independent correctness and the seven-unit accumulated error bound
+for the decoded four-term f64 dot-product WAT program.  `hsafe` records every
+remaining finite-input, product, and accumulator magnitude obligation. -/
+theorem dot4_program_real_error (a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃ : UInt64)
+    (ha₀ : CodeLib.IEEE64.Finite a₀)
+    (hb₀ : CodeLib.IEEE64.Finite b₀)
+    (ha₀Bound : |CodeLib.IEEE64.value a₀| ≤ 1)
+    (hb₀Bound : |CodeLib.IEEE64.value b₀| ≤ 1)
+    (hsafe : Dot64Safe (Wasm.IEEE64.mul a₀ b₀)
+      [(a₁, b₁), (a₂, b₂), (a₃, b₃)]) :
+    SmallStep.TerminatesWith
+      (dot4Config a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃)
+      (fun values _ =>
+        values = [.f64 (dot4Result a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃)] ∧
+          CodeLib.IEEE64.Finite
+            (dot4Result a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃) ∧
+          |CodeLib.IEEE64.value
+              (dot4Result a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃) -
+            (((CodeLib.IEEE64.value a₀ * CodeLib.IEEE64.value b₀ +
+                CodeLib.IEEE64.value a₁ * CodeLib.IEEE64.value b₁) +
+              CodeLib.IEEE64.value a₂ * CodeLib.IEEE64.value b₂) +
+              CodeLib.IEEE64.value a₃ * CodeLib.IEEE64.value b₃)| ≤
+            7 * f64Epsilon) := by
+  have hgeneric := dot64_real_error (a₀, b₀)
+    [(a₁, b₁), (a₂, b₂), (a₃, b₃)]
+    ha₀ hb₀ ha₀Bound hb₀Bound hsafe
+  have hfinite : CodeLib.IEEE64.Finite
+      (dot4Result a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃) := by
+    simpa [dot64, dot64Acc, dot4Result] using hgeneric.1
+  have herror :
+      |CodeLib.IEEE64.value
+          (dot4Result a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃) -
+        (((CodeLib.IEEE64.value a₀ * CodeLib.IEEE64.value b₀ +
+            CodeLib.IEEE64.value a₁ * CodeLib.IEEE64.value b₁) +
+          CodeLib.IEEE64.value a₂ * CodeLib.IEEE64.value b₂) +
+          CodeLib.IEEE64.value a₃ * CodeLib.IEEE64.value b₃)| ≤
+        7 * f64Epsilon := by
+    have h := hgeneric.2
+    simp only [dot64, dot64Acc, dot64Exact, dot64ExactAcc,
+      List.length_cons, List.length_nil] at h
+    norm_num at h
+    simpa [dot4Result] using h
+  exact (dot4_terminates a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃).mono
+    (fun _values _store hvalues => ⟨hvalues, hfinite, herror⟩)
+
 #print axioms horner32_step_real_error
 #print axioms horner32_safe_finite
 #print axioms horner32_safe_trace
 #print axioms horner32_real_error
 #print axioms affine_real_error
 #print axioms affine_program_real_error
+#print axioms horner3_program_real_error
 #print axioms dot64_step_real_error
 #print axioms dot64Acc_real_error
 #print axioms dot64_real_error
 #print axioms dot_real_error
 #print axioms dot_program_real_error
+#print axioms dot4_program_real_error
 
 end CodeLib.Numerical.Kernels

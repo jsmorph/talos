@@ -688,3 +688,27 @@ differential tests, and an example-program theorem.
   `propext`, `Classical.choice`, and `Quot.sound`.
 - Next: publish and fetch-verify this checkpoint, then add degree-three f32
   Horner and four-term f64 dot-product decoded-WAT consumers.
+
+### Scalable kernels checkpoint 3: larger decoded-WAT consumers
+
+- Added a decoded hand-written three-stage f32 Horner program evaluating
+  `((c3*x + c2)*x + c1)*x + c0`.  Its module signature and instruction body
+  are decoder-checked, and its fourteen-event symbolic trace yields a
+  fuel-independent `TerminatesWith` theorem.
+- Added a decoded hand-written four-term f64 dot product.  Its eight-parameter
+  signature and unrolled instruction body are decoder-checked, and its
+  sixteen-event symbolic trace yields a fuel-independent termination theorem.
+- Connected both executions to the generic modeled folds.  The Horner WAT
+  theorem proves a finite result and error at most `6 * 2^-23`; the dot-product
+  WAT theorem proves a finite result and error at most `7 * 2^-52`, with their
+  recursive safety predicates retaining every intermediate overflow-exclusion
+  obligation.
+- From `interpreter`,
+  `lake build Interpreter.Wasm.Examples.FloatNumericalKernels` passed in 15
+  jobs.  From `codelib`, `lake build CodeLib.Numerical.Kernels` passed in 3,062
+  jobs.  Both builds used exact Lean 4.34.0-rc2.
+- Axiom reports for `horner3_program_real_error` and
+  `dot4_program_real_error` contain only `propext`, `Classical.choice`, and
+  `Quot.sound`.
+- Next: publish and fetch-verify this checkpoint, then add sufficient-condition
+  safety corollaries and perform the combined final validation.
