@@ -631,3 +631,16 @@ differential tests, and an example-program theorem.
   or axiom declaration.  `git diff 166dac4..HEAD --check` passed.  The ordered
   quantitative binary64, reusable composition, numerical-kernel, and final
   validation phases are complete.
+
+## 2026-09-02: Scalable numerical kernels started
+
+- Accepted the four-checkpoint follow-up agenda: list-level error algebra,
+  generic modeled Horner/dot folds, larger decoded-WAT consumers, and safety
+  convenience corollaries plus combined validation.
+- Reconfirmed the local and fetched remote trees are identical at the previous
+  completed agenda and that the active compiler is exact Lean 4.34.0-rc2.
+- The initial scope deliberately keeps WAT programs unrolled.  Verification of
+  arbitrary memory loops is deferred until the reusable numerical induction
+  layer and its fixed-size consumers are stable.
+- Each passing checkpoint will be committed, published through the
+  authenticated GitHub connection, fetched, and compared by Git tree SHA.

@@ -281,3 +281,30 @@ sets pass with exact Lean 4.34.0-rc2; every new general theorem reports only
 standard Lean logical axioms; the complete changed-source scan and Git
 whitespace check pass; and every substantive checkpoint has been published
 and fetch-verified against its local Git tree.
+
+## Scalable numerical-kernel agenda (2026-09-02)
+
+The next development turns the fixed affine and two-term dot-product examples
+into consumers of reusable sequential-kernel theorems.  Work proceeds in four
+independently validated and published checkpoints:
+
+1. **List error algebra.**  Prove list-sum perturbation, sequential
+   accumulation, general Horner recurrence, its weighted closed form, and the
+   `|x| ≤ 1` corollary.  Refactor the existing two-step Horner lemma to use the
+   general result.
+2. **Generic modeled kernels.**  Define pure IEEE32 Horner and nonempty IEEE64
+   dot-product folds with exact real counterparts and explicit recursive
+   safety predicates.  Prove finiteness and accumulated-error results, then
+   make the current affine and dot-two theorems corollaries where practical.
+3. **Larger decoded-WAT consumers.**  Add a degree-three f32 Horner program and
+   a four-term f64 dot product with decoder checks, explicit small-step traces,
+   fuel-independent termination, and generic finite/error conclusions.
+4. **Safety corollaries and final validation.**  Add useful sufficient
+   conditions that discharge the explicit intermediate bounds without hiding
+   them.  Rebuild every affected interpreter and CodeLib root, inspect public
+   theorem axioms, scan all changed sources, update the plan and journal, and
+   verify the final fetched remote tree.
+
+Arbitrary-memory WAT loops remain a later extension.  The first scalable layer
+uses unrolled decoded programs so that numerical induction and control-flow
+invariants remain separate review units.
