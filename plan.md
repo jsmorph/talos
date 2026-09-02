@@ -146,3 +146,34 @@ Every milestone is committed and pushed independently.  It must build under
 examples, pass `git diff --check`, and have its public theorems checked with
 `#print axioms`.  Repository-wide failures in unchanged pinned dependencies
 will continue to be recorded separately from the affected-target results.
+
+### Roadmap implementation status
+
+The representative end-to-end slice is implemented for every category above:
+
+- f32 multiplication, division, and square root use pure integer/dyadic or
+  rational rounding, with exact WAT execution theorems and exceptional-value
+  examples.
+- f32 comparison, min/max, copysign, integral rounding, and integer conversion
+  are proof-visible.  Clamp, nearest-integer, conversion, and concrete
+  round-trip programs exercise the operations.
+- f64 scalar arithmetic, square root, selection, comparison, sign, and
+  integral-rounding operations use a pure binary64 model.  A WAT multiplication
+  theorem and full-width differential suite provide the first end-to-end f64
+  instance.
+- SIMD multiplication is lifted lane-wise for both `f32x4` and `f64x2`, with
+  decoded WAT programs and per-lane theorems covering signed zero, infinity,
+  and NaN lanes.
+- The algorithm-level transcendental example implements `x - x^3 / 6` in
+  ordinary f32 instructions.  Its arbitrary-input theorem gives the exact
+  rounded program result, and a fixed-input analytic theorem connects the
+  result to real sine and a strict epsilon bound.
+
+This completes representative verified programs, not every quantitative
+theorem suggested by the roadmap.  The next strengthening work is: general
+real error bounds for multiplication/division/square root; proof-visible f64
+integer conversions; removal of the five compatibility axioms in
+`CodeLib.IEEE32.Exec`; and a nontrivial-interval Taylor-plus-roundoff theorem
+for the sine polynomial.  Native floating point remains only as a regression
+oracle for the implemented operations, except for the explicitly noted f64
+conversion seam.

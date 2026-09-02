@@ -4,11 +4,12 @@ import Std.Tactic.BVDecide
 open Wasm
 
 /-!
-Pure bitvector IEEE 754 f32 operations and bridge axioms for `float_trunc` proofs.
+Pure bitvector IEEE 754 f32 helpers and compatibility bridges for
+`float_trunc` proofs.
 
 **These bridge axioms are trusted, not proved.** The five `axiom` declarations
-below (`beq_ax`, `isNaN_ax`, `ble_ax`, `blt_ax`, `satI32S_eq`) assert that Lean's
-opaque `Float32`/`Float` externs agree with the bitvector model defined here;
+below (`beq_ax`, `isNaN_ax`, `ble_ax`, `blt_ax`, `satI32S_eq`) now relate the
+proof-visible integer IEEE32 implementation to the older bitvector helpers;
 they are the only axioms in this repository beyond Lean's own. Anything that
 imports this module and uses them — including everything proved further down
 this file — is therefore *not* axiom-free. Check what a given result rests on
@@ -70,23 +71,23 @@ def satI32S (x : UInt32) : UInt32 :=
         else full <<< (e - 150)
       if s == 0 then mag else 0 - mag
 
-/-! ## Bridge axioms: runtime `Float32`/`Float` matches the bitvector model -/
+/-! ## Compatibility axioms: proof-visible model matches legacy bitvector helpers -/
 
--- BEq on Float agrees with ieee32 beq
+-- Ordered equality agrees with the legacy bitvector equality.
 axiom beq_ax (a b : UInt32) :
-    ((Float32.ofBits a).toFloat == (Float32.ofBits b).toFloat) = beq a b
+    Wasm.IEEE32.eq a b = beq a b
 
--- Float.isNaN agrees with ieee32 isNaN (toFloat is exact for NaN detection)
+-- Classification agrees with the legacy bitvector classifier.
 axiom isNaN_ax (a : UInt32) :
-    (Float32.ofBits a).toFloat.isNaN = isNaN a
+    Wasm.IEEE32.isNaN a = isNaN a
 
--- decide (Float ≤) agrees with ieee32 ble
+-- Ordered less-than-or-equal agrees with the legacy helper.
 axiom ble_ax (a b : UInt32) :
-    decide ((Float32.ofBits a).toFloat ≤ (Float32.ofBits b).toFloat) = ble a b
+    Wasm.IEEE32.le a b = ble a b
 
--- decide (Float <) agrees with ieee32 blt
+-- Ordered less-than agrees with the legacy helper.
 axiom blt_ax (a b : UInt32) :
-    decide ((Float32.ofBits a).toFloat < (Float32.ofBits b).toFloat) = blt a b
+    Wasm.IEEE32.lt a b = blt a b
 
 -- i32TruncSatF32S agrees with ieee32 satI32S
 axiom satI32S_eq (a : UInt32) :
@@ -95,7 +96,7 @@ axiom satI32S_eq (a : UInt32) :
 /-! ## Theorems used by `FloatTrunc.Spec` -/
 
 theorem f32Ne_self_iff_isNaN (x : UInt32) :
-    f32Ne x x = (Float32.ofBits x).toFloat.isNaN := by
+    f32Ne x x = Wasm.IEEE32.isNaN x := by
   simp only [f32Ne, beq_ax, isNaN_ax, isNaN, beq]
   bv_decide
 

@@ -251,3 +251,46 @@ addition and subtraction.
 Generalize exact rounding to dyadic products and implement binary32
 multiplication, including special values, overflow, gradual underflow, native
 differential tests, and an example-program theorem.
+
+## 2026-09-02: Representative operation-roadmap implementation
+
+- Generalized binary32 rounding from scaled integers to exact dyadics, exact
+  rational quotients, and an exact integer-square-root midpoint test.
+- Replaced native f32 multiplication, division, square root, comparisons,
+  min/max, copysign, integral rounding, and integer conversions with the pure
+  `Wasm.IEEE32` implementation.  Trapping conversion classification now uses
+  the same pure NaN predicate in big-step, small-step, and weakest-precondition
+  semantics.
+- Added a pure `Wasm.IEEE64` model for scalar arithmetic, square root,
+  comparison, min/max, copysign, and integral rounding.  Native f64 conversion
+  operations remain an explicit follow-up seam.
+- Added differential regression suites against native IEEE arithmetic.  The
+  direct suites passed 4,105 cases for each f32 operation family and 1,031
+  cases across f64 scalar operations.  Committed suites cover 4,096 f32
+  conversion inputs and 1,024 full-width plus seven f64 edge inputs.
+- Added hand-written WAT programs and fuel-independent small-step theorems for
+  f32 multiplication, division, square root, clamp, nearest, signed i32
+  conversion, f64 multiplication, `f32x4.mul`, `f64x2.mul`, and the cubic sine
+  polynomial `x - x^3 / 6`.  The executable round-trip program also checks the
+  exact/inexact i32 boundary.
+- Added CodeLib specifications for finite exact products and quotients,
+  positive square root, NaN/infinity/zero behavior, overflow, gradual
+  underflow, comparison and signed-zero selection, conversion saturation,
+  integral ties-to-even, lane-wise SIMD, and algorithm-level sine execution.
+- Replaced `native_decide` with kernel `decide` in scalar examples where the
+  kernel evaluator reduces the operation.  Concrete positive-square-root and
+  SIMD examples retain `native_decide` as regression-oracle theorems because
+  `Nat.sqrt` does not reduce through their decidable equalities; the general
+  operation and program specifications remain independent of those examples.
+
+### Validation so far
+
+- All new interpreter example targets pass with Lean 4.34.0-rc2.
+- The targeted CodeLib builds pass for multiplication, division, square root,
+  selection, integral rounding, conversions, binary64 operations, SIMD, and
+  the transcendental example.
+- `Interpreter.Wasm.Wp.Atomic` passes after its four f32 truncation rules were
+  aligned with the proof-visible NaN classifier.
+- `CodeLib.IEEE32.Exec` still reaches Lean's previously recorded code-139
+  compiler crash after all interpreter dependencies build.  Its five legacy
+  compatibility axioms remain isolated from the new operation specifications.
