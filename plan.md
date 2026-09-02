@@ -432,4 +432,16 @@ local Git trees.
 
 ### Current flagship status
 
-The agenda is recorded.  Implementation has not yet begun.
+The agenda is recorded and checkpoint 1 is complete.  The reusable relational
+memory layer now proves slot addresses/readback, physical in-bounds access, and
+the exact authoritative `f64.load` transition for an indexed `Mem.words64`
+view while preserving the complete machine store.
+
+The initially planned total-WP formulation was tested and rejected for this
+branch because rebuilding its pinned Iris dependencies reproduces the existing
+`COFESolver` and `MaxPrefixList` type errors already recorded in the journal.
+The flagship execution proof will instead use explicit relational
+`SmallStep.Steps` iteration traces plus `terminatesWith_of_loop`.  This remains
+an authoritative, fuel-independent total-correctness proof and avoids coupling
+the numerical milestone to an unrelated dependency failure.  Checkpoint 2,
+generation and inspection of the exact compiled artifact, is in progress.

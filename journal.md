@@ -794,3 +794,32 @@ differential tests, and an example-program theorem.
 
 Validate and publish this documentation checkpoint, then add the reusable
 ownership-preserving indexed `f64.load` and address-safety infrastructure.
+
+### Memory and indexed-load checkpoint
+
+- Added `CodeLib.RustStd.MemArray.SmallStep`, depending only on the existing
+  `Mem.words64` view and the authoritative relational small-step semantics.
+- Proved `Mem.words64_slot_address_and_read` and
+  `Mem.words64_slot_inBounds`, packaging the no-wrap address equation,
+  list-view readback, and physical capacity arithmetic for an indexed
+  eight-byte slot.
+- Proved `SmallStep.f64Load_words64`, the exact `Step.f64Load` transition that
+  loads a `Mem.words64` element as its binary64 bit pattern and preserves the
+  entire machine store definitionally.
+- Attempting the originally planned total-WP helper reproduced the repository's
+  previously recorded pinned-Iris errors in `COFESolver` and `MaxPrefixList`.
+  The committed helper therefore has no Iris or separation-logic dependency;
+  the loop will use finite per-iteration relational traces and
+  `terminatesWith_of_loop`.  This changes proof organization, not the final
+  operational or numerical contract.
+- `lake build CodeLib.RustStd.MemArray.SmallStep` passed in 3,338 jobs under
+  exact Lean 4.34.0-rc2.  Axiom reports are `[propext, Quot.sound]` for the
+  address/read and capacity results and
+  `[propext, Classical.choice, Quot.sound]` for the exact load transition.
+- `git diff --check` and the changed-source scan pass with no `sorry`, `admit`,
+  axiom declaration, or Iris/SepLogic import.
+
+### Next work
+
+Publish and fetch-verify this checkpoint, then inspect and validate the exact
+Rust-generated WAT artifact before fixing the loop-state invariant.
