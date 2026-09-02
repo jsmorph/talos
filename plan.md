@@ -205,8 +205,10 @@ multiplication error is at most `2^-23` whenever both finite inputs have
 absolute value at most one.  The rational ties-to-even contract and its f32
 division lift are also complete: for a nonzero finite denominator and a
 quotient of magnitude at most one, the real error is at most `2^-23`, including
-through gradual underflow.  Integer square root and the interval sine proof
-remain the next proof work.  Every passing unit above will be committed and
+through gradual underflow.  The square-root contract is complete as well: on
+positive finite inputs at most one, both the operation and decoded WAT program
+are within `2^-23` of the exact real square root.  The interval sine theorem is
+the remaining proof work.  Every passing unit above will be committed and
 pushed before work proceeds to the next unit.
 
 ### Current execution status (2026-09-02)
@@ -220,13 +222,12 @@ pushed before work proceeds to the next unit.
 4. **Complete and pushed:** exact rational ties-to-even rounding plus f32
    division and decoded-WAT `2^-23` real-error theorems (`8d5234c` remote
    checkpoint).
-5. **In progress:** square root.  The exact integer-midpoint theorem is proved
-   and passes in isolation.  The hand-expanded exponent/fraction packing proof
-   closes its goals but produces a pathological kernel term, so the packer is
-   being factored through the already verified exact scaled-magnitude packer.
-   Next validation is the general real `2^-23` bound, the WAT termination
-   theorem, and the existing native/boundary regression suites.
-6. **Next:** strengthen the cubic sine WAT example on a nontrivial input
+5. **Complete; push in progress:** exact square-root midpoint rounding, packing
+   through the verified scaled-magnitude rounder, and operation/WAT real error
+   bounds of `2^-23` for positive finite inputs at most one.  The interpreter
+   square-root examples and regression suite and the CodeLib theorem root pass
+   under Lean 4.34.0-rc2, with only standard logical axioms reported.
+6. **In progress:** strengthen the cubic sine WAT example on a nontrivial input
    interval by combining a real Taylor remainder with the proved f32 addition,
    subtraction, multiplication, and division roundoff budgets.
 7. **Final validation:** build all affected interpreter and CodeLib roots with

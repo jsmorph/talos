@@ -393,3 +393,30 @@ differential tests, and an example-program theorem.
   factored through the existing exact `roundScaledMagnitude` packer to obtain a
   smaller kernel-checkable proof term, after which the native and boundary
   square-root suites will be rerun.
+
+## 2026-09-02: Quantitative square-root checkpoint
+
+- Refactored `roundSqrtMagnitude` to feed its exactly representable rounded
+  scaled integer through the shared `roundScaledMagnitude` packer.  This keeps
+  the executable IEEE32 result unchanged while replacing the rejected
+  hand-expanded packing proof with a compact reusable exact-packing argument.
+- Proved `roundSqrtIntegral_real_error` from the integer midpoint-square test,
+  then proved `roundSqrtMagnitude_spec`: inputs no larger than `2^149` produce
+  a finite positive result whose scaled magnitude is within `2^126` of the
+  exact scaled real square root.
+- Added `sqrt_real_error`.  For a nonzero, positive, finite binary32 input no
+  larger than one, the modeled `f32.sqrt` differs from `Real.sqrt` by at most
+  the fixed real epsilon `2^-23`.
+- Added `sqrt_program_terminates_real_error`, attaching the same quantitative
+  result to the decoded hand-written WAT program's fuel-independent execution
+  theorem.
+- `lake build Interpreter.Wasm.Examples.FloatSquareRoot
+  Interpreter.Wasm.Examples.IEEE32` passed, rebuilding the affected IEEE32 and
+  small-step semantics.  `lake build CodeLib.IEEE32.SquareRoot` passed in 3,051
+  jobs under exact Lean 4.34.0-rc2.
+- Axiom reports for the new rounder, operation, and WAT theorems contain only
+  `propext`, `Classical.choice`, and `Quot.sound`.  `git diff --check` passed,
+  and the changed source contains no `sorry`, `admit`, or new axiom.
+- Next: push this checkpoint, then strengthen the cubic sine program from its
+  fixed-input analytic result to a nontrivial interval theorem that combines a
+  Taylor remainder with the primitive f32 roundoff budgets.

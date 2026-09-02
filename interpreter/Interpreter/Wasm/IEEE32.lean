@@ -168,16 +168,11 @@ def roundSqrtMagnitude (magnitude : Nat) : UInt32 :=
     let radicand := magnitude * 2 ^ 149
     let rootFloor := Nat.sqrt radicand
     let outputShift := Nat.log2 rootFloor - 23
-    if outputShift == 0 then
-      roundScaledMagnitude false (roundSqrtIntegral radicand 0)
-    else
-      let rounded := roundSqrtIntegral radicand outputShift
-      let (finalShift, significand) :=
-        if rounded == 2 ^ 24 then (outputShift + 1, 2 ^ 23)
-        else (outputShift, rounded)
-      let exponentField := finalShift + 1
-      if 0xFF ≤ exponentField then infinity false
-      else encodeFinite false exponentField (significand - 2 ^ 23)
+    let rounded := roundSqrtIntegral radicand outputShift
+    -- `rounded * 2^outputShift` is already exactly representable.  Routing it
+    -- through the shared scaled-magnitude packer keeps exponent carry and
+    -- gradual underflow in one proof-visible implementation.
+    roundScaledMagnitude false (rounded * 2 ^ outputShift)
 
 /-- Pure IEEE-754 binary32 addition with round-to-nearest, ties-to-even.
 NaN results use WebAssembly's canonical quiet NaN.  Exact cancellation yields
