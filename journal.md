@@ -894,3 +894,40 @@ execution theorem.
 Finish the exact generated-loop termination theorem, then attach the
 total-list numerical result with `TerminatesWith.mono` so the operational and
 roundoff claims remain independently reusable.
+
+### Exact generated-loop total-correctness checkpoint
+
+- Added `Project.F64Dot.Proof`, a direct proof over the exact generated
+  `func0` body.  Its finite traces cover the zero-length return, first pair of
+  loads and initial multiplication, singleton exit, the common 20-instruction
+  loop prefix, the taken back edge, and the final fall-through/return path.
+- The loop family is indexed by the processed tail position and measured by
+  the remaining element count.  At every head, its two pointer locals are the
+  base addresses plus `8 * (k + 1)`, its count local is the remaining tail
+  length, and its f64 local is the modeled `dot64Acc` of the consumed prefix.
+  `SmallStep.f64Load_words64` supplies both read-only loads; the prefix lemma
+  identifies the `f64.mul`/`f64.add` result with the next modeled accumulator.
+- Proved `f64Dot_terminates` for arbitrary binary64 word pairs under explicit
+  memory-view, 32-bit no-wrap, and physical-capacity hypotheses.  It returns
+  exactly `Kernels.dot64List terms` and preserves the complete `MachineStore`,
+  not merely the observed array regions.  No finiteness or magnitude
+  assumption appears in this operational theorem.
+- Proved the stronger zero-length specialization without any pointer, view,
+  or capacity hypothesis: the generated branch returns positive zero before
+  either load.  Also proved `initConfig_eq_configFromStore`, connecting the
+  direct proof state to function zero of the exact generated module with the
+  external operand-stack order `[count, right, left]`.
+- Replaced the temporary `True` export scaffold with a quantified
+  `F64DotSpec` and an attached `@[proves ...]` total-correctness theorem.
+  `lake build Project.F64Dot.Spec` passed in 3,364 jobs under exact Lean
+  4.34.0-rc2.  Axiom reports for `f64Dot_terminates`,
+  `f64Dot_empty_terminates`, `initConfig_eq_configFromStore`, and
+  `Spec.proves` are exactly `[propext, Classical.choice, Quot.sound]`.
+  `git diff --check` and the changed-source scan find no `sorry`, `admit`,
+  axiom declaration, or `native_decide` dependency.
+
+### Next work
+
+Publish and fetch-verify the raw total-correctness checkpoint, then use
+`TerminatesWith.mono` to attach the total-list finite/error conclusions under
+recursive, absolute-mass, and uniform-envelope safety assumptions.

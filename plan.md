@@ -464,5 +464,15 @@ and the total-list layer covers the exact empty branch as well as the
 nonempty `(2 * n - 1) * 2^-52` result.  These are checkpoints 4--5 support
 lemmas; their final attachment to WAT execution still waits for checkpoint 3.
 
-Checkpoint 3, the exact total loop execution theorem over arbitrary binary64
-bit patterns and read-only `Mem.words64` inputs, is in progress.
+Checkpoint 3 is complete.  Exact relational traces cover the generated
+zero-length branch, first product, singleton exit, continuing loop iterations,
+and final iteration.  `terminatesWith_of_loop` assembles them into a
+fuel-independent theorem for arbitrary binary64 bit patterns.  Its conclusion
+is exactly `dot64List terms`, and equality of the complete final machine store
+proves that both arrays and all unrelated state are preserved.  A separate
+hypothesis-free theorem exposes the pre-load empty branch, and a proved
+`initConfig` equality connects the proof configuration to function zero of the
+generated module without native evaluation.
+
+Checkpoint 4, attaching the total-list finite/error theorem to this exact WAT
+execution with `TerminatesWith.mono`, is next.
