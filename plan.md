@@ -308,3 +308,11 @@ independently validated and published checkpoints:
 Arbitrary-memory WAT loops remain a later extension.  The first scalable layer
 uses unrolled decoded programs so that numerical induction and control-flow
 invariants remain separate review units.
+
+### Current scalable-kernel status
+
+Checkpoint 1 is complete.  The error-composition layer now includes list-sum
+and sequential perturbation theorems, explicit approximate Horner traces,
+recursive and weighted closed-form error budgets, and the `|x| ≤ 1`
+corollary.  The original two-step Horner theorem is derived from this general
+recurrence.  Checkpoints 2 through 4 remain pending.

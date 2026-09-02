@@ -644,3 +644,24 @@ differential tests, and an example-program theorem.
   layer and its fixed-size consumers are stable.
 - Each passing checkpoint will be committed, published through the
   authenticated GitHub connection, fetched, and compared by Git tree SHA.
+
+### Scalable kernels checkpoint 1: list error algebra
+
+- Extended `CodeLib.Numerical.ErrorComposition` with a list-sum perturbation
+  theorem and a sequential-update theorem.
+- Added an explicit `HornerApprox` trace relation, exact Horner evaluation,
+  recursive error propagation, and a weighted closed form.  Proved the full
+  recurrence and the convenient result that `|x| ≤ 1` prevents amplification
+  of earlier errors.
+- Refactored `horner_two_step` into a two-stage instance of the general trace
+  theorem; its statement and the existing cubic-sine consumer are unchanged.
+- `lake build CodeLib.Numerical.ErrorComposition` passed in 3,032 jobs.
+  `lake build CodeLib.IEEE32.Transcendental CodeLib.Numerical.Kernels` passed
+  in 3,181 jobs under exact Lean 4.34.0-rc2.
+- Axiom reports for all new list, sequential, recurrence, closed-form, and
+  unit-interval results contain only `propext`, `Classical.choice`, and
+  `Quot.sound`.  The downstream sine and kernel theorems retain the same clean
+  axiom set.
+- Next: publish and fetch-verify this checkpoint, then define generic modeled
+  IEEE32 Horner and IEEE64 nonempty dot-product folds with recursive safety
+  predicates.
