@@ -311,6 +311,85 @@ theorem sign_roundScaledMagnitude (negative : Bool) (n : Nat)
       exact sign_encodeFinite negative (shift + 1) (rounded - 2 ^ 52)
         (by omega) hfraction
 
+/-- Packing a scaled integer has the binary64 relative-error bound.  Values
+below the first inexact integer are represented exactly; above it, the
+half-ulp error is at most `2^-53` of the exact scaled magnitude. -/
+theorem roundedMagnitude_relative_error (n : Nat) :
+    |(roundedMagnitude n : Int) - n| * (2 ^ 53 : Int) ≤ n := by
+  by_cases hexact : n < 2 ^ 53
+  · have hexactNum : n < 9007199254740992 := by
+      norm_num at hexact ⊢
+      exact hexact
+    simp [roundedMagnitude, hexactNum]
+  · have hmin : 2 ^ 53 ≤ n := by omega
+    have hexactNum : ¬n < 9007199254740992 := by
+      norm_num at hexact ⊢
+      exact hexact
+    have hn : n ≠ 0 := by omega
+    have hlogLower : 53 ≤ Nat.log2 n := (Nat.le_log2 hn).2 hmin
+    let shift := Nat.log2 n - 52
+    let rounded := Wasm.IEEE32.roundShift n shift
+    have hshift : 0 < shift := by simp only [shift]; omega
+    have hpowLower : 2 ^ 52 * 2 ^ shift ≤ n := by
+      rw [← pow_add]
+      have heq : 52 + shift = Nat.log2 n := by simp only [shift]; omega
+      rw [heq]
+      exact Nat.log2_self_le hn
+    have herrorCases :=
+      CodeLib.IEEE32.roundShift_error_cases n shift hshift
+    have herrorHalf :
+        |((rounded * 2 ^ shift : Nat) : Int) - n| ≤
+          (2 ^ shift / 2 : Nat) :=
+      CodeLib.IEEE32.abs_int_sub_le_of_error_cases
+        _ _ _ herrorCases
+    have hrounded : roundedMagnitude n = rounded * 2 ^ shift := by
+      by_cases hcarry : rounded = 2 ^ 53
+      · have hcarryNum :
+            Wasm.IEEE32.roundShift n (Nat.log2 n - 52) =
+              9007199254740992 := by
+          norm_num at hcarry ⊢
+          simpa [rounded, shift] using hcarry
+        simp [roundedMagnitude, hexactNum, rounded, shift, hcarryNum,
+          pow_succ, Nat.mul_assoc, Nat.mul_comm]
+        ring
+      · have hcarryNum :
+            ¬Wasm.IEEE32.roundShift n (Nat.log2 n - 52) =
+              9007199254740992 := by
+          norm_num at hcarry ⊢
+          simpa [rounded, shift] using hcarry
+        simp [roundedMagnitude, hexactNum, rounded, shift, hcarryNum]
+    have hhalfScaled :
+        ((2 ^ shift / 2 : Nat) : Int) * (2 ^ 53 : Int) =
+          (2 ^ 52 * 2 ^ shift : Nat) := by
+      obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero
+        (by omega : shift ≠ 0)
+      rw [hk, pow_succ, Nat.mul_div_left _ (by omega)]
+      push_cast
+      ring
+    rw [hrounded]
+    calc
+      |((rounded * 2 ^ shift : Nat) : Int) - n| * (2 ^ 53 : Int) ≤
+          ((2 ^ shift / 2 : Nat) : Int) * (2 ^ 53 : Int) :=
+        mul_le_mul_of_nonneg_right herrorHalf (by positivity)
+      _ = (2 ^ 52 * 2 ^ shift : Nat) := hhalfScaled
+      _ ≤ n := by exact_mod_cast hpowLower
+
+/-- The packed magnitude and sign satisfy the relative-error contract in
+scaled integer units. -/
+theorem roundScaledMagnitude_relative_spec (negative : Bool) (n : Nat)
+    (hmax : n < 2 ^ 1076) :
+    Finite (Wasm.IEEE64.roundScaledMagnitude negative n) ∧
+      Wasm.IEEE64.sign
+          (Wasm.IEEE64.roundScaledMagnitude negative n) = negative ∧
+      |((Wasm.IEEE64.scaledMagnitude
+            (Wasm.IEEE64.roundScaledMagnitude negative n) : Nat) : Int) - n| *
+          (2 ^ 53 : Int) ≤ n := by
+  have hspec := roundScaledMagnitude_spec negative n hmax
+  have hsign := sign_roundScaledMagnitude negative n hmax
+  refine ⟨hspec.1, hsign, ?_⟩
+  rw [hspec.2.1]
+  exact roundedMagnitude_relative_error n
+
 theorem scaledValue_roundScaledMagnitude (negative : Bool) (n : Nat)
     (hmax : n < 2 ^ 1076) :
     Wasm.IEEE64.scaledValue (Wasm.IEEE64.roundScaledMagnitude negative n) =
@@ -345,6 +424,36 @@ theorem roundScaledValue_spec (z : Int) (hmax : z.natAbs < 2 ^ 1076) :
           (roundedMagnitude z.natAbs : Int) - z.natAbs := by omega
       rw [heq]
       exact hspec.2.2
+
+/-- Signed scaled-integer rounding has relative error at most `2^-53`. -/
+theorem roundScaledValue_relative_spec (z : Int)
+    (hmax : z.natAbs < 2 ^ 1076) :
+    Finite (Wasm.IEEE64.roundScaledMagnitude (z < 0) z.natAbs) ∧
+      |Wasm.IEEE64.scaledValue
+          (Wasm.IEEE64.roundScaledMagnitude (z < 0) z.natAbs) - z| *
+          (2 ^ 53 : Int) ≤ z.natAbs := by
+  have hspec := roundScaledMagnitude_spec (z < 0) z.natAbs hmax
+  have hvalue := scaledValue_roundScaledMagnitude (z < 0) z.natAbs hmax
+  have hrelative := roundedMagnitude_relative_error z.natAbs
+  constructor
+  · exact hspec.1
+  · by_cases hz : z < 0
+    · have hz' : z = -(z.natAbs : Int) :=
+        Int.eq_neg_natAbs_of_nonpos (Int.le_of_lt hz)
+      have hdec : decide (z < 0) = true := by simp [hz]
+      rw [hvalue, if_pos hdec]
+      have heq : -(roundedMagnitude z.natAbs : Int) - z =
+          -((roundedMagnitude z.natAbs : Int) - z.natAbs) := by omega
+      rw [heq, abs_neg]
+      exact hrelative
+    · have hz' : z = (z.natAbs : Int) :=
+        Int.eq_natAbs_of_nonneg (Int.le_of_not_gt hz)
+      have hdec : decide (z < 0) ≠ true := by simp [hz]
+      rw [hvalue, if_neg hdec]
+      have heq : (roundedMagnitude z.natAbs : Int) - z =
+          (roundedMagnitude z.natAbs : Int) - z.natAbs := by omega
+      rw [heq]
+      exact hrelative
 
 theorem not_nan_of_finite {x : UInt64} (h : Finite x) :
     Wasm.IEEE64.isNaN x = false := by
@@ -383,6 +492,39 @@ theorem add_spec (a b : UInt64) (ha : Finite a) (hb : Finite b)
       Wasm.IEEE64.scaledValue b = 0 from hz]
     exact ⟨hfinite, by norm_num⟩
   · have hround := roundScaledValue_spec z hbound
+    simpa [Wasm.IEEE64.add, hna, hnb, hia, hib, z, hz] using hround
+
+/-- Addition of finite scaled binary64 values has relative error at most
+`2^-53`, provided the exact sum remains in the verified finite packing range. -/
+theorem add_relative_spec (a b : UInt64) (ha : Finite a) (hb : Finite b)
+    (hbound : (Wasm.IEEE64.scaledValue a +
+      Wasm.IEEE64.scaledValue b).natAbs < 2 ^ 1076) :
+    Finite (Wasm.IEEE64.add a b) ∧
+      |Wasm.IEEE64.scaledValue (Wasm.IEEE64.add a b) -
+        (Wasm.IEEE64.scaledValue a + Wasm.IEEE64.scaledValue b)| *
+          (2 ^ 53 : Int) ≤
+        (Wasm.IEEE64.scaledValue a +
+          Wasm.IEEE64.scaledValue b).natAbs := by
+  have hna := not_nan_of_finite ha
+  have hnb := not_nan_of_finite hb
+  have hia := not_infinite_of_finite ha
+  have hib := not_infinite_of_finite hb
+  let z := Wasm.IEEE64.scaledValue a + Wasm.IEEE64.scaledValue b
+  by_cases hz : z = 0
+  · have hzero : Wasm.IEEE64.scaledValue (Wasm.IEEE64.add a b) = 0 := by
+      simp [Wasm.IEEE64.add, hna, hnb, hia, hib, z, hz]
+      split <;> decide
+    have hfinite : Finite (Wasm.IEEE64.add a b) := by
+      simp [Wasm.IEEE64.add, hna, hnb, hia, hib, z, hz]
+      split
+      · change Wasm.IEEE64.isFinite (Wasm.IEEE64.signMask true) = true
+        decide
+      · change Wasm.IEEE64.isFinite 0 = true
+        decide
+    rw [hzero, show Wasm.IEEE64.scaledValue a +
+      Wasm.IEEE64.scaledValue b = 0 from hz]
+    exact ⟨hfinite, by norm_num⟩
+  · have hround := roundScaledValue_relative_spec z hbound
     simpa [Wasm.IEEE64.add, hna, hnb, hia, hib, z, hz] using hround
 
 theorem negate_spec (x : UInt64) (h : Finite x) :
@@ -436,6 +578,9 @@ theorem scaled_abs_le_of_value_abs_le (x : UInt64)
 
 noncomputable def arithmeticEpsilon : ℝ := 1 / (2 : ℝ) ^ 52
 
+/-- Binary64 unit roundoff for round-to-nearest, ties-to-even. -/
+noncomputable def unitRoundoff64 : ℝ := 1 / (2 : ℝ) ^ 53
+
 theorem add_real_error (a b : UInt64) (ha : Finite a) (hb : Finite b)
     (haBound : |value a| ≤ 1) (hbBound : |value b| ≤ 1) :
     Finite (Wasm.IEEE64.add a b) ∧
@@ -471,6 +616,67 @@ theorem add_real_error (a b : UInt64) (ha : Finite a) (hb : Finite b)
       |(z : ℝ)| ≤ (2 : ℝ) ^ 1022 := hzReal
       _ = arithmeticEpsilon * (2 : ℝ) ^ 1074 := by
         norm_num [arithmeticEpsilon]
+
+/-- Addition of finite binary64 inputs bounded by one satisfies the
+scale-aware unit-roundoff contract.  In particular, cancellation and
+subnormal sums need no separate lower-bound hypothesis because the exact sum
+of two binary64 values lies on the common `2^-1074` integer grid. -/
+theorem add_real_relative_error (a b : UInt64)
+    (ha : Finite a) (hb : Finite b)
+    (haBound : |value a| ≤ 1) (hbBound : |value b| ≤ 1) :
+    Finite (Wasm.IEEE64.add a b) ∧
+      |value (Wasm.IEEE64.add a b) - (value a + value b)| ≤
+        unitRoundoff64 * |value a + value b| := by
+  have haScaled := scaled_abs_le_of_value_abs_le a haBound
+  have hbScaled := scaled_abs_le_of_value_abs_le b hbBound
+  have hsum :
+      |Wasm.IEEE64.scaledValue a + Wasm.IEEE64.scaledValue b| <
+        (2 ^ 1076 : Int) := by
+    apply abs_lt.mpr
+    have hbudget : 2 * (2 ^ 1074 : Int) < 2 ^ 1076 := by norm_num
+    have haBounds := abs_le.mp haScaled
+    have hbBounds := abs_le.mp hbScaled
+    constructor <;> omega
+  have hs := add_relative_spec a b ha hb (natAbs_lt_nat hsum)
+  constructor
+  · exact hs.1
+  · let exactScaled : Int :=
+      Wasm.IEEE64.scaledValue a + Wasm.IEEE64.scaledValue b
+    let errorScaled : Int :=
+      Wasm.IEEE64.scaledValue (Wasm.IEEE64.add a b) - exactScaled
+    have hscaled :
+        |errorScaled| * (2 ^ 53 : Int) ≤ exactScaled.natAbs := by
+      simpa [errorScaled, exactScaled] using hs.2
+    have hscaledReal :
+        |(errorScaled : ℝ)| * (2 : ℝ) ^ 53 ≤
+          |(exactScaled : ℝ)| := by
+      exact_mod_cast hscaled
+    have hunit :
+        |(errorScaled : ℝ)| ≤
+          |(exactScaled : ℝ)| / (2 : ℝ) ^ 53 :=
+      (le_div_iff₀ (by positivity : 0 < (2 : ℝ) ^ 53)).2 hscaledReal
+    have hscalePos : 0 < (2 : ℝ) ^ 1074 := by positivity
+    have herrorEq :
+        value (Wasm.IEEE64.add a b) - (value a + value b) =
+          (errorScaled : ℝ) / (2 : ℝ) ^ 1074 := by
+      simp [value, errorScaled, exactScaled]
+      ring
+    have hexactEq :
+        value a + value b =
+          (exactScaled : ℝ) / (2 : ℝ) ^ 1074 := by
+      simp [value, exactScaled]
+      ring
+    rw [herrorEq, abs_div, abs_of_pos hscalePos,
+      hexactEq, abs_div, abs_of_pos hscalePos]
+    calc
+      |(errorScaled : ℝ)| / (2 : ℝ) ^ 1074 ≤
+          (|(exactScaled : ℝ)| / (2 : ℝ) ^ 53) /
+            (2 : ℝ) ^ 1074 :=
+        div_le_div_of_nonneg_right hunit (le_of_lt hscalePos)
+      _ = unitRoundoff64 *
+          (|(exactScaled : ℝ)| / (2 : ℝ) ^ 1074) := by
+        simp [unitRoundoff64]
+        ring
 
 theorem sub_real_error (a b : UInt64) (ha : Finite a) (hb : Finite b)
     (haBound : |value a| ≤ 1) (hbBound : |value b| ≤ 1) :
@@ -509,7 +715,12 @@ theorem sub_real_error (a b : UInt64) (ha : Finite a) (hb : Finite b)
         norm_num [arithmeticEpsilon]
 
 #print axioms roundScaledMagnitude_spec
+#print axioms roundedMagnitude_relative_error
+#print axioms roundScaledMagnitude_relative_spec
+#print axioms roundScaledValue_relative_spec
+#print axioms add_relative_spec
 #print axioms add_real_error
+#print axioms add_real_relative_error
 #print axioms sub_real_error
 
 end CodeLib.IEEE64

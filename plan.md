@@ -485,5 +485,10 @@ finiteness and the piecewise error budget (zero when empty and
 records the aggregate-mass interface without weakening the raw operational
 spec.
 
-Checkpoint 6, the scale-aware `u = 2^-53` primitive roundoff and standard
-`gamma` dot-product strengthening, is in progress.
+Checkpoint 6 is in progress.  Its first independently validated subcheckpoint
+derives `u = 2^-53` relative rounding directly from the integer
+`roundScaledMagnitude` model and lifts it to binary64 addition.  This bound is
+valid even for cancellation and subnormal exact sums because addition remains
+on the common `2^-1074` grid.  Scale-aware multiplication, generic `gamma`
+algebra, the dot-product bound, and its exact-WAT attachment follow as separate
+publishable subcheckpoints.

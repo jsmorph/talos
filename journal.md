@@ -970,3 +970,25 @@ Publish and fetch-verify the absolute numerical WAT checkpoint, then land the
 scale-aware binary64 primitive results and prove the standard gamma-weighted
 dot-product/condition-number strengthening under explicit normality and
 underflow-exclusion assumptions.
+
+### Scale-aware binary64 addition checkpoint
+
+- Published and fetch-verified the generated-WAT absolute numerical
+  checkpoint as remote commit `fb868dd`; its remote tree exactly matches the
+  validated local tree.
+- Defined the round-to-nearest binary64 unit roundoff `unitRoundoff64 =
+  2^-53`.  Proved the integer relative-error bound for `roundedMagnitude`,
+  lifted it through signed scaled packing, and instantiated it for finite
+  binary64 addition.
+- `add_real_relative_error` proves
+  `|fl(a + b) - (a + b)| <= 2^-53 * |a + b|` for finite unit-bounded inputs.
+  No lower normality premise is needed: exact addition stays on the binary64
+  common integer grid, including cancellation and subnormal sums.
+- `LD_PRELOAD=/tmp/lean_procself.so lake build CodeLib.IEEE64.Roundoff`
+  passed in 3,048 jobs under exact Lean 4.34.0-rc2.  Every new public theorem
+  reports exactly `[propext, Classical.choice, Quot.sound]`.
+
+### Next work
+
+Publish and fetch-verify this addition checkpoint, then add the adaptive
+relative/underflow multiplication layer.
