@@ -398,7 +398,156 @@ theorem roundDyadicMagnitude1074_spec (negative : Bool) (n : Nat)
       simpa [candidate, totalShift, pow_add, Nat.mul_assoc,
         Nat.mul_comm, Nat.mul_left_comm] using herr
 
+/-- Binary64 square-root rounding is finite and positive on scaled magnitudes
+at most one, with error at most `2^1022` in the common `2^-1074` scale. -/
+theorem roundSqrtMagnitude_spec (magnitude : Nat)
+    (hbound : magnitude ≤ 2 ^ 1074) :
+    Finite (Wasm.IEEE64.roundSqrtMagnitude magnitude) ∧
+      Wasm.IEEE64.sign (Wasm.IEEE64.roundSqrtMagnitude magnitude) = false ∧
+      |(Wasm.IEEE64.scaledMagnitude
+            (Wasm.IEEE64.roundSqrtMagnitude magnitude) : ℝ) -
+          Real.sqrt (magnitude * 2 ^ 1074)| ≤ (2 : ℝ) ^ 1022 := by
+  by_cases hmagnitude : magnitude = 0
+  · subst magnitude
+    norm_num [Wasm.IEEE64.roundSqrtMagnitude, Finite,
+      Wasm.IEEE64.isFinite, Wasm.IEEE64.sign,
+      Wasm.IEEE64.scaledMagnitude, Wasm.IEEE64.exponent,
+      Wasm.IEEE64.fraction, UInt64.toNat_ofNat]
+  · let radicand := magnitude * 2 ^ 1074
+    let rootFloor := Nat.sqrt radicand
+    let outputShift := Nat.log2 rootFloor - 52
+    let rounded := Wasm.IEEE32.roundSqrtIntegral radicand outputShift
+    let candidate := rounded * 2 ^ outputShift
+    have hradicand : radicand ≤ 2 ^ 2148 := by
+      calc
+        radicand ≤ 2 ^ 1074 * 2 ^ 1074 :=
+          Nat.mul_le_mul_right (2 ^ 1074) hbound
+        _ = 2 ^ 2148 := by rw [← pow_add]
+    have hrootBound : rootFloor ≤ 2 ^ 1074 := by
+      calc
+        rootFloor ≤ Nat.sqrt (2 ^ 2148) := by
+          simpa [rootFloor] using Nat.sqrt_le_sqrt hradicand
+        _ = 2 ^ 1074 := by
+          rw [show (2 : Nat) ^ 2148 = ((2 : Nat) ^ 1074) ^ 2 by
+            rw [pow_two, ← pow_add]]
+          exact Nat.sqrt_eq' _
+    have hradicandNe : radicand ≠ 0 := by
+      simp [radicand, hmagnitude]
+    have hrootNe : rootFloor ≠ 0 := by
+      intro h
+      have hupper := Nat.lt_succ_sqrt' radicand
+      simp [rootFloor, h] at hupper
+      apply hradicandNe
+      omega
+    have hrootLt : rootFloor < 2 ^ 1075 :=
+      hrootBound.trans_lt (by norm_num)
+    have hlogUpper : Nat.log2 rootFloor < 1075 :=
+      (Nat.log2_lt hrootNe).2 hrootLt
+    have hshiftMax : outputShift ≤ 1022 := by
+      simp [outputShift]
+      omega
+    have hroundBounds :=
+      CodeLib.IEEE32.roundSqrtIntegral_bounds radicand outputShift
+    change rootFloor / 2 ^ outputShift ≤ rounded ∧
+      rounded ≤ rootFloor / 2 ^ outputShift + 1 at hroundBounds
+    have hrepresentable : roundedMagnitude candidate = candidate := by
+      by_cases hzero : outputShift = 0
+      · have hlog : Nat.log2 rootFloor ≤ 52 := by
+          simpa [outputShift, Nat.sub_eq_zero_iff_le] using hzero
+        have hrootLt53 : rootFloor < 2 ^ 53 := by
+          have hself : rootFloor < 2 ^ (Nat.log2 rootFloor + 1) :=
+            Nat.lt_log2_self
+          exact hself.trans_le
+            (Nat.pow_le_pow_right (by omega) (by omega))
+        have hroundedUpper : rounded ≤ 2 ^ 53 := by
+          simp [hzero] at hroundBounds
+          omega
+        simp [candidate, hzero, roundedMagnitude_eq_self hroundedUpper]
+      · have hshiftPos : 0 < outputShift := Nat.pos_of_ne_zero hzero
+        have hshiftEq : 52 + outputShift = Nat.log2 rootFloor := by
+          simp [outputShift]
+          omega
+        have hpowLower : 2 ^ 52 * 2 ^ outputShift ≤ rootFloor := by
+          rw [← pow_add, hshiftEq]
+          exact Nat.log2_self_le hrootNe
+        have hpowUpper : rootFloor < 2 ^ 53 * 2 ^ outputShift := by
+          rw [← pow_add]
+          have heq : 53 + outputShift = Nat.log2 rootFloor + 1 := by
+            rw [← hshiftEq]
+            omega
+          rw [heq]
+          exact Nat.lt_log2_self
+        have hquotientLower :
+            2 ^ 52 ≤ rootFloor / 2 ^ outputShift :=
+          (Nat.le_div_iff_mul_le (by positivity)).2 hpowLower
+        have hquotientUpper :
+            rootFloor / 2 ^ outputShift < 2 ^ 53 :=
+          (Nat.div_lt_iff_lt_mul (by positivity)).2 hpowUpper
+        exact roundedMagnitude_shifted rounded outputShift
+          (by omega) (by omega)
+    have hcandidateMax : candidate < 2 ^ 1076 := by
+      by_cases hzero : outputShift = 0
+      · have hlog : Nat.log2 rootFloor ≤ 52 := by
+          simpa [outputShift, Nat.sub_eq_zero_iff_le] using hzero
+        have hrootLt53 : rootFloor < 2 ^ 53 := by
+          exact Nat.lt_log2_self.trans_le
+            (Nat.pow_le_pow_right (by omega) (by omega))
+        have hroundedUpper : rounded ≤ 2 ^ 53 := by
+          simp [hzero] at hroundBounds
+          omega
+        simp [candidate, hzero]
+        exact hroundedUpper.trans_lt (by norm_num)
+      · have hroundedUpper : rounded ≤ 2 ^ 53 := by
+          have hshiftPos : 0 < outputShift := Nat.pos_of_ne_zero hzero
+          have hshiftEq : 52 + outputShift = Nat.log2 rootFloor := by
+            simp [outputShift]
+            omega
+          have hpowUpper : rootFloor < 2 ^ 53 * 2 ^ outputShift := by
+            rw [← pow_add]
+            have heq : 53 + outputShift = Nat.log2 rootFloor + 1 := by
+              rw [← hshiftEq]
+              omega
+            rw [heq]
+            exact Nat.lt_log2_self
+          have hquotientUpper :
+              rootFloor / 2 ^ outputShift < 2 ^ 53 :=
+            (Nat.div_lt_iff_lt_mul (by positivity)).2 hpowUpper
+          omega
+        calc
+          candidate ≤ 2 ^ 53 * 2 ^ 1022 :=
+            Nat.mul_le_mul hroundedUpper
+              (Nat.pow_le_pow_right (by omega) hshiftMax)
+          _ = 2 ^ 1075 := by rw [← pow_add]
+          _ < 2 ^ 1076 := Nat.pow_lt_pow_right (by omega) (by omega)
+    have hpack := roundScaledMagnitude_spec false candidate hcandidateMax
+    have hsign := sign_roundScaledMagnitude false candidate hcandidateMax
+    have hactual : Wasm.IEEE64.roundSqrtMagnitude magnitude =
+        Wasm.IEEE64.roundScaledMagnitude false candidate := by
+      simp only [Wasm.IEEE64.roundSqrtMagnitude, beq_iff_eq,
+        if_neg hmagnitude]
+      rfl
+    have herrHalf :=
+      CodeLib.IEEE32.roundSqrtIntegral_real_error radicand outputShift
+    have hhalf : (2 : ℝ) ^ outputShift / 2 ≤ (2 : ℝ) ^ 1022 := by
+      calc
+        (2 : ℝ) ^ outputShift / 2 ≤ (2 : ℝ) ^ outputShift := by
+          have hp : 0 ≤ (2 : ℝ) ^ outputShift := by positivity
+          linarith
+        _ ≤ (2 : ℝ) ^ 1022 :=
+          pow_le_pow_right₀ (by norm_num) hshiftMax
+    have herr : |(candidate : ℝ) - Real.sqrt radicand| ≤
+        (2 : ℝ) ^ 1022 := by
+      have := herrHalf.trans hhalf
+      simpa only [candidate, Nat.cast_mul, Nat.cast_pow, Nat.cast_ofNat]
+        using this
+    rw [hactual]
+    refine ⟨hpack.1, hsign, ?_⟩
+    rw [hpack.2.1, hrepresentable]
+    simpa only [radicand, Nat.cast_mul, Nat.cast_pow, Nat.cast_ofNat]
+      using herr
+
 #print axioms roundDyadicMagnitude1074_spec
 #print axioms roundRationalMagnitude_spec
+#print axioms roundSqrtMagnitude_spec
 
 end CodeLib.IEEE64

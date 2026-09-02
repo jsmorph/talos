@@ -263,9 +263,8 @@ each phase:
 
 ### Current status
 
-Phase 1 is in progress.  The common binary64 scaled-magnitude packing theorem
-and the `2^-52` addition, subtraction, multiplication, and division results
-pass.  Multiplication and division are attached to decoded-WAT,
-fuel-independent execution theorems.  Binary64 square root and decoded-WAT
-results for square root, addition, and subtraction remain in Phase 1.  Phases
-2 through 4 remain pending.
+Phase 1 is complete.  Binary64 addition, subtraction, multiplication,
+division, and square root have finite `2^-52` real-error results on their
+explicit bounded domains.  Each operation is represented by decoded
+hand-written WAT with an explicit small-step trace and a fuel-independent
+execution/error theorem.  Phases 2 through 4 remain pending.

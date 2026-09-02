@@ -535,3 +535,28 @@ differential tests, and an example-program theorem.
   passes.
 - Next: publish and fetch-verify this checkpoint, then prove binary64 square
   root and add the remaining direct f64 operation WAT examples.
+
+### Binary64 square-root and operation-WAT checkpoint
+
+- Proved `CodeLib.IEEE64.roundSqrtMagnitude_spec` by adapting the verified
+  integer-midpoint argument to the binary64 scale and passing the exact
+  candidate through `roundScaledMagnitude`.  Magnitudes at most `2^1074`
+  produce a finite positive value within `2^1022` scaled units of the exact
+  scaled real square root.
+- Added `squareRootEpsilon = 2^-52`, the positive finite-operation theorem,
+  the real square-root error theorem, and its decoded-WAT execution theorem.
+- Added direct decoded WAT modules for `f64.sqrt`, `f64.add`, and `f64.sub`.
+  Each has an explicit `SmallStep.Steps` trace and a fuel-independent
+  `TerminatesWith` theorem; the addition and subtraction traces are connected
+  to the existing binary64 `2^-52` real-error theorems.
+- `lake build CodeLib.IEEE64.Rounders` passed in 3,050 jobs;
+  `lake build Interpreter.Wasm.Examples.Float64SquareRoot` and
+  `Interpreter.Wasm.Examples.Float64AddSub` each passed in 15 jobs; and
+  `lake build CodeLib.IEEE64.Operations` passed in 3,056 jobs.  All commands
+  used exact Lean 4.34.0-rc2.
+- Axiom reports for the new rounder, square-root, addition-WAT, subtraction-WAT,
+  and square-root-WAT theorems contain only `propext`, `Classical.choice`, and
+  `Quot.sound`.  Phase 1 now has representative decoded-WAT theorems for all
+  five requested binary64 arithmetic operations.
+- Next: publish and fetch-verify this checkpoint, then add the reusable real
+  error-composition layer and refactor the cubic sine proof to consume it.

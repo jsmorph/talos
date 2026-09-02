@@ -1,6 +1,8 @@
 import CodeLib.IEEE64.Rounders
+import Interpreter.Wasm.Examples.Float64AddSub
 import Interpreter.Wasm.Examples.Float64Division
 import Interpreter.Wasm.Examples.Float64Multiplication
+import Interpreter.Wasm.Examples.Float64SquareRoot
 import Interpreter.Wasm.Examples.IEEE64
 import Mathlib.Tactic
 
@@ -14,8 +16,37 @@ set_option exponentiation.threshold 4096
 set_option maxRecDepth 8192
 
 open Wasm
+open Wasm.Float64Addition
 open Wasm.Float64Division
 open Wasm.Float64Multiplication
+open Wasm.Float64SquareRoot
+open Wasm.Float64Subtraction
+
+theorem add_program_real_error (a b : UInt64)
+    (ha : Finite a) (hb : Finite b)
+    (haBound : |value a| ≤ 1) (hbBound : |value b| ≤ 1) :
+    SmallStep.TerminatesWith (addConfig a b)
+      (fun values _ =>
+        values = [.f64 (Wasm.IEEE64.add a b)] ∧
+          Finite (Wasm.IEEE64.add a b) ∧
+          |value (Wasm.IEEE64.add a b) - (value a + value b)| ≤
+            arithmeticEpsilon) := by
+  have hresult := add_real_error a b ha hb haBound hbBound
+  exact (add_terminates a b).mono
+    (fun _values _store hvalues => ⟨hvalues, hresult.1, hresult.2⟩)
+
+theorem sub_program_real_error (a b : UInt64)
+    (ha : Finite a) (hb : Finite b)
+    (haBound : |value a| ≤ 1) (hbBound : |value b| ≤ 1) :
+    SmallStep.TerminatesWith (subConfig a b)
+      (fun values _ =>
+        values = [.f64 (Wasm.IEEE64.sub a b)] ∧
+          Finite (Wasm.IEEE64.sub a b) ∧
+          |value (Wasm.IEEE64.sub a b) - (value a - value b)| ≤
+            arithmeticEpsilon) := by
+  have hresult := sub_real_error a b ha hb haBound hbBound
+  exact (sub_terminates a b).mono
+    (fun _values _store hvalues => ⟨hvalues, hresult.1, hresult.2⟩)
 
 theorem mul_nan_left {a : UInt64} (b : UInt64)
     (ha : Wasm.IEEE64.isNaN a = true) :
@@ -247,6 +278,108 @@ theorem div_program_real_error (a b : UInt64)
   exact (div_terminates a b).mono
     (fun _values _store hvalues => ⟨hvalues, hresult.1, hresult.2⟩)
 
+/-- Every positive, nonzero finite input reaches the exact integer-square-root
+rounder. -/
+theorem sqrt_positive_finite (a : UInt64)
+    (ha : Finite a)
+    (ha0 : Wasm.IEEE64.scaledMagnitude a ≠ 0)
+    (hsign : Wasm.IEEE64.sign a = false) :
+    Wasm.IEEE64.sqrt a =
+      Wasm.IEEE64.roundSqrtMagnitude (Wasm.IEEE64.scaledMagnitude a) := by
+  have hna := not_nan_of_finite ha
+  have hia := not_infinite_of_finite ha
+  simp [Wasm.IEEE64.sqrt, hna, hia, ha0, hsign]
+
+noncomputable def squareRootEpsilon : ℝ := 1 / (2 : ℝ) ^ 52
+
+/-- On positive finite binary64 inputs no larger than one, square root differs
+from exact real square root by at most `2^-52`. -/
+theorem sqrt_real_error (a : UInt64)
+    (ha : Finite a)
+    (ha0 : Wasm.IEEE64.scaledMagnitude a ≠ 0)
+    (hsign : Wasm.IEEE64.sign a = false)
+    (hbound : Wasm.IEEE64.scaledMagnitude a ≤ 2 ^ 1074) :
+    Finite (Wasm.IEEE64.sqrt a) ∧
+      |value (Wasm.IEEE64.sqrt a) - Real.sqrt (value a)| ≤
+        squareRootEpsilon := by
+  let magnitude := Wasm.IEEE64.scaledMagnitude a
+  let result := Wasm.IEEE64.roundSqrtMagnitude magnitude
+  have hs := roundSqrtMagnitude_spec magnitude hbound
+  have hsqrt := sqrt_positive_finite a ha ha0 hsign
+  rw [hsqrt]
+  constructor
+  · exact hs.1
+  · have hscalePos : 0 < (2 : ℝ) ^ 1074 := by positivity
+    have hmagnitudeNonnegative : 0 ≤ (magnitude : ℝ) := by positivity
+    have hsqrtScalePos : 0 < Real.sqrt ((2 : ℝ) ^ 1074) :=
+      Real.sqrt_pos.2 hscalePos
+    have hsqrtScaleSq :
+        Real.sqrt ((2 : ℝ) ^ 1074) * Real.sqrt ((2 : ℝ) ^ 1074) =
+          (2 : ℝ) ^ 1074 := by
+      simpa [pow_two] using Real.sq_sqrt (le_of_lt hscalePos)
+    have hsqrtScale :
+        Real.sqrt ((magnitude : ℝ) / (2 : ℝ) ^ 1074) =
+          Real.sqrt ((magnitude : ℝ) * (2 : ℝ) ^ 1074) /
+            (2 : ℝ) ^ 1074 := by
+      rw [Real.sqrt_div hmagnitudeNonnegative,
+        Real.sqrt_mul hmagnitudeNonnegative]
+      calc
+        Real.sqrt (magnitude : ℝ) / Real.sqrt ((2 : ℝ) ^ 1074) =
+            Real.sqrt (magnitude : ℝ) * Real.sqrt ((2 : ℝ) ^ 1074) /
+              (Real.sqrt ((2 : ℝ) ^ 1074) *
+                Real.sqrt ((2 : ℝ) ^ 1074)) := by
+          field_simp [ne_of_gt hsqrtScalePos]
+        _ = Real.sqrt (magnitude : ℝ) * Real.sqrt ((2 : ℝ) ^ 1074) /
+              (2 : ℝ) ^ 1074 := by rw [hsqrtScaleSq]
+    have hvalueA :
+        value a = (magnitude : ℝ) / (2 : ℝ) ^ 1074 := by
+      simp [value, magnitude, Wasm.IEEE64.scaledValue, hsign]
+    have hvalueResult :
+        value result =
+          (Wasm.IEEE64.scaledMagnitude result : ℝ) / (2 : ℝ) ^ 1074 := by
+      simp [value, Wasm.IEEE64.scaledValue, hs.2.1, result]
+    have heq :
+        value result - Real.sqrt (value a) =
+          ((Wasm.IEEE64.scaledMagnitude result : ℝ) -
+              Real.sqrt ((magnitude : ℝ) * (2 : ℝ) ^ 1074)) /
+            (2 : ℝ) ^ 1074 := by
+      rw [hvalueA, hvalueResult, hsqrtScale]
+      ring
+    change |value result - Real.sqrt (value a)| ≤ squareRootEpsilon
+    rw [heq, abs_div, abs_of_pos hscalePos]
+    apply (div_le_iff₀ hscalePos).2
+    have herr := hs.2.2
+    calc
+      |(Wasm.IEEE64.scaledMagnitude result : ℝ) -
+          Real.sqrt ((magnitude : ℝ) * (2 : ℝ) ^ 1074)| ≤
+          (2 : ℝ) ^ 1022 := by
+        simpa only [result, magnitude, Nat.cast_mul, Nat.cast_pow,
+          Nat.cast_ofNat] using herr
+      _ = squareRootEpsilon * (2 : ℝ) ^ 1074 := by
+        norm_num [squareRootEpsilon]
+
+theorem sqrt_program_exact (a : UInt64) :
+    SmallStep.TerminatesWith (sqrtConfig a)
+      (fun values _ => values = [.f64 (Wasm.IEEE64.sqrt a)]) :=
+  sqrt_terminates a
+
+/-- Fuel-independent correctness of decoded `f64.sqrt`, including finiteness
+and the `2^-52` real-error bound. -/
+theorem sqrt_program_real_error (a : UInt64)
+    (ha : Finite a)
+    (ha0 : Wasm.IEEE64.scaledMagnitude a ≠ 0)
+    (hsign : Wasm.IEEE64.sign a = false)
+    (hbound : Wasm.IEEE64.scaledMagnitude a ≤ 2 ^ 1074) :
+    SmallStep.TerminatesWith (sqrtConfig a)
+      (fun values _ =>
+        values = [.f64 (Wasm.IEEE64.sqrt a)] ∧
+          Finite (Wasm.IEEE64.sqrt a) ∧
+          |value (Wasm.IEEE64.sqrt a) - Real.sqrt (value a)| ≤
+            squareRootEpsilon) := by
+  have hresult := sqrt_real_error a ha ha0 hsign hbound
+  exact (sqrt_terminates a).mono
+    (fun _values _store hvalues => ⟨hvalues, hresult.1, hresult.2⟩)
+
 theorem sqrt_special_values :
     Wasm.IEEE64.sqrt 0x8000000000000000 = 0x8000000000000000 ∧
     Wasm.IEEE64.sqrt 0x7FF0000000000000 = 0x7FF0000000000000 ∧
@@ -280,6 +413,8 @@ theorem arithmetic_examples :
 
 #print axioms mul_nan_left
 #print axioms mul_infinities
+#print axioms add_program_real_error
+#print axioms sub_program_real_error
 #print axioms mul_program_exact
 #print axioms mul_real_error
 #print axioms mul_program_real_error
@@ -287,6 +422,9 @@ theorem arithmetic_examples :
 #print axioms div_scaled_error
 #print axioms div_real_error
 #print axioms div_program_real_error
+#print axioms sqrt_positive_finite
+#print axioms sqrt_real_error
+#print axioms sqrt_program_real_error
 #print axioms arithmetic_examples
 
 end CodeLib.IEEE64
