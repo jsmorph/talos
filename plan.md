@@ -202,6 +202,9 @@ The f64 conversion implementation and axiom-removal refactor are complete and
 pushed.  The first quantitative rounder contract now proves the exact signed
 integer error of `roundDyadicMagnitude`, and its lift proves the real f32
 multiplication error is at most `2^-23` whenever both finite inputs have
-absolute value at most one.  Rational division, integer square root, and the
-interval sine proof remain the next proof work.  Every passing unit above will
-be committed and pushed before work proceeds to the next unit.
+absolute value at most one.  The rational ties-to-even contract and its f32
+division lift are also complete: for a nonzero finite denominator and a
+quotient of magnitude at most one, the real error is at most `2^-23`, including
+through gradual underflow.  Integer square root and the interval sine proof
+remain the next proof work.  Every passing unit above will be committed and
+pushed before work proceeds to the next unit.

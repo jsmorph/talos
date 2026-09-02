@@ -368,3 +368,15 @@ differential tests, and an example-program theorem.
   theorems contain only standard logical axioms (`propext`,
   `Classical.choice`, and `Quot.sound`); no compatibility axiom or `sorryAx`
   remains.
+- Proved the quotient/remainder error contract for `roundQuotient`, including
+  exact-half parity, and lifted it through every packing branch of
+  `roundRationalMagnitude`.  For a rational scaled magnitude no larger than
+  one, the result is finite and its cleared-denominator error is uniformly
+  bounded by the binary32 unit-roundoff budget.
+- Added `div_real_error` and `div_program_terminates_real_error`.  For finite
+  inputs with a nonzero denominator and numerator magnitude no larger than the
+  denominator magnitude, modeled f32 division and the decoded WAT program are
+  within `2^-23` of exact real division.
+- `lake build CodeLib.IEEE32.Division` passes in 3,051 jobs under exact Lean
+  4.34.0-rc2.  Its rounder, operation, and fuel-independent program error
+  theorems use only standard Lean logical axioms.

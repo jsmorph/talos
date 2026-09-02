@@ -19,6 +19,12 @@ noncomputable def value (x : UInt32) : ℝ :=
 
 def Finite (x : UInt32) : Prop := Wasm.IEEE32.isFinite x = true
 
+theorem natAbs_scaledValue (x : UInt32) :
+    (Wasm.IEEE32.scaledValue x).natAbs =
+      Wasm.IEEE32.scaledMagnitude x := by
+  simp [Wasm.IEEE32.scaledValue]
+  split <;> simp
+
 theorem exponent_encodeFinite (negative : Bool) (e f : Nat)
     (he : e < 2 ^ 8) (hf : f < 2 ^ 23) :
     Wasm.IEEE32.exponent (Wasm.IEEE32.encodeFinite negative e f) = e := by

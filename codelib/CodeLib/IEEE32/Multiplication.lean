@@ -66,11 +66,6 @@ theorem mul_finite_nonzero (a b : UInt32)
   have hib := not_infinite_of_finite hb
   simp [Wasm.IEEE32.mul, hna, hnb, hia, hib, ha0, hb0]
 
-theorem natAbs_scaledValue (x : UInt32) :
-    (Wasm.IEEE32.scaledValue x).natAbs = Wasm.IEEE32.scaledMagnitude x := by
-  simp [Wasm.IEEE32.scaledValue]
-  split <;> simp
-
 /-- The finite multiplication path is uniformly the dyadic rounder, including
 signed-zero products. -/
 theorem mul_finite_rounder (a b : UInt32) (ha : Finite a) (hb : Finite b) :
