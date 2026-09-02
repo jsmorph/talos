@@ -1,6 +1,7 @@
 import CodeLib.IEEE32.Multiplication
 import CodeLib.IEEE64.Operations
 import CodeLib.Numerical.ErrorComposition
+import CodeLib.Numerical.RelativeError
 import Interpreter.Wasm.Examples.FloatNumericalKernels
 
 /-!
@@ -686,6 +687,170 @@ def Dot64ListSafe : List (UInt64 × UInt64) → Prop
   | first :: rest =>
       Dot64Safe (Wasm.IEEE64.mul first.1 first.2) rest
 
+/-- Exact product terms corresponding to a modeled binary64 dot-product
+tail. -/
+noncomputable def dot64ExactTerms
+    (terms : List (UInt64 × UInt64)) : List ℝ :=
+  terms.map fun term =>
+    CodeLib.IEEE64.value term.1 * CodeLib.IEEE64.value term.2
+
+/-- The generic sequential magnitude accumulator is exactly the existing
+absolute-product mass, plus its supplied starting magnitude. -/
+theorem sequentialMagnitude_dot64ExactTerms (magnitude : ℝ)
+    (terms : List (UInt64 × UInt64)) :
+    CodeLib.Numerical.sequentialMagnitude magnitude (dot64ExactTerms terms) =
+      magnitude + dot64AbsMass terms := by
+  induction terms generalizing magnitude with
+  | nil => simp [dot64ExactTerms, CodeLib.Numerical.sequentialMagnitude,
+      dot64AbsMass]
+  | cons term terms ih =>
+      rcases term with ⟨a, b⟩
+      simp only [dot64ExactTerms, List.map_cons,
+        CodeLib.Numerical.sequentialMagnitude, dot64AbsMass]
+      change CodeLib.Numerical.sequentialMagnitude
+          (magnitude + |CodeLib.IEEE64.value a * CodeLib.IEEE64.value b|)
+          (dot64ExactTerms terms) =
+        magnitude +
+          (|CodeLib.IEEE64.value a * CodeLib.IEEE64.value b| +
+            dot64AbsMass terms)
+      rw [ih]
+      ring
+
+theorem dot64ExactAcc_eq_sequentialExactSum (exactAccumulator : ℝ)
+    (terms : List (UInt64 × UInt64)) :
+    dot64ExactAcc exactAccumulator terms =
+      CodeLib.Numerical.sequentialExactSum exactAccumulator
+        (dot64ExactTerms terms) := by
+  induction terms generalizing exactAccumulator with
+  | nil =>
+      simp [dot64ExactAcc, CodeLib.Numerical.sequentialExactSum,
+        dot64ExactTerms]
+  | cons term terms ih =>
+      rcases term with ⟨a, b⟩
+      simp only [dot64ExactAcc, dot64ExactTerms, List.map_cons,
+        CodeLib.Numerical.sequentialExactSum]
+      exact ih _
+
+/-- Tail products whose exact magnitudes are zero or lie outside the
+binary64 underflow region. -/
+def Dot64NormalOrZeroProducts : List (UInt64 × UInt64) → Prop
+  | [] => True
+  | (a, b) :: terms =>
+      (let n := Wasm.IEEE64.scaledMagnitude a *
+          Wasm.IEEE64.scaledMagnitude b;
+        n = 0 ∨ 2 ^ 1126 ≤ n) ∧
+      Dot64NormalOrZeroProducts terms
+
+/-- The explicit safe trace and normal-or-zero product condition instantiate the
+format-independent relative-error dot-product trace. -/
+theorem dot64_relative_trace (accumulator : UInt64)
+    (terms : List (UInt64 × UInt64))
+    (hsafe : Dot64Safe accumulator terms)
+    (hnormalOrZero : Dot64NormalOrZeroProducts terms) :
+    CodeLib.IEEE64.Finite (dot64Acc accumulator terms) ∧
+      CodeLib.Numerical.RelativeDotAcc CodeLib.IEEE64.unitRoundoff64
+        (CodeLib.IEEE64.value accumulator) (dot64ExactTerms terms)
+        (CodeLib.IEEE64.value (dot64Acc accumulator terms)) := by
+  induction terms generalizing accumulator with
+  | nil =>
+      cases hsafe with
+      | nil haccumulator =>
+          exact ⟨by simpa [dot64Acc] using haccumulator,
+            by simp [dot64Acc, dot64ExactTerms,
+              CodeLib.Numerical.RelativeDotAcc.nil]⟩
+  | cons term terms ih =>
+      rcases term with ⟨a, b⟩
+      cases hsafe with
+      | cons haccumulator ha hb haccumulatorBound haBound hbBound
+          hproductBound tail =>
+          simp only [Dot64NormalOrZeroProducts] at hnormalOrZero
+          rcases hnormalOrZero with ⟨hproductNormalOrZero, htailNormalOrZero⟩
+          have hproduct := CodeLib.IEEE64.mul_real_relative_error a b ha hb
+            haBound hbBound hproductNormalOrZero
+          have haddition := CodeLib.IEEE64.add_real_relative_error accumulator
+            (Wasm.IEEE64.mul a b) haccumulator hproduct.1
+            haccumulatorBound hproductBound
+          have htail := ih
+            (Wasm.IEEE64.add accumulator (Wasm.IEEE64.mul a b))
+            tail htailNormalOrZero
+          constructor
+          · simpa [dot64Acc] using htail.1
+          · simp only [dot64ExactTerms, List.map_cons, dot64Acc]
+            exact .cons hproduct.2 haddition.2 htail.2
+
+/-- A nonempty sequential binary64 dot product has the standard
+`gamma_(2n-1)` forward-error bound by its exact absolute product mass.
+`hsafe` supplies finite, bounded intermediate operands (excluding overflow),
+while the normal-or-zero hypotheses exclude multiplication underflow. -/
+theorem dot64_real_gamma_error (first : UInt64 × UInt64)
+    (rest : List (UInt64 × UInt64))
+    (hfirstLeft : CodeLib.IEEE64.Finite first.1)
+    (hfirstRight : CodeLib.IEEE64.Finite first.2)
+    (hfirstLeftBound : |CodeLib.IEEE64.value first.1| ≤ 1)
+    (hfirstRightBound : |CodeLib.IEEE64.value first.2| ≤ 1)
+    (hfirstNormalOrZero :
+      let n := Wasm.IEEE64.scaledMagnitude first.1 *
+        Wasm.IEEE64.scaledMagnitude first.2
+      n = 0 ∨ 2 ^ 1126 ≤ n)
+    (hsafe : Dot64Safe (Wasm.IEEE64.mul first.1 first.2) rest)
+    (hnormalOrZero : Dot64NormalOrZeroProducts rest)
+    (hku : (((2 * rest.length + 1 : ℕ) : ℝ) *
+      CodeLib.IEEE64.unitRoundoff64) < 1) :
+    CodeLib.IEEE64.Finite (dot64 first rest) ∧
+      |CodeLib.IEEE64.value (dot64 first rest) - dot64Exact first rest| ≤
+        CodeLib.Numerical.gamma (2 * rest.length + 1)
+          CodeLib.IEEE64.unitRoundoff64 * dot64AbsMass (first :: rest) := by
+  have hfirst := CodeLib.IEEE64.mul_real_relative_error first.1 first.2
+    hfirstLeft hfirstRight hfirstLeftBound hfirstRightBound hfirstNormalOrZero
+  have htrace := dot64_relative_trace
+    (Wasm.IEEE64.mul first.1 first.2) rest hsafe hnormalOrZero
+  have hu : 0 ≤ CodeLib.IEEE64.unitRoundoff64 := by
+    norm_num [CodeLib.IEEE64.unitRoundoff64]
+  have hku' : (((2 * (dot64ExactTerms rest).length + 1 : ℕ) : ℝ) *
+      CodeLib.IEEE64.unitRoundoff64) < 1 := by
+    simpa [dot64ExactTerms] using hku
+  have herror := CodeLib.Numerical.relativeDotAcc_gamma_error hu hku'
+    hfirst.2 htrace.2
+  constructor
+  · simpa [dot64] using htrace.1
+  · rw [sequentialMagnitude_dot64ExactTerms] at herror
+    simpa [dot64, dot64Exact, dot64AbsMass,
+      dot64ExactAcc_eq_sequentialExactSum, dot64ExactTerms] using herror
+
+/-- Absolute-product mass divided by the magnitude of the exact dot product.
+This is the usual condition number for summation cancellation. -/
+noncomputable def dot64ConditionNumber (first : UInt64 × UInt64)
+    (rest : List (UInt64 × UInt64)) : ℝ :=
+  dot64AbsMass (first :: rest) / |dot64Exact first rest|
+
+/-- The forward gamma bound as a relative-error estimate.  Unlike the
+absolute mass theorem, this corollary explicitly requires a nonzero exact dot
+product. -/
+theorem dot64_conditioned_relative_error (first : UInt64 × UInt64)
+    (rest : List (UInt64 × UInt64))
+    (hfirstLeft : CodeLib.IEEE64.Finite first.1)
+    (hfirstRight : CodeLib.IEEE64.Finite first.2)
+    (hfirstLeftBound : |CodeLib.IEEE64.value first.1| ≤ 1)
+    (hfirstRightBound : |CodeLib.IEEE64.value first.2| ≤ 1)
+    (hfirstNormalOrZero :
+      let n := Wasm.IEEE64.scaledMagnitude first.1 *
+        Wasm.IEEE64.scaledMagnitude first.2
+      n = 0 ∨ 2 ^ 1126 ≤ n)
+    (hsafe : Dot64Safe (Wasm.IEEE64.mul first.1 first.2) rest)
+    (hnormalOrZero : Dot64NormalOrZeroProducts rest)
+    (hku : (((2 * rest.length + 1 : ℕ) : ℝ) *
+      CodeLib.IEEE64.unitRoundoff64) < 1)
+    (hexact : dot64Exact first rest ≠ 0) :
+    |CodeLib.IEEE64.value (dot64 first rest) / dot64Exact first rest - 1| ≤
+      CodeLib.Numerical.gamma (2 * rest.length + 1)
+        CodeLib.IEEE64.unitRoundoff64 * dot64ConditionNumber first rest := by
+  have hgamma := (dot64_real_gamma_error first rest hfirstLeft hfirstRight
+    hfirstLeftBound hfirstRightBound hfirstNormalOrZero hsafe hnormalOrZero
+    hku).2
+  have hdiv := CodeLib.Numerical.division_by_exact_constant hexact hgamma
+  rw [div_self hexact] at hdiv
+  simpa [dot64ConditionNumber, div_eq_mul_inv, mul_assoc] using hdiv
+
 /-- Exact-real sufficient conditions for dot-product tail stages.  Each
 product reserves one binary64 unit error and each multiply-add target reserves
 the two-unit local budget. -/
@@ -1301,6 +1466,11 @@ theorem dot4_program_real_error_of_headroom
 #print axioms dot64List_real_error_of_uniform
 #print axioms dot64_safe_of_headroom
 #print axioms dot64_real_error_of_headroom
+#print axioms dot64ExactAcc_eq_sequentialExactSum
+#print axioms sequentialMagnitude_dot64ExactTerms
+#print axioms dot64_relative_trace
+#print axioms dot64_real_gamma_error
+#print axioms dot64_conditioned_relative_error
 #print axioms dot_real_error
 #print axioms dot_program_real_error
 #print axioms dot4_program_real_error

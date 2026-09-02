@@ -1039,3 +1039,27 @@ format-independent geometric and `gamma` accumulation inequalities.
 Publish and fetch-verify the generic accumulation checkpoint, then instantiate
 the trace with the modeled binary64 dot fold and prove its condition-number
 corollary.
+
+### Modeled binary64 gamma-bound checkpoint
+
+- Published and fetch-verified the reusable relative-error accumulation
+  checkpoint as remote commit `0fe23a3`; its fetched tree exactly matches the
+  validated local tree.
+- Instantiated `RelativeDotAcc` with the pure IEEE64 `dot64` fold.
+  `dot64_real_gamma_error` proves finiteness and
+  `|fl(dot)-exact| <= gamma (2*n-1) 2^-53 * dot64AbsMass` for a nonempty list.
+  Its public hypotheses expose the recursive finite/no-overflow trace,
+  normal-or-zero exact products, unit input bounds, and `k * u < 1`.
+- Reused the pre-existing canonical `dot64AbsMass` rather than introducing a
+  second mass notion.  `dot64_conditioned_relative_error` divides the forward
+  bound by an explicitly nonzero exact dot product and exposes the usual
+  condition number `dot64AbsMass / |exact|`.
+- `LD_PRELOAD=/tmp/lean_procself.so lake build CodeLib.Numerical.Kernels`
+  passed in 3,063 jobs under exact Lean 4.34.0-rc2.  The bridge, trace,
+  gamma-bound, and condition-number theorems all report exactly
+  `[propext, Classical.choice, Quot.sound]`.
+
+### Next work
+
+Publish and fetch-verify the pure modeled gamma checkpoint, then attach both
+gamma conclusions to the exact generated memory-backed WAT execution.

@@ -485,7 +485,7 @@ finiteness and the piecewise error budget (zero when empty and
 records the aggregate-mass interface without weakening the raw operational
 spec.
 
-Checkpoint 6 is in progress.  Its first three independently validated
+Checkpoint 6 is in progress.  Its first four independently validated
 subcheckpoints derive `u = 2^-53` relative rounding directly from the integer
 `roundScaledMagnitude` model and lifts it to binary64 addition.  This bound is
 valid even for cancellation and subnormal exact sums because addition remains
@@ -494,5 +494,7 @@ bound: relative `u` outside underflow, half a minimum subnormal below it, plus
 a mixed global corollary.  The format-independent numerical layer now proves
 the geometric accumulation inequalities and the standard
 `gamma(k,u) = k*u/(1-k*u)` conversion for sequential multiply/add traces.
-Instantiating that trace for binary64 dot products and attaching it to exact
-WAT execution remain separate publishable subcheckpoints.
+The pure binary64 instantiation is also complete: it proves the standard
+`gamma(2*n-1,u)` forward bound using the canonical `dot64AbsMass`, plus a
+condition-number relative-error corollary for nonzero exact results.  Attaching
+these results to exact WAT execution remains the next publishable subcheckpoint.

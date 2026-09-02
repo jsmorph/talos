@@ -264,6 +264,24 @@ def sequentialMagnitude : ℝ → List ℝ → ℝ
   | magnitude, term :: terms =>
       sequentialMagnitude (magnitude + |term|) terms
 
+theorem sequentialExactSum_eq_add_sum (accumulator : ℝ) (terms : List ℝ) :
+    sequentialExactSum accumulator terms = accumulator + terms.sum := by
+  induction terms generalizing accumulator with
+  | nil => simp [sequentialExactSum]
+  | cons term terms ih =>
+      simp only [sequentialExactSum, List.sum_cons, ih]
+      ring
+
+theorem sequentialMagnitude_eq_add_sum_abs (magnitude : ℝ)
+    (terms : List ℝ) :
+    sequentialMagnitude magnitude terms =
+      magnitude + (terms.map fun term => |term|).sum := by
+  induction terms generalizing magnitude with
+  | nil => simp [sequentialMagnitude]
+  | cons term terms ih =>
+      simp only [sequentialMagnitude, List.map_cons, List.sum_cons, ih]
+      ring
+
 /-- A sequential dot-product trace in the standard relative-error model.
 Each stage rounds one exact product term and then rounds its addition to the
 current approximate accumulator. -/
@@ -349,6 +367,8 @@ theorem relativeDotAcc_gamma_error {u first roundedFirst output : ℝ}
 #print axioms geometric_error_le_gamma_mul
 #print axioms relative_error_le_gamma_mul
 #print axioms relative_mul_add_step_geometric
+#print axioms sequentialExactSum_eq_add_sum
+#print axioms sequentialMagnitude_eq_add_sum_abs
 #print axioms relativeDotAcc_geometric_error
 #print axioms relativeDotAcc_gamma_error
 
