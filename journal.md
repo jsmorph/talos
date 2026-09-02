@@ -908,7 +908,7 @@ roundoff claims remain independently reusable.
   `SmallStep.f64Load_words64` supplies both read-only loads; the prefix lemma
   identifies the `f64.mul`/`f64.add` result with the next modeled accumulator.
 - Proved `f64Dot_terminates` for arbitrary binary64 word pairs under explicit
-  memory-view, 32-bit no-wrap, and physical-capacity hypotheses.  It returns
+  memory-view, dereferenced-slot no-wrap, and physical-capacity hypotheses.  It returns
   exactly `Kernels.dot64List terms` and preserves the complete `MachineStore`,
   not merely the observed array regions.  No finiteness or magnitude
   assumption appears in this operational theorem.
@@ -931,3 +931,42 @@ roundoff claims remain independently reusable.
 Publish and fetch-verify the raw total-correctness checkpoint, then use
 `TerminatesWith.mono` to attach the total-list finite/error conclusions under
 recursive, absolute-mass, and uniform-envelope safety assumptions.
+
+- Published and fetch-verified the raw total-correctness checkpoint as remote
+  commit `ee6e8fc`; its fetched tree is byte-identical to the validated local
+  tree.
+
+### Generated-WAT absolute numerical checkpoint
+
+- Added `f64Dot_terminates_real_error`, which monotonically strengthens the
+  exact operational theorem under `Dot64UnitInputs` and `Dot64ListSafe`.
+  Its postcondition retains the exact `dot64List` result and complete-store
+  equality, then proves result finiteness and distance from the conventional
+  exact real sum at most `dot64ListErrorBudget`.
+- Added public aggregate interfaces for absolute mass and uniform operand
+  envelopes.  The former replaces recursive rounded-intermediate obligations
+  with `dot64AbsMass terms + budget <= 1`; the latter uses
+  `n * (A * B) + budget <= 1` with explicit nonnegative unit bounds and
+  per-input finite/magnitude hypotheses.  For nonempty `n`, the budget is
+  exactly `(2 * n - 1) * 2^-52`; for empty input it is zero.
+- Added a second export-linked `F64DotNumericalSpec` and
+  `provesNumerical` theorem for the aggregate absolute-mass contract.  The raw
+  `F64DotSpec` remains independently available for arbitrary bit patterns.
+  The proved `dotExport` equality connects the name `dot` to function index
+  zero rather than leaving that association only as a build-time guard.
+  Both specs expose the proved equality between the standard generated-module
+  `initConfig` and the direct relational proof state.  Their address premises
+  cover every dereferenced slot; the final unused increment may wrap exactly
+  at `2^32`.  The separate zero-length theorem needs no memory premise.
+- `lake build Project.F64Dot.Spec` passed in 3,364 jobs under exact Lean
+  4.34.0-rc2.  The recursive, absolute-mass, uniform-envelope, and linked-spec
+  theorems all report exactly `[propext, Classical.choice, Quot.sound]`.
+  `git diff --check` and the changed-source scan find no `sorry`, `admit`,
+  axiom declaration, or `native_decide` dependency.
+
+### Next work
+
+Publish and fetch-verify the absolute numerical WAT checkpoint, then land the
+scale-aware binary64 primitive results and prove the standard gamma-weighted
+dot-product/condition-number strengthening under explicit normality and
+underflow-exclusion assumptions.

@@ -353,8 +353,9 @@ The hypotheses will keep machine safety separate from numerical safety:
 
 - the two logical lists have equal length `n` and are represented by the
   memory words starting at the supplied base pointers;
-- every indexed address and eight-byte load is within linear memory, and all
-  32-bit pointer calculations are nonwrapping;
+- every address used by an eight-byte load is within linear memory and is
+  obtained without 32-bit wrap; the final unused post-load increment may wrap
+  at exactly `2^32`;
 - the input words are finite binary64 values with explicit magnitude bounds;
 - intermediate products and prefix accumulators satisfy either the existing
   recursive safety predicate or a proved aggregate sufficient condition.
@@ -393,8 +394,8 @@ that rustc itself is verified.
    measured by the remaining element count.  Use `terminatesWith_of_loop` to
    assemble those exact iterations into an axiom-clean, fuel-independent
    execution theorem.  The invariant preserves both memory views, proves the
-   pointer/no-wrap equations, and identifies the accumulator with the modeled
-   prefix dot product.
+   load-pointer/no-wrap equations, and identifies the accumulator with the
+   modeled prefix dot product.
 4. **Absolute numerical result.**  Prove the prefix/list algebra needed to
    connect the loop invariant to `dot64` and `dot64Exact`.  Compose the exact
    execution theorem with `dot64_real_error`, including an exact empty-list
@@ -474,5 +475,15 @@ hypothesis-free theorem exposes the pre-load empty branch, and a proved
 `initConfig` equality connects the proof configuration to function zero of the
 generated module without native evaluation.
 
-Checkpoint 4, attaching the total-list finite/error theorem to this exact WAT
-execution with `TerminatesWith.mono`, is next.
+Checkpoints 4 and 5 are complete.  Three `TerminatesWith.mono` corollaries
+attach the total-list numerical result to the unchanged exact execution trace:
+one accepts the recursive `Dot64ListSafe` evidence, one accepts an exact
+absolute-mass budget, and one accepts uniform left/right envelopes.  Each
+retains the exact returned word and complete-store equality while adding
+finiteness and the piecewise error budget (zero when empty and
+`(2 * n - 1) * 2^-52` when nonempty).  A second export-linked numerical spec
+records the aggregate-mass interface without weakening the raw operational
+spec.
+
+Checkpoint 6, the scale-aware `u = 2^-53` primitive roundoff and standard
+`gamma` dot-product strengthening, is in progress.

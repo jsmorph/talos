@@ -743,8 +743,206 @@ theorem f64Dot_terminates
         (by simpa using hleftFit) (by simpa using hrightFit)
         (by simpa using hleftCapacity) (by simpa using hrightCapacity)
 
+/-- Public export-entry form of `f64Dot_terminates`.  It records that the
+standard module/function/ABI invocation initializes to the direct proof
+configuration, then states the raw fuel-independent execution contract. -/
+theorem f64Dot_export_terminates
+    (wasm : Store Unit) (left right : UInt32)
+    (terms : List (UInt64 × UInt64))
+    (hleftView :
+      wasm.mem.words64 left terms.length = terms.map Prod.fst)
+    (hrightView :
+      wasm.mem.words64 right terms.length = terms.map Prod.snd)
+    (hleftFit : left.toNat + 8 * terms.length ≤ UInt32.size)
+    (hrightFit : right.toNat + 8 * terms.length ≤ UInt32.size)
+    (hleftCapacity :
+      left.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536)
+    (hrightCapacity :
+      right.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536) :
+    initConfig { module := Project.F64Dot.«module», host := {} } 0 wasm
+        [.i32 (UInt32.ofNat terms.length), .i32 right, .i32 left] =
+        .ok (configFromStore wasm left right (UInt32.ofNat terms.length)) ∧
+      TerminatesWith
+        (configFromStore wasm left right (UInt32.ofNat terms.length))
+        (fun values store =>
+          values = [.f64 (CodeLib.Numerical.Kernels.dot64List terms)] ∧
+            store = (configFromStore wasm left right
+              (UInt32.ofNat terms.length)).store) := by
+  exact ⟨initConfig_eq_configFromStore wasm left right
+      (UInt32.ofNat terms.length),
+    f64Dot_terminates wasm left right terms hleftView hrightView
+      hleftFit hrightFit hleftCapacity hrightCapacity⟩
+
+/-- Fuel-independent execution of the exact generated WAT, strengthened with
+the recursive numerical safety interface.  The postcondition retains both the
+exact modeled return word and equality of the complete machine store before
+adding finiteness and the accumulated absolute-error conclusion. -/
+theorem f64Dot_terminates_real_error
+    (wasm : Store Unit) (left right : UInt32)
+    (terms : List (UInt64 × UInt64))
+    (hleftView :
+      wasm.mem.words64 left terms.length = terms.map Prod.fst)
+    (hrightView :
+      wasm.mem.words64 right terms.length = terms.map Prod.snd)
+    (hleftFit : left.toNat + 8 * terms.length ≤ UInt32.size)
+    (hrightFit : right.toNat + 8 * terms.length ≤ UInt32.size)
+    (hleftCapacity :
+      left.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536)
+    (hrightCapacity :
+      right.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536)
+    (hinputs : CodeLib.Numerical.Kernels.Dot64UnitInputs terms)
+    (hsafe : CodeLib.Numerical.Kernels.Dot64ListSafe terms) :
+    TerminatesWith
+      (configFromStore wasm left right (UInt32.ofNat terms.length))
+      (fun values store =>
+        values = [.f64 (CodeLib.Numerical.Kernels.dot64List terms)] ∧
+          store = (configFromStore wasm left right
+            (UInt32.ofNat terms.length)).store ∧
+          CodeLib.IEEE64.Finite
+            (CodeLib.Numerical.Kernels.dot64List terms) ∧
+          |CodeLib.IEEE64.value
+              (CodeLib.Numerical.Kernels.dot64List terms) -
+              CodeLib.Numerical.Kernels.dot64ExactSum terms| ≤
+            CodeLib.Numerical.Kernels.dot64ListErrorBudget terms) := by
+  have hresult := CodeLib.Numerical.Kernels.dot64List_real_error
+    terms hinputs hsafe
+  exact (f64Dot_terminates wasm left right terms hleftView hrightView
+    hleftFit hrightFit hleftCapacity hrightCapacity).mono
+      (fun _values _store hexecution =>
+        ⟨hexecution.1, hexecution.2, hresult.1, hresult.2⟩)
+
+/-- Exact-real absolute-mass interface for the generated WAT theorem.  The
+single aggregate headroom condition constructs the recursive safety evidence
+without exposing rounded intermediate accumulators at the public boundary. -/
+theorem f64Dot_terminates_real_error_of_abs_mass
+    (wasm : Store Unit) (left right : UInt32)
+    (terms : List (UInt64 × UInt64))
+    (hleftView :
+      wasm.mem.words64 left terms.length = terms.map Prod.fst)
+    (hrightView :
+      wasm.mem.words64 right terms.length = terms.map Prod.snd)
+    (hleftFit : left.toNat + 8 * terms.length ≤ UInt32.size)
+    (hrightFit : right.toNat + 8 * terms.length ≤ UInt32.size)
+    (hleftCapacity :
+      left.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536)
+    (hrightCapacity :
+      right.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536)
+    (hinputs : CodeLib.Numerical.Kernels.Dot64UnitInputs terms)
+    (hbudget :
+      CodeLib.Numerical.Kernels.dot64AbsMass terms +
+          CodeLib.Numerical.Kernels.dot64ListErrorBudget terms ≤ 1) :
+    TerminatesWith
+      (configFromStore wasm left right (UInt32.ofNat terms.length))
+      (fun values store =>
+        values = [.f64 (CodeLib.Numerical.Kernels.dot64List terms)] ∧
+          store = (configFromStore wasm left right
+            (UInt32.ofNat terms.length)).store ∧
+          CodeLib.IEEE64.Finite
+            (CodeLib.Numerical.Kernels.dot64List terms) ∧
+          |CodeLib.IEEE64.value
+              (CodeLib.Numerical.Kernels.dot64List terms) -
+              CodeLib.Numerical.Kernels.dot64ExactSum terms| ≤
+            CodeLib.Numerical.Kernels.dot64ListErrorBudget terms) := by
+  have hresult :=
+    CodeLib.Numerical.Kernels.dot64List_real_error_of_abs_mass
+      terms hinputs hbudget
+  exact (f64Dot_terminates wasm left right terms hleftView hrightView
+    hleftFit hrightFit hleftCapacity hrightCapacity).mono
+      (fun _values _store hexecution =>
+        ⟨hexecution.1, hexecution.2, hresult.1, hresult.2⟩)
+
+/-- Public export-entry form of the aggregate numerical theorem.  It pairs
+the exact generated-module initialization equation with the strengthened
+finite/error execution result. -/
+theorem f64Dot_export_terminates_real_error_of_abs_mass
+    (wasm : Store Unit) (left right : UInt32)
+    (terms : List (UInt64 × UInt64))
+    (hleftView :
+      wasm.mem.words64 left terms.length = terms.map Prod.fst)
+    (hrightView :
+      wasm.mem.words64 right terms.length = terms.map Prod.snd)
+    (hleftFit : left.toNat + 8 * terms.length ≤ UInt32.size)
+    (hrightFit : right.toNat + 8 * terms.length ≤ UInt32.size)
+    (hleftCapacity :
+      left.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536)
+    (hrightCapacity :
+      right.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536)
+    (hinputs : CodeLib.Numerical.Kernels.Dot64UnitInputs terms)
+    (hbudget :
+      CodeLib.Numerical.Kernels.dot64AbsMass terms +
+          CodeLib.Numerical.Kernels.dot64ListErrorBudget terms ≤ 1) :
+    initConfig { module := Project.F64Dot.«module», host := {} } 0 wasm
+        [.i32 (UInt32.ofNat terms.length), .i32 right, .i32 left] =
+        .ok (configFromStore wasm left right (UInt32.ofNat terms.length)) ∧
+      TerminatesWith
+        (configFromStore wasm left right (UInt32.ofNat terms.length))
+        (fun values store =>
+          values = [.f64 (CodeLib.Numerical.Kernels.dot64List terms)] ∧
+            store = (configFromStore wasm left right
+              (UInt32.ofNat terms.length)).store ∧
+            CodeLib.IEEE64.Finite
+              (CodeLib.Numerical.Kernels.dot64List terms) ∧
+            |CodeLib.IEEE64.value
+                (CodeLib.Numerical.Kernels.dot64List terms) -
+                CodeLib.Numerical.Kernels.dot64ExactSum terms| ≤
+              CodeLib.Numerical.Kernels.dot64ListErrorBudget terms) := by
+  exact ⟨initConfig_eq_configFromStore wasm left right
+      (UInt32.ofNat terms.length),
+    f64Dot_terminates_real_error_of_abs_mass
+      wasm left right terms hleftView hrightView hleftFit hrightFit
+        hleftCapacity hrightCapacity hinputs hbudget⟩
+
+/-- Uniform left/right envelope interface for the generated WAT theorem.  All
+sign, unit-range, exact aggregate headroom, address, and capacity assumptions
+remain visible in the statement. -/
+theorem f64Dot_terminates_real_error_of_uniform
+    (wasm : Store Unit) (left right : UInt32)
+    (leftBound rightBound : ℝ)
+    (terms : List (UInt64 × UInt64))
+    (hleftView :
+      wasm.mem.words64 left terms.length = terms.map Prod.fst)
+    (hrightView :
+      wasm.mem.words64 right terms.length = terms.map Prod.snd)
+    (hleftFit : left.toNat + 8 * terms.length ≤ UInt32.size)
+    (hrightFit : right.toNat + 8 * terms.length ≤ UInt32.size)
+    (hleftCapacity :
+      left.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536)
+    (hrightCapacity :
+      right.toNat + 8 * terms.length ≤ wasm.mem.pages * 65536)
+    (hleftNonneg : 0 ≤ leftBound) (hrightNonneg : 0 ≤ rightBound)
+    (hleftUnit : leftBound ≤ 1) (hrightUnit : rightBound ≤ 1)
+    (hinputs : CodeLib.Numerical.Kernels.Dot64UniformInputs
+      leftBound rightBound terms)
+    (hbudget :
+      (terms.length : ℝ) * (leftBound * rightBound) +
+          CodeLib.Numerical.Kernels.dot64ListErrorBudget terms ≤ 1) :
+    TerminatesWith
+      (configFromStore wasm left right (UInt32.ofNat terms.length))
+      (fun values store =>
+        values = [.f64 (CodeLib.Numerical.Kernels.dot64List terms)] ∧
+          store = (configFromStore wasm left right
+            (UInt32.ofNat terms.length)).store ∧
+          CodeLib.IEEE64.Finite
+            (CodeLib.Numerical.Kernels.dot64List terms) ∧
+          |CodeLib.IEEE64.value
+              (CodeLib.Numerical.Kernels.dot64List terms) -
+              CodeLib.Numerical.Kernels.dot64ExactSum terms| ≤
+            CodeLib.Numerical.Kernels.dot64ListErrorBudget terms) := by
+  have hresult := CodeLib.Numerical.Kernels.dot64List_real_error_of_uniform
+    leftBound rightBound terms hleftNonneg hrightNonneg hleftUnit hrightUnit
+      hinputs hbudget
+  exact (f64Dot_terminates wasm left right terms hleftView hrightView
+    hleftFit hrightFit hleftCapacity hrightCapacity).mono
+      (fun _values _store hexecution =>
+        ⟨hexecution.1, hexecution.2, hresult.1, hresult.2⟩)
+
 #print axioms f64Dot_terminates
 #print axioms f64Dot_empty_terminates
 #print axioms initConfig_eq_configFromStore
+#print axioms f64Dot_export_terminates
+#print axioms f64Dot_terminates_real_error
+#print axioms f64Dot_terminates_real_error_of_abs_mass
+#print axioms f64Dot_export_terminates_real_error_of_abs_mass
+#print axioms f64Dot_terminates_real_error_of_uniform
 
 end Project.F64Dot.Proof
