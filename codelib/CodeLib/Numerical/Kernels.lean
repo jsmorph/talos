@@ -18,6 +18,192 @@ open Wasm.FloatNumericalKernels
 
 noncomputable def f32Epsilon : ℝ := 1 / (2 : ℝ) ^ 23
 
+/-- One modeled binary32 Horner stage, with both primitive rounding errors
+made explicit in the conclusion. -/
+theorem horner32_step_real_error (accumulator x coefficient : UInt32)
+    (haccumulator : CodeLib.IEEE32.Finite accumulator)
+    (hx : CodeLib.IEEE32.Finite x)
+    (hcoefficient : CodeLib.IEEE32.Finite coefficient)
+    (haccumulatorBound : |CodeLib.IEEE32.value accumulator| ≤ 1)
+    (hxBound : |CodeLib.IEEE32.value x| ≤ 1)
+    (hcoefficientBound : |CodeLib.IEEE32.value coefficient| ≤ 1)
+    (hproductBound :
+      |CodeLib.IEEE32.value (Wasm.IEEE32.mul accumulator x)| ≤ 1) :
+    CodeLib.IEEE32.Finite
+        (Wasm.IEEE32.add (Wasm.IEEE32.mul accumulator x) coefficient) ∧
+      |CodeLib.IEEE32.value
+          (Wasm.IEEE32.add (Wasm.IEEE32.mul accumulator x) coefficient) -
+          (CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x +
+            CodeLib.IEEE32.value coefficient)| ≤ 2 * f32Epsilon := by
+  let product := Wasm.IEEE32.mul accumulator x
+  have hproduct := CodeLib.IEEE32.mul_real_error accumulator x
+    haccumulator hx haccumulatorBound hxBound
+  change CodeLib.IEEE32.Finite product ∧
+    |CodeLib.IEEE32.value product -
+      CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x| ≤
+        CodeLib.IEEE32.multiplicationEpsilon at hproduct
+  have hsum := CodeLib.IEEE32.add_real_error product coefficient
+    hproduct.1 hcoefficient hproductBound hcoefficientBound
+  change CodeLib.IEEE32.Finite (Wasm.IEEE32.add product coefficient) ∧
+    |CodeLib.IEEE32.value (Wasm.IEEE32.add product coefficient) -
+      (CodeLib.IEEE32.value product +
+        CodeLib.IEEE32.value coefficient)| ≤
+        CodeLib.IEEE32.arithmeticEpsilon at hsum
+  have hproductError :
+      |CodeLib.IEEE32.value product -
+        CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x| ≤
+          f32Epsilon := by
+    simpa [f32Epsilon, CodeLib.IEEE32.multiplicationEpsilon] using hproduct.2
+  have hsumError :
+      |CodeLib.IEEE32.value (Wasm.IEEE32.add product coefficient) -
+        (CodeLib.IEEE32.value product +
+          CodeLib.IEEE32.value coefficient)| ≤ f32Epsilon := by
+    simpa [f32Epsilon, CodeLib.IEEE32.arithmeticEpsilon] using hsum.2
+  have hsecond :
+      |(0 : ℝ) -
+        ((CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x +
+            CodeLib.IEEE32.value coefficient) -
+          (CodeLib.IEEE32.value product +
+            CodeLib.IEEE32.value coefficient))| ≤ f32Epsilon := by
+    rw [show (0 : ℝ) -
+        ((CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x +
+            CodeLib.IEEE32.value coefficient) -
+          (CodeLib.IEEE32.value product +
+            CodeLib.IEEE32.value coefficient)) =
+        CodeLib.IEEE32.value product -
+          CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x by ring]
+    exact hproductError
+  have hcomposed := CodeLib.Numerical.sum_perturbations
+    (x := CodeLib.IEEE32.value (Wasm.IEEE32.add product coefficient))
+    (x₀ := CodeLib.IEEE32.value product + CodeLib.IEEE32.value coefficient)
+    (y := 0)
+    (y₀ :=
+      (CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x +
+        CodeLib.IEEE32.value coefficient) -
+      (CodeLib.IEEE32.value product + CodeLib.IEEE32.value coefficient))
+    hsumError hsecond
+  change CodeLib.IEEE32.Finite (Wasm.IEEE32.add product coefficient) ∧ _
+  constructor
+  · exact hsum.1
+  · rw [show
+      CodeLib.IEEE32.value (Wasm.IEEE32.add product coefficient) -
+          (CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x +
+            CodeLib.IEEE32.value coefficient) =
+        (CodeLib.IEEE32.value (Wasm.IEEE32.add product coefficient) + 0) -
+          ((CodeLib.IEEE32.value product +
+              CodeLib.IEEE32.value coefficient) +
+            ((CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x +
+                CodeLib.IEEE32.value coefficient) -
+              (CodeLib.IEEE32.value product +
+                CodeLib.IEEE32.value coefficient))) by ring]
+    convert hcomposed using 1 <;> ring
+
+/-- Modeled left-to-right binary32 Horner fold. -/
+def horner32 (x accumulator : UInt32) : List UInt32 → UInt32
+  | [] => accumulator
+  | coefficient :: coefficients =>
+      horner32 x
+        (Wasm.IEEE32.add (Wasm.IEEE32.mul accumulator x) coefficient)
+        coefficients
+
+/-- Coefficients paired with the two-error budget for each modeled stage. -/
+noncomputable def horner32Stages (coefficients : List UInt32) :
+    List (ℝ × ℝ) :=
+  coefficients.map
+    (fun word => (CodeLib.IEEE32.value word, 2 * f32Epsilon))
+
+theorem horner32Stages_error_sum (coefficients : List UInt32) :
+    ((horner32Stages coefficients).map Prod.snd).sum =
+      (coefficients.length : ℝ) * (2 * f32Epsilon) := by
+  induction coefficients with
+  | nil => simp [horner32Stages]
+  | cons coefficient coefficients ih =>
+      change 2 * f32Epsilon +
+          ((horner32Stages coefficients).map Prod.snd).sum =
+        ((coefficients.length + 1 : Nat) : ℝ) * (2 * f32Epsilon)
+      rw [ih]
+      push_cast
+      ring
+
+/-- Exact real Horner target corresponding to `horner32`. -/
+noncomputable def horner32Exact (x accumulator : UInt32)
+    (coefficients : List UInt32) : ℝ :=
+  CodeLib.Numerical.exactHorner (CodeLib.IEEE32.value x)
+    (CodeLib.IEEE32.value accumulator) (horner32Stages coefficients)
+
+/-- Every recursive Horner stage records exactly the hypotheses needed by its
+modeled multiplication and addition, including the next accumulator's safety. -/
+inductive Horner32Safe (x : UInt32) : UInt32 → List UInt32 → Prop
+  | nil {accumulator : UInt32}
+      (haccumulator : CodeLib.IEEE32.Finite accumulator) :
+      Horner32Safe x accumulator []
+  | cons {accumulator coefficient : UInt32} {coefficients : List UInt32}
+      (haccumulator : CodeLib.IEEE32.Finite accumulator)
+      (hx : CodeLib.IEEE32.Finite x)
+      (hcoefficient : CodeLib.IEEE32.Finite coefficient)
+      (haccumulatorBound : |CodeLib.IEEE32.value accumulator| ≤ 1)
+      (hxBound : |CodeLib.IEEE32.value x| ≤ 1)
+      (hcoefficientBound : |CodeLib.IEEE32.value coefficient| ≤ 1)
+      (hproductBound :
+        |CodeLib.IEEE32.value (Wasm.IEEE32.mul accumulator x)| ≤ 1)
+      (tail : Horner32Safe x
+        (Wasm.IEEE32.add (Wasm.IEEE32.mul accumulator x) coefficient)
+        coefficients) :
+      Horner32Safe x accumulator (coefficient :: coefficients)
+
+/-- The terminal accumulator of a safe binary32 Horner fold is finite. -/
+theorem horner32_safe_finite (x accumulator : UInt32)
+    (coefficients : List UInt32)
+    (hsafe : Horner32Safe x accumulator coefficients) :
+    CodeLib.IEEE32.Finite (horner32 x accumulator coefficients) := by
+  induction hsafe with
+  | nil haccumulator => simpa [horner32] using haccumulator
+  | @cons accumulator coefficient coefficients haccumulator hx hcoefficient
+      haccumulatorBound hxBound hcoefficientBound hproductBound tail ih =>
+      simpa [horner32] using ih
+
+/-- A safe binary32 fold supplies the format-independent Horner error trace. -/
+theorem horner32_safe_trace (x accumulator : UInt32)
+    (coefficients : List UInt32)
+    (hsafe : Horner32Safe x accumulator coefficients) :
+    CodeLib.Numerical.HornerApprox (CodeLib.IEEE32.value x)
+      (CodeLib.IEEE32.value accumulator) (horner32Stages coefficients)
+      (CodeLib.IEEE32.value (horner32 x accumulator coefficients)) := by
+  induction coefficients generalizing accumulator with
+  | nil =>
+      exact CodeLib.Numerical.HornerApprox.nil _
+  | cons coefficient coefficients ih =>
+      cases hsafe with
+      | cons haccumulator hx hcoefficient haccumulatorBound hxBound
+          hcoefficientBound hproductBound tail =>
+          have hstep := horner32_step_real_error accumulator x coefficient
+            haccumulator hx hcoefficient haccumulatorBound hxBound
+            hcoefficientBound hproductBound
+          simpa [horner32, horner32Stages] using
+            (CodeLib.Numerical.HornerApprox.cons hstep.2
+              (ih _ tail))
+
+/-- A safe modeled binary32 Horner fold stays finite and accumulates at most
+two binary32 unit error budgets per stage on `|x| ≤ 1`. -/
+theorem horner32_real_error (x accumulator : UInt32)
+    (coefficients : List UInt32)
+    (hxBound : |CodeLib.IEEE32.value x| ≤ 1)
+    (hsafe : Horner32Safe x accumulator coefficients) :
+    CodeLib.IEEE32.Finite (horner32 x accumulator coefficients) ∧
+      |CodeLib.IEEE32.value (horner32 x accumulator coefficients) -
+          horner32Exact x accumulator coefficients| ≤
+        (coefficients.length : ℝ) * (2 * f32Epsilon) := by
+  constructor
+  · exact horner32_safe_finite x accumulator coefficients hsafe
+  · have herror := CodeLib.Numerical.horner_error_unit_interval
+      hxBound
+      (by simp :
+        |CodeLib.IEEE32.value accumulator -
+          CodeLib.IEEE32.value accumulator| ≤ (0 : ℝ))
+      (horner32_safe_trace x accumulator coefficients hsafe)
+    rw [horner32Stages_error_sum] at herror
+    simpa [horner32Exact] using herror
+
 /-- The decoded f32 affine kernel has at most two primitive rounding errors.
 `hproductBound` is the explicit intermediate-magnitude/overflow-exclusion
 condition for the final addition. -/
@@ -34,59 +220,13 @@ theorem affine_real_error (a x b : UInt32)
       |CodeLib.IEEE32.value (affineResult a x b) -
           (CodeLib.IEEE32.value a * CodeLib.IEEE32.value x +
             CodeLib.IEEE32.value b)| ≤ 2 * f32Epsilon := by
-  let product := Wasm.IEEE32.mul a x
-  have hproduct := CodeLib.IEEE32.mul_real_error
-    a x ha hx haBound hxBound
-  change CodeLib.IEEE32.Finite product ∧
-    |CodeLib.IEEE32.value product -
-      CodeLib.IEEE32.value a * CodeLib.IEEE32.value x| ≤
-        CodeLib.IEEE32.multiplicationEpsilon at hproduct
-  have hsum := CodeLib.IEEE32.add_real_error
-    product b hproduct.1 hb hproductBound hbBound
-  change CodeLib.IEEE32.Finite (Wasm.IEEE32.add product b) ∧
-    |CodeLib.IEEE32.value (Wasm.IEEE32.add product b) -
-      (CodeLib.IEEE32.value product + CodeLib.IEEE32.value b)| ≤
-        CodeLib.IEEE32.arithmeticEpsilon at hsum
-  have hproductError :
-      |CodeLib.IEEE32.value product -
-        CodeLib.IEEE32.value a * CodeLib.IEEE32.value x| ≤
-          f32Epsilon := by
-    simpa [f32Epsilon, CodeLib.IEEE32.multiplicationEpsilon] using hproduct.2
-  have hsumError :
-      |CodeLib.IEEE32.value (Wasm.IEEE32.add product b) -
-        (CodeLib.IEEE32.value product + CodeLib.IEEE32.value b)| ≤
-          f32Epsilon := by
-    simpa [f32Epsilon, CodeLib.IEEE32.arithmeticEpsilon] using hsum.2
-  have hsecond :
-      |(0 : ℝ) -
-        ((CodeLib.IEEE32.value a * CodeLib.IEEE32.value x +
-            CodeLib.IEEE32.value b) -
-          (CodeLib.IEEE32.value product + CodeLib.IEEE32.value b))| ≤
-        f32Epsilon := by
-    rw [show (0 : ℝ) -
-        ((CodeLib.IEEE32.value a * CodeLib.IEEE32.value x +
-            CodeLib.IEEE32.value b) -
-          (CodeLib.IEEE32.value product + CodeLib.IEEE32.value b)) =
-        CodeLib.IEEE32.value product -
-          CodeLib.IEEE32.value a * CodeLib.IEEE32.value x by ring]
-    exact hproductError
-  have hcomposed := CodeLib.Numerical.sum_perturbations
-    (x := CodeLib.IEEE32.value (Wasm.IEEE32.add product b))
-    (x₀ := CodeLib.IEEE32.value product + CodeLib.IEEE32.value b)
-    (y := 0)
-    (y₀ :=
-      (CodeLib.IEEE32.value a * CodeLib.IEEE32.value x +
-        CodeLib.IEEE32.value b) -
-      (CodeLib.IEEE32.value product + CodeLib.IEEE32.value b))
-    hsumError hsecond
-  change CodeLib.IEEE32.Finite (Wasm.IEEE32.add product b) ∧ _
-  constructor
-  · exact hsum.1
-  · change
-      |CodeLib.IEEE32.value (Wasm.IEEE32.add product b) -
-          (CodeLib.IEEE32.value a * CodeLib.IEEE32.value x +
-            CodeLib.IEEE32.value b)| ≤ 2 * f32Epsilon
-    convert hcomposed using 1 <;> ring
+  have hstep := horner32_step_real_error a x b ha hx hb
+    haBound hxBound hbBound hproductBound
+  have hsafe : Horner32Safe x a [b] :=
+    .cons ha hx hb haBound hxBound hbBound hproductBound (.nil hstep.1)
+  simpa [horner32, horner32Exact, horner32Stages,
+    CodeLib.Numerical.exactHorner, affineResult] using
+      (horner32_real_error x a [b] hxBound hsafe)
 
 /-- Fuel-independent end-to-end correctness and accumulated error for the
 decoded f32 affine WAT program. -/
@@ -113,6 +253,220 @@ theorem affine_program_real_error (a x b : UInt32)
 
 noncomputable def f64Epsilon : ℝ := 1 / (2 : ℝ) ^ 52
 
+/-- One binary64 dot-product accumulation stage contributes one multiplication
+error and one addition error. -/
+theorem dot64_step_real_error (accumulator a b : UInt64)
+    (haccumulator : CodeLib.IEEE64.Finite accumulator)
+    (ha : CodeLib.IEEE64.Finite a)
+    (hb : CodeLib.IEEE64.Finite b)
+    (haccumulatorBound : |CodeLib.IEEE64.value accumulator| ≤ 1)
+    (haBound : |CodeLib.IEEE64.value a| ≤ 1)
+    (hbBound : |CodeLib.IEEE64.value b| ≤ 1)
+    (hproductBound :
+      |CodeLib.IEEE64.value (Wasm.IEEE64.mul a b)| ≤ 1) :
+    CodeLib.IEEE64.Finite
+        (Wasm.IEEE64.add accumulator (Wasm.IEEE64.mul a b)) ∧
+      |CodeLib.IEEE64.value
+          (Wasm.IEEE64.add accumulator (Wasm.IEEE64.mul a b)) -
+          (CodeLib.IEEE64.value accumulator +
+            CodeLib.IEEE64.value a * CodeLib.IEEE64.value b)| ≤
+        2 * f64Epsilon := by
+  let product := Wasm.IEEE64.mul a b
+  have hproduct := CodeLib.IEEE64.mul_real_error a b ha hb haBound hbBound
+  change CodeLib.IEEE64.Finite product ∧
+    |CodeLib.IEEE64.value product -
+      CodeLib.IEEE64.value a * CodeLib.IEEE64.value b| ≤
+        CodeLib.IEEE64.multiplicationEpsilon at hproduct
+  have hsum := CodeLib.IEEE64.add_real_error accumulator product
+    haccumulator hproduct.1 haccumulatorBound hproductBound
+  change CodeLib.IEEE64.Finite (Wasm.IEEE64.add accumulator product) ∧
+    |CodeLib.IEEE64.value (Wasm.IEEE64.add accumulator product) -
+      (CodeLib.IEEE64.value accumulator +
+        CodeLib.IEEE64.value product)| ≤
+        CodeLib.IEEE64.arithmeticEpsilon at hsum
+  have hproductError :
+      |CodeLib.IEEE64.value product -
+        CodeLib.IEEE64.value a * CodeLib.IEEE64.value b| ≤ f64Epsilon := by
+    simpa [f64Epsilon, CodeLib.IEEE64.multiplicationEpsilon] using hproduct.2
+  have hsumError :
+      |CodeLib.IEEE64.value (Wasm.IEEE64.add accumulator product) -
+        (CodeLib.IEEE64.value accumulator +
+          CodeLib.IEEE64.value product)| ≤ f64Epsilon := by
+    simpa [f64Epsilon, CodeLib.IEEE64.arithmeticEpsilon] using hsum.2
+  have hsecond :
+      |(0 : ℝ) -
+        ((CodeLib.IEEE64.value accumulator +
+            CodeLib.IEEE64.value a * CodeLib.IEEE64.value b) -
+          (CodeLib.IEEE64.value accumulator +
+            CodeLib.IEEE64.value product))| ≤ f64Epsilon := by
+    rw [show (0 : ℝ) -
+        ((CodeLib.IEEE64.value accumulator +
+            CodeLib.IEEE64.value a * CodeLib.IEEE64.value b) -
+          (CodeLib.IEEE64.value accumulator +
+            CodeLib.IEEE64.value product)) =
+        CodeLib.IEEE64.value product -
+          CodeLib.IEEE64.value a * CodeLib.IEEE64.value b by ring]
+    exact hproductError
+  have hcomposed := CodeLib.Numerical.sum_perturbations
+    (x := CodeLib.IEEE64.value (Wasm.IEEE64.add accumulator product))
+    (x₀ := CodeLib.IEEE64.value accumulator + CodeLib.IEEE64.value product)
+    (y := 0)
+    (y₀ :=
+      (CodeLib.IEEE64.value accumulator +
+        CodeLib.IEEE64.value a * CodeLib.IEEE64.value b) -
+      (CodeLib.IEEE64.value accumulator + CodeLib.IEEE64.value product))
+    hsumError hsecond
+  change CodeLib.IEEE64.Finite (Wasm.IEEE64.add accumulator product) ∧ _
+  constructor
+  · exact hsum.1
+  · rw [show
+      CodeLib.IEEE64.value (Wasm.IEEE64.add accumulator product) -
+          (CodeLib.IEEE64.value accumulator +
+            CodeLib.IEEE64.value a * CodeLib.IEEE64.value b) =
+        (CodeLib.IEEE64.value (Wasm.IEEE64.add accumulator product) + 0) -
+          ((CodeLib.IEEE64.value accumulator +
+              CodeLib.IEEE64.value product) +
+            ((CodeLib.IEEE64.value accumulator +
+                CodeLib.IEEE64.value a * CodeLib.IEEE64.value b) -
+              (CodeLib.IEEE64.value accumulator +
+                CodeLib.IEEE64.value product))) by ring]
+    convert hcomposed using 1 <;> ring
+
+/-- Modeled accumulation after the first term of a nonempty binary64 dot
+product has established its initial accumulator. -/
+def dot64Acc (accumulator : UInt64) : List (UInt64 × UInt64) → UInt64
+  | [] => accumulator
+  | (a, b) :: terms =>
+      dot64Acc (Wasm.IEEE64.add accumulator (Wasm.IEEE64.mul a b)) terms
+
+/-- Exact real accumulation corresponding to `dot64Acc`. -/
+noncomputable def dot64ExactAcc (accumulator : ℝ) :
+    List (UInt64 × UInt64) → ℝ
+  | [] => accumulator
+  | (a, b) :: terms =>
+      dot64ExactAcc
+        (accumulator + CodeLib.IEEE64.value a * CodeLib.IEEE64.value b) terms
+
+/-- A nonempty modeled binary64 dot product. -/
+def dot64 (first : UInt64 × UInt64) (rest : List (UInt64 × UInt64)) : UInt64 :=
+  dot64Acc (Wasm.IEEE64.mul first.1 first.2) rest
+
+/-- Exact real target for `dot64`. -/
+noncomputable def dot64Exact (first : UInt64 × UInt64)
+    (rest : List (UInt64 × UInt64)) : ℝ :=
+  dot64ExactAcc
+    (CodeLib.IEEE64.value first.1 * CodeLib.IEEE64.value first.2) rest
+
+/-- Each recursive dot-product stage exposes its finite-input and magnitude
+hypotheses, plus safety of the accumulator produced for the tail. -/
+inductive Dot64Safe : UInt64 → List (UInt64 × UInt64) → Prop
+  | nil {accumulator : UInt64}
+      (haccumulator : CodeLib.IEEE64.Finite accumulator) :
+      Dot64Safe accumulator []
+  | cons {accumulator a b : UInt64} {terms : List (UInt64 × UInt64)}
+      (haccumulator : CodeLib.IEEE64.Finite accumulator)
+      (ha : CodeLib.IEEE64.Finite a)
+      (hb : CodeLib.IEEE64.Finite b)
+      (haccumulatorBound : |CodeLib.IEEE64.value accumulator| ≤ 1)
+      (haBound : |CodeLib.IEEE64.value a| ≤ 1)
+      (hbBound : |CodeLib.IEEE64.value b| ≤ 1)
+      (hproductBound :
+        |CodeLib.IEEE64.value (Wasm.IEEE64.mul a b)| ≤ 1)
+      (tail : Dot64Safe
+        (Wasm.IEEE64.add accumulator (Wasm.IEEE64.mul a b)) terms) :
+      Dot64Safe accumulator ((a, b) :: terms)
+
+/-- An explicitly safe binary64 dot-product tail preserves an arbitrary
+initial error budget and adds two unit budgets per additional term. -/
+theorem dot64Acc_real_error (accumulator : UInt64)
+    (terms : List (UInt64 × UInt64)) (exactAccumulator E : ℝ)
+    (hsafe : Dot64Safe accumulator terms)
+    (haccumulatorError :
+      |CodeLib.IEEE64.value accumulator - exactAccumulator| ≤ E) :
+    CodeLib.IEEE64.Finite (dot64Acc accumulator terms) ∧
+      |CodeLib.IEEE64.value (dot64Acc accumulator terms) -
+          dot64ExactAcc exactAccumulator terms| ≤
+        E + (terms.length : ℝ) * (2 * f64Epsilon) := by
+  induction terms generalizing accumulator exactAccumulator E with
+  | nil =>
+      cases hsafe with
+      | nil haccumulator =>
+          constructor
+          · simpa [dot64Acc] using haccumulator
+          · simpa [dot64Acc, dot64ExactAcc] using haccumulatorError
+  | cons term terms ih =>
+      rcases term with ⟨a, b⟩
+      cases hsafe with
+      | cons haccumulator ha hb haccumulatorBound haBound hbBound
+          hproductBound tail =>
+          let next := Wasm.IEEE64.add accumulator (Wasm.IEEE64.mul a b)
+          have hstep := dot64_step_real_error accumulator a b haccumulator ha hb
+            haccumulatorBound haBound hbBound hproductBound
+          have hlocal :
+              |(CodeLib.IEEE64.value next -
+                  (exactAccumulator +
+                    CodeLib.IEEE64.value a * CodeLib.IEEE64.value b)) -
+                (CodeLib.IEEE64.value accumulator - exactAccumulator)| ≤
+                  2 * f64Epsilon := by
+            rw [show
+              (CodeLib.IEEE64.value next -
+                  (exactAccumulator +
+                    CodeLib.IEEE64.value a * CodeLib.IEEE64.value b)) -
+                (CodeLib.IEEE64.value accumulator - exactAccumulator) =
+              CodeLib.IEEE64.value next -
+                (CodeLib.IEEE64.value accumulator +
+                  CodeLib.IEEE64.value a * CodeLib.IEEE64.value b) by ring]
+            exact hstep.2
+          have hnext := CodeLib.Numerical.sequential_perturbation
+            haccumulatorError hlocal
+          have htail := ih next
+            (exactAccumulator +
+              CodeLib.IEEE64.value a * CodeLib.IEEE64.value b)
+            (E + 2 * f64Epsilon) tail hnext
+          constructor
+          · simpa [dot64Acc, next] using htail.1
+          · change
+              |CodeLib.IEEE64.value (dot64Acc next terms) -
+                  dot64ExactAcc
+                    (exactAccumulator +
+                      CodeLib.IEEE64.value a * CodeLib.IEEE64.value b)
+                    terms| ≤
+                E + (((terms.length + 1 : Nat) : ℝ) * (2 * f64Epsilon))
+            convert htail.2 using 1 <;> push_cast <;> ring
+
+/-- A safe nonempty binary64 dot product has `2n - 1` primitive error
+budgets: one for the first product and two for every remaining term. -/
+theorem dot64_real_error (first : UInt64 × UInt64)
+    (rest : List (UInt64 × UInt64))
+    (hfirstLeft : CodeLib.IEEE64.Finite first.1)
+    (hfirstRight : CodeLib.IEEE64.Finite first.2)
+    (hfirstLeftBound : |CodeLib.IEEE64.value first.1| ≤ 1)
+    (hfirstRightBound : |CodeLib.IEEE64.value first.2| ≤ 1)
+    (hsafe : Dot64Safe (Wasm.IEEE64.mul first.1 first.2) rest) :
+    CodeLib.IEEE64.Finite (dot64 first rest) ∧
+      |CodeLib.IEEE64.value (dot64 first rest) - dot64Exact first rest| ≤
+        (2 * (rest.length : ℝ) + 1) * f64Epsilon := by
+  have hfirst := CodeLib.IEEE64.mul_real_error first.1 first.2
+    hfirstLeft hfirstRight hfirstLeftBound hfirstRightBound
+  have hfirstError :
+      |CodeLib.IEEE64.value (Wasm.IEEE64.mul first.1 first.2) -
+        CodeLib.IEEE64.value first.1 * CodeLib.IEEE64.value first.2| ≤
+          f64Epsilon := by
+    simpa [f64Epsilon, CodeLib.IEEE64.multiplicationEpsilon] using hfirst.2
+  have hresult := dot64Acc_real_error
+    (Wasm.IEEE64.mul first.1 first.2) rest
+    (CodeLib.IEEE64.value first.1 * CodeLib.IEEE64.value first.2)
+    f64Epsilon hsafe hfirstError
+  constructor
+  · simpa [dot64] using hresult.1
+  · change
+      |CodeLib.IEEE64.value
+          (dot64Acc (Wasm.IEEE64.mul first.1 first.2) rest) -
+        dot64ExactAcc
+          (CodeLib.IEEE64.value first.1 * CodeLib.IEEE64.value first.2) rest| ≤
+        (2 * (rest.length : ℝ) + 1) * f64Epsilon
+    convert hresult.2 using 1 <;> ring
+
 /-- A two-term binary64 dot product has the two multiplication errors plus the
 final addition error.  `hproduct₀Bound` and `hproduct₁Bound` explicitly
 exclude overflow in the intermediate products and final addition. -/
@@ -138,66 +492,25 @@ theorem dot_real_error (a₀ b₀ a₁ b₁ : UInt64)
     a₀ b₀ ha₀ hb₀ ha₀Bound hb₀Bound
   have hp₁ := CodeLib.IEEE64.mul_real_error
     a₁ b₁ ha₁ hb₁ ha₁Bound hb₁Bound
-  change CodeLib.IEEE64.Finite product₀ ∧
-    |CodeLib.IEEE64.value product₀ -
-      CodeLib.IEEE64.value a₀ * CodeLib.IEEE64.value b₀| ≤
-        CodeLib.IEEE64.multiplicationEpsilon at hp₀
-  change CodeLib.IEEE64.Finite product₁ ∧
-    |CodeLib.IEEE64.value product₁ -
-      CodeLib.IEEE64.value a₁ * CodeLib.IEEE64.value b₁| ≤
-        CodeLib.IEEE64.multiplicationEpsilon at hp₁
   have hadd := CodeLib.IEEE64.add_real_error product₀ product₁
     hp₀.1 hp₁.1 hproduct₀Bound hproduct₁Bound
-  change CodeLib.IEEE64.Finite (Wasm.IEEE64.add product₀ product₁) ∧
-    |CodeLib.IEEE64.value (Wasm.IEEE64.add product₀ product₁) -
-      (CodeLib.IEEE64.value product₀ + CodeLib.IEEE64.value product₁)| ≤
-        CodeLib.IEEE64.arithmeticEpsilon at hadd
-  have hp₀Error :
-      |CodeLib.IEEE64.value product₀ -
-        CodeLib.IEEE64.value a₀ * CodeLib.IEEE64.value b₀| ≤
-          f64Epsilon := by
-    simpa [f64Epsilon, CodeLib.IEEE64.multiplicationEpsilon] using hp₀.2
-  have hp₁Error :
-      |CodeLib.IEEE64.value product₁ -
-        CodeLib.IEEE64.value a₁ * CodeLib.IEEE64.value b₁| ≤
-          f64Epsilon := by
-    simpa [f64Epsilon, CodeLib.IEEE64.multiplicationEpsilon] using hp₁.2
-  have hproducts := CodeLib.Numerical.sum_perturbations hp₀Error hp₁Error
-  have haddError :
-      |CodeLib.IEEE64.value (Wasm.IEEE64.add product₀ product₁) -
-        (CodeLib.IEEE64.value product₀ + CodeLib.IEEE64.value product₁)| ≤
-          f64Epsilon := by
-    simpa [f64Epsilon, CodeLib.IEEE64.arithmeticEpsilon] using hadd.2
-  let exactSum :=
-    CodeLib.IEEE64.value a₀ * CodeLib.IEEE64.value b₀ +
-      CodeLib.IEEE64.value a₁ * CodeLib.IEEE64.value b₁
-  have hsecond :
-      |(0 : ℝ) -
-        (exactSum -
-          (CodeLib.IEEE64.value product₀ + CodeLib.IEEE64.value product₁))| ≤
-        f64Epsilon + f64Epsilon := by
-    rw [show (0 : ℝ) -
-        (exactSum -
-          (CodeLib.IEEE64.value product₀ + CodeLib.IEEE64.value product₁)) =
-      (CodeLib.IEEE64.value product₀ + CodeLib.IEEE64.value product₁) -
-        exactSum by ring]
-    simpa [exactSum] using hproducts
-  have hcomposed := CodeLib.Numerical.sum_perturbations
-    (x := CodeLib.IEEE64.value (Wasm.IEEE64.add product₀ product₁))
-    (x₀ := CodeLib.IEEE64.value product₀ + CodeLib.IEEE64.value product₁)
-    (y := 0) (y₀ := exactSum -
-      (CodeLib.IEEE64.value product₀ + CodeLib.IEEE64.value product₁))
-    haddError hsecond
-  change CodeLib.IEEE64.Finite (Wasm.IEEE64.add product₀ product₁) ∧ _
+  have hsafe : Dot64Safe product₀ [(a₁, b₁)] :=
+    .cons hp₀.1 ha₁ hb₁ hproduct₀Bound ha₁Bound hb₁Bound
+      hproduct₁Bound (.nil hadd.1)
+  have hgeneric := dot64_real_error (a₀, b₀) [(a₁, b₁)]
+    ha₀ hb₀ ha₀Bound hb₀Bound hsafe
   constructor
-  · exact hadd.1
+  · simpa [dot64, dot64Acc, dotResult] using hgeneric.1
   · change
       |CodeLib.IEEE64.value (Wasm.IEEE64.add product₀ product₁) -
           (CodeLib.IEEE64.value a₀ * CodeLib.IEEE64.value b₀ +
             CodeLib.IEEE64.value a₁ * CodeLib.IEEE64.value b₁)| ≤
         3 * f64Epsilon
-    dsimp only [exactSum] at hcomposed
-    convert hcomposed using 1 <;> ring
+    have herror := hgeneric.2
+    simp only [dot64, dot64Acc, dot64Exact, dot64ExactAcc,
+      List.length_cons, List.length_nil, Nat.cast_one] at herror
+    norm_num at herror
+    exact herror
 
 /-- Fuel-independent end-to-end correctness and accumulated error for the
 decoded two-term f64 dot-product WAT program. -/
@@ -225,8 +538,15 @@ theorem dot_program_real_error (a₀ b₀ a₁ b₁ : UInt64)
   exact (dot_terminates a₀ b₀ a₁ b₁).mono
     (fun _values _store hvalues => ⟨hvalues, hresult.1, hresult.2⟩)
 
+#print axioms horner32_step_real_error
+#print axioms horner32_safe_finite
+#print axioms horner32_safe_trace
+#print axioms horner32_real_error
 #print axioms affine_real_error
 #print axioms affine_program_real_error
+#print axioms dot64_step_real_error
+#print axioms dot64Acc_real_error
+#print axioms dot64_real_error
 #print axioms dot_real_error
 #print axioms dot_program_real_error
 

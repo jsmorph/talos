@@ -665,3 +665,26 @@ differential tests, and an example-program theorem.
 - Next: publish and fetch-verify this checkpoint, then define generic modeled
   IEEE32 Horner and IEEE64 nonempty dot-product folds with recursive safety
   predicates.
+
+### Scalable kernels checkpoint 2: generic modeled folds
+
+- Added the pure modeled `horner32` fold, its exact-real counterpart, and the
+  recursive `Horner32Safe` predicate.  Each stage exposes finite accumulator,
+  argument, and coefficient hypotheses together with operand and product
+  magnitude bounds.
+- Proved reusable one-stage, terminal-finiteness, approximate-trace, and full
+  Horner error theorems.  A safe list of `n` stages on `|x| ≤ 1` has absolute
+  error at most `n * (2 * 2^-23)`.
+- Added the pure modeled nonempty `dot64` fold, exact-real accumulator, and
+  recursive `Dot64Safe` predicate.  Proved that a first product followed by
+  `k` safe multiply-add stages has absolute error at most
+  `(2 * k + 1) * 2^-52`.
+- Refactored the existing f32 affine and two-term f64 dot-product theorems into
+  one-stage and two-term instances of the generic folds without weakening
+  either public statement.
+- `lake build CodeLib.Numerical.Kernels` passed in 3,062 jobs under exact Lean
+  4.34.0-rc2.  Axiom reports for the new stage, safety, trace, accumulator, and
+  generic error theorems—and both refactored fixed-size theorems—contain only
+  `propext`, `Classical.choice`, and `Quot.sound`.
+- Next: publish and fetch-verify this checkpoint, then add degree-three f32
+  Horner and four-term f64 dot-product decoded-WAT consumers.

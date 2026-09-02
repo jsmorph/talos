@@ -315,4 +315,8 @@ Checkpoint 1 is complete.  The error-composition layer now includes list-sum
 and sequential perturbation theorems, explicit approximate Horner traces,
 recursive and weighted closed-form error budgets, and the `|x| ≤ 1`
 corollary.  The original two-step Horner theorem is derived from this general
-recurrence.  Checkpoints 2 through 4 remain pending.
+recurrence.  Checkpoint 2 is complete: modeled IEEE32 Horner and nonempty
+IEEE64 dot-product folds now have exact real counterparts, recursive safety
+predicates, finiteness results, and accumulated-error theorems.  The fixed
+affine and two-term dot-product results are derived from the generic folds.
+Checkpoints 3 and 4 remain pending.
