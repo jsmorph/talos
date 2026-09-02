@@ -730,3 +730,32 @@ differential tests, and an example-program theorem.
   theorem reports only `propext`, `Classical.choice`, and `Quot.sound`.
 - Next: publish and fetch-verify the safety layer, then run the combined final
   interpreter and CodeLib validation and close the scalable-kernel agenda.
+
+### Scalable kernels final validation
+
+- Published and fetch-verified the generic-fold checkpoint as remote
+  `8001254`, the larger decoded-WAT checkpoint as remote `b9f0766`, and the
+  exact-headroom safety checkpoint as remote `dffb632`.  Their fetched remote
+  trees were byte-identical to their validated local committed trees.
+- Reconfirmed the active compiler as Lean `4.34.0-rc2`, release commit
+  `6a10ac8c22beadecabdbb0919c2b50214762f91d`.
+- From `interpreter`, the final
+  `lake build Interpreter.Wasm.Examples.FloatNumericalKernels` passed in 15
+  jobs.
+- From `codelib`, the combined final command passed these exact targets:
+  `CodeLib.Numerical.ErrorComposition`, `CodeLib.Numerical.Kernels`,
+  `CodeLib.IEEE32.Transcendental`, and `CodeLib.IEEE64.Operations` (3,181
+  jobs).
+- Final axiom output for the list and Horner algebra, generic modeled folds,
+  recursive safety constructors, exact-headroom corollaries, refactored fixed
+  kernels, and larger WAT theorems contains only `propext`,
+  `Classical.choice`, and `Quot.sound`.  The native-decision axiom shown for
+  the pre-existing concrete `sin_half_program_value` regression theorem is
+  absent from every new general result.
+- The agenda-wide scan covers
+  `CodeLib/Numerical/ErrorComposition.lean`,
+  `CodeLib/Numerical/Kernels.lean`, and
+  `Interpreter/Wasm/Examples/FloatNumericalKernels.lean`; it finds no `sorry`,
+  `admit`, or axiom declaration.  `git diff 15e032d..HEAD --check` passes.
+- The scalable numerical-kernel agenda is complete.  Arbitrary-memory WAT
+  loops remain the explicitly deferred follow-up.

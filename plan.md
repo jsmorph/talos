@@ -324,4 +324,8 @@ f32 Horner evaluation and a four-term f64 dot product, with explicit traces,
 fuel-independent termination, and error bounds supplied by the generic
 folds.  Checkpoint 4's safety layer is complete: exact-real headroom predicates
 now imply the explicit recursive safety conditions and feed both generic and
-WAT theorems.  Combined final validation remains pending.
+WAT theorems.  All four checkpoints are complete.  The combined interpreter
+and CodeLib builds pass with exact Lean 4.34.0-rc2; every new general theorem
+reports only standard logical axioms; the agenda-wide proof-hole and Git
+whitespace scans pass; and every substantive tree has been published and
+fetch-verified.
