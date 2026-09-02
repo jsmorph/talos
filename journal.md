@@ -233,3 +233,21 @@ addition and subtraction.
   and subtraction-overflow theorems reports only `propext`,
   `Classical.choice`, and `Quot.sound` as applicable.  There is no `sorryAx`
   and no dependency on the floating-point bridge axioms.
+
+## 2026-09-02: Full operation roadmap
+
+- Restored `float-associativity-verification` from the pushed fork after the
+  transient workspace was cleared.  The restored head is `8b8cc16`.
+- Expanded `plan.md` with staged work for f32 multiplication, division, square
+  root, comparisons and selection, conversions and integral rounding, f64,
+  SIMD, and algorithm-level transcendental verification.
+- Required every operation milestone to include proof-visible interpreter
+  semantics, differential tests, operation specifications, and at least one
+  fuel-independent theorem about an example WAT program.
+- Kept the toolchain fixed at `leanprover/lean4:v4.34.0-rc2`.
+
+### Next work
+
+Generalize exact rounding to dyadic products and implement binary32
+multiplication, including special values, overflow, gradual underflow, native
+differential tests, and an example-program theorem.

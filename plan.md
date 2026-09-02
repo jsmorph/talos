@@ -88,3 +88,61 @@ signed-infinity identities and invalid combinations, and overflow for finite
 addition and subtraction.  The overflow theorem uses the exact scaled
 round-to-nearest threshold `2^277 - 2^252`, corresponding to the real midpoint
 `2^128 - 2^103` above the largest finite binary32 value.
+
+## Floating-point operation roadmap
+
+The next phase extends the proof-visible IEEE-754 layer across the operation
+families used by WebAssembly programs.  Each milestone has four deliverables:
+an executable operation used by the interpreter, native differential tests,
+operation-level specifications, and a decoded or hand-written WAT example with
+a fuel-independent small-step theorem.  Proof statements will distinguish
+finite, NaN, infinity, overflow, underflow, subnormal, and signed-zero behavior
+where those cases are semantically relevant.
+
+1. **Binary32 multiplication.**  Generalize the ties-to-even rounder to exact
+   dyadic products, implement `f32.mul` without the native floating-point
+   bridge, and prove finite error, zero/infinity/NaN, overflow, and underflow
+   results.  Verify a WAT `mul_error` program against a fixed error bound.
+2. **Binary32 division.**  Add exact rational rounding with quotient/remainder
+   tie handling.  Prove normal and subnormal rounding, division by zero,
+   zero/infinity, infinity/infinity, NaN, overflow, and underflow behavior.
+   Verify a WAT relative-error example on a bounded nonzero domain.
+3. **Binary32 square root.**  Add correctly rounded integer-square-root
+   semantics.  Prove exact-square examples, a rounding enclosure, signed-zero,
+   positive infinity, NaN, and negative-input behavior.  Verify a WAT
+   square-and-root program under a nonnegative bounded-input hypothesis.
+4. **Selection, comparison, sign, conversion, and integral rounding.**  Make
+   comparisons, `min`, `max`, `copysign`, integer/float conversions, saturating
+   conversions, `ceil`, `floor`, `trunc`, and `nearest` proof-visible.  Remove
+   the corresponding legacy bridge axioms once their users have constructive
+   replacements.  Add WAT examples proving ordered clamps, sign transfer,
+   conversion round trips on exact ranges, saturation, and integral-rounding
+   properties.
+5. **Binary64.**  Parameterize or reproduce the verified representation and
+   rounding results for 11 exponent bits and 52 fraction bits.  Replace native
+   `f64` arithmetic in the reference semantics and verify representative f64
+   error-bound and exceptional-value programs.
+6. **SIMD.**  Lift verified scalar operations lane-wise to `f32x4` and `f64x2`.
+   Verify example vector programs with per-lane postconditions, including NaN
+   lanes and signed zeros where applicable.
+7. **Transcendental algorithms.**  WebAssembly core has no transcendental
+   instructions, so model concrete Wasm implementations or imports rather than
+   inventing opcodes.  Start with range-reduced polynomial `exp2` or `sin` on a
+   small stated interval; prove the approximation error plus accumulated
+   floating-point error, and connect that bound to an example module's
+   execution theorem.  Broader-domain reduction and correctly-rounded library
+   contracts remain separate follow-up results.
+
+### Sequencing and validation
+
+Multiplication precedes division and square root because it establishes the
+general dyadic rounding interface reused by later proofs.  Scalar f32 coverage
+precedes f64 and SIMD to keep each semantic change reviewable.  Transcendental
+work begins only after the core scalar error lemmas can bound every primitive
+operation used by the selected algorithm.
+
+Every milestone is committed and pushed independently.  It must build under
+`leanprover/lean4:v4.34.0-rc2`, pass its executable comparisons and WAT
+examples, pass `git diff --check`, and have its public theorems checked with
+`#print axioms`.  Repository-wide failures in unchanged pinned dependencies
+will continue to be recorded separately from the affected-target results.
