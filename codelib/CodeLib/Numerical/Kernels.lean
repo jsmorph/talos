@@ -513,6 +513,50 @@ noncomputable def dot64Exact (first : UInt64 × UInt64)
   dot64ExactAcc
     (CodeLib.IEEE64.value first.1 * CodeLib.IEEE64.value first.2) rest
 
+/-- Total list wrapper matching the generated runtime dot-product kernel:
+the empty list returns positive zero, while a nonempty list seeds the
+accumulator with its first rounded product. -/
+def dot64List : List (UInt64 × UInt64) → UInt64
+  | [] => 0
+  | first :: rest => dot64 first rest
+
+/-- Exact real target corresponding to `dot64List`. -/
+noncomputable def dot64ExactList : List (UInt64 × UInt64) → ℝ
+  | [] => 0
+  | first :: rest => dot64Exact first rest
+
+/-- Conventional exact real dot-product sum for a list of binary64 word
+pairs. -/
+noncomputable def dot64ExactSum (terms : List (UInt64 × UInt64)) : ℝ :=
+  (terms.map fun term =>
+    CodeLib.IEEE64.value term.1 * CodeLib.IEEE64.value term.2).sum
+
+theorem dot64ExactAcc_eq_add_sum (accumulator : ℝ)
+    (terms : List (UInt64 × UInt64)) :
+    dot64ExactAcc accumulator terms = accumulator + dot64ExactSum terms := by
+  induction terms generalizing accumulator with
+  | nil => simp [dot64ExactAcc, dot64ExactSum]
+  | cons term terms ih =>
+      rcases term with ⟨a, b⟩
+      simp only [dot64ExactAcc, dot64ExactSum, List.map_cons, List.sum_cons]
+      rw [ih]
+      simp only [dot64ExactSum]
+      ring
+
+theorem dot64ExactList_eq_sum (terms : List (UInt64 × UInt64)) :
+    dot64ExactList terms = dot64ExactSum terms := by
+  cases terms with
+  | nil => simp [dot64ExactList, dot64ExactSum]
+  | cons first rest =>
+      rw [dot64ExactList, dot64Exact, dot64ExactAcc_eq_add_sum]
+      simp [dot64ExactSum]
+
+/-- Absolute primitive-error budget for the generated dot-product shape.  It
+is zero for the exact empty branch and `(2n - 1) * epsilon` for `n > 0`. -/
+noncomputable def dot64ListErrorBudget : List (UInt64 × UInt64) → ℝ
+  | [] => 0
+  | _ :: rest => (2 * (rest.length : ℝ) + 1) * f64Epsilon
+
 /-- Every input word in a binary64 dot product is finite and has real
 magnitude at most one.  This is the common input domain of the primitive
 multiplication theorem used by the fold. -/
@@ -633,6 +677,14 @@ inductive Dot64Safe : UInt64 → List (UInt64 × UInt64) → Prop
       (tail : Dot64Safe
         (Wasm.IEEE64.add accumulator (Wasm.IEEE64.mul a b)) terms) :
       Dot64Safe accumulator ((a, b) :: terms)
+
+/-- Safety condition for the total list-shaped dot product.  The empty branch
+performs no arithmetic; the nonempty branch uses the existing recursive tail
+safety trace after its first multiplication. -/
+def Dot64ListSafe : List (UInt64 × UInt64) → Prop
+  | [] => True
+  | first :: rest =>
+      Dot64Safe (Wasm.IEEE64.mul first.1 first.2) rest
 
 /-- Exact-real sufficient conditions for dot-product tail stages.  Each
 product reserves one binary64 unit error and each multiply-add target reserves
@@ -836,6 +888,38 @@ theorem dot64_safe_nonempty_of_uniform
   simp only [List.length_cons, Nat.cast_add, Nat.cast_one] at hmass
   nlinarith
 
+/-- Total-list version of `dot64_safe_nonempty_of_abs_mass`.  Its empty case
+is discharged without numerical hypotheses beyond the uniformly shaped input
+condition. -/
+theorem dot64ListSafe_of_abs_mass
+    (terms : List (UInt64 × UInt64))
+    (hinputs : Dot64UnitInputs terms)
+    (hbudget :
+      dot64AbsMass terms + dot64ListErrorBudget terms ≤ 1) :
+    Dot64ListSafe terms := by
+  cases terms with
+  | nil => trivial
+  | cons first rest =>
+      exact dot64_safe_nonempty_of_abs_mass first rest hinputs
+        (by simpa [dot64ListErrorBudget] using hbudget)
+
+/-- Uniform-envelope sufficient condition for the total list-shaped kernel. -/
+theorem dot64ListSafe_of_uniform
+    (leftBound rightBound : ℝ) (terms : List (UInt64 × UInt64))
+    (hleftNonneg : 0 ≤ leftBound) (hrightNonneg : 0 ≤ rightBound)
+    (hleftUnit : leftBound ≤ 1) (hrightUnit : rightBound ≤ 1)
+    (hinputs : Dot64UniformInputs leftBound rightBound terms)
+    (hbudget :
+      (terms.length : ℝ) * (leftBound * rightBound) +
+          dot64ListErrorBudget terms ≤ 1) :
+    Dot64ListSafe terms := by
+  cases terms with
+  | nil => trivial
+  | cons first rest =>
+      apply dot64_safe_nonempty_of_uniform leftBound rightBound first rest
+        hleftNonneg hrightNonneg hleftUnit hrightUnit hinputs
+      simpa [dot64ListErrorBudget] using hbudget
+
 /-- Exact-real headroom constructs the explicit modeled dot-product safety
 trace. -/
 theorem dot64_safe_of_headroom (accumulator : UInt64)
@@ -952,6 +1036,63 @@ theorem dot64_real_error (first : UInt64 × UInt64)
           (CodeLib.IEEE64.value first.1 * CodeLib.IEEE64.value first.2) rest| ≤
         (2 * (rest.length : ℝ) + 1) * f64Epsilon
     convert hresult.2 using 1 <;> ring
+
+/-- Finite/error theorem for the total list-shaped dot product used by the
+generated runtime kernel.  It includes the exact positive-zero empty branch
+and exposes the conventional exact real sum as its target. -/
+theorem dot64List_real_error (terms : List (UInt64 × UInt64))
+    (hinputs : Dot64UnitInputs terms)
+    (hsafe : Dot64ListSafe terms) :
+    CodeLib.IEEE64.Finite (dot64List terms) ∧
+      |CodeLib.IEEE64.value (dot64List terms) - dot64ExactSum terms| ≤
+        dot64ListErrorBudget terms := by
+  cases terms with
+  | nil =>
+      constructor
+      · norm_num [dot64List, CodeLib.IEEE64.Finite,
+          Wasm.IEEE64.isFinite, Wasm.IEEE64.exponent]
+      · norm_num [dot64List, dot64ExactSum, dot64ListErrorBudget,
+          CodeLib.IEEE64.value, Wasm.IEEE64.scaledValue,
+          Wasm.IEEE64.scaledMagnitude, Wasm.IEEE64.sign,
+          Wasm.IEEE64.exponent, Wasm.IEEE64.fraction]
+  | cons first rest =>
+      have hfirst := hinputs first (by simp)
+      obtain ⟨hfirstLeft, hfirstRight, hfirstLeftBound,
+        hfirstRightBound⟩ := hfirst
+      have hresult := dot64_real_error first rest hfirstLeft hfirstRight
+        hfirstLeftBound hfirstRightBound hsafe
+      rw [← dot64ExactList_eq_sum]
+      simpa [dot64List, dot64ExactList, dot64ListErrorBudget] using hresult
+
+/-- Aggregate exact-mass interface for the total list-shaped error theorem. -/
+theorem dot64List_real_error_of_abs_mass
+    (terms : List (UInt64 × UInt64))
+    (hinputs : Dot64UnitInputs terms)
+    (hbudget :
+      dot64AbsMass terms + dot64ListErrorBudget terms ≤ 1) :
+    CodeLib.IEEE64.Finite (dot64List terms) ∧
+      |CodeLib.IEEE64.value (dot64List terms) - dot64ExactSum terms| ≤
+        dot64ListErrorBudget terms :=
+  dot64List_real_error terms hinputs
+    (dot64ListSafe_of_abs_mass terms hinputs hbudget)
+
+/-- Uniform-envelope interface for the total list-shaped error theorem. -/
+theorem dot64List_real_error_of_uniform
+    (leftBound rightBound : ℝ) (terms : List (UInt64 × UInt64))
+    (hleftNonneg : 0 ≤ leftBound) (hrightNonneg : 0 ≤ rightBound)
+    (hleftUnit : leftBound ≤ 1) (hrightUnit : rightBound ≤ 1)
+    (hinputs : Dot64UniformInputs leftBound rightBound terms)
+    (hbudget :
+      (terms.length : ℝ) * (leftBound * rightBound) +
+          dot64ListErrorBudget terms ≤ 1) :
+    CodeLib.IEEE64.Finite (dot64List terms) ∧
+      |CodeLib.IEEE64.value (dot64List terms) - dot64ExactSum terms| ≤
+        dot64ListErrorBudget terms :=
+  dot64List_real_error terms
+    (dot64UnitInputs_of_uniform leftBound rightBound terms
+      hleftUnit hrightUnit hinputs)
+    (dot64ListSafe_of_uniform leftBound rightBound terms
+      hleftNonneg hrightNonneg hleftUnit hrightUnit hinputs hbudget)
 
 /-- Exact-real headroom is a sufficient interface for the generic nonempty
 binary64 dot-product theorem. -/
@@ -1144,13 +1285,20 @@ theorem dot4_program_real_error_of_headroom
 #print axioms dot64AbsMass_nonneg
 #print axioms dot64AbsMass_take_add_drop
 #print axioms dot64PrefixMass_le
+#print axioms dot64ExactAcc_eq_add_sum
+#print axioms dot64ExactList_eq_sum
 #print axioms dot64UnitInputs_of_uniform
 #print axioms dot64AbsMass_le_uniform
 #print axioms dot64_safe_of_abs_mass_budget
 #print axioms dot64_safe_nonempty_of_abs_mass
 #print axioms dot64_safe_nonempty_of_uniform
+#print axioms dot64ListSafe_of_abs_mass
+#print axioms dot64ListSafe_of_uniform
 #print axioms dot64Acc_real_error
 #print axioms dot64_real_error
+#print axioms dot64List_real_error
+#print axioms dot64List_real_error_of_abs_mass
+#print axioms dot64List_real_error_of_uniform
 #print axioms dot64_safe_of_headroom
 #print axioms dot64_real_error_of_headroom
 #print axioms dot_real_error
