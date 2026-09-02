@@ -712,3 +712,21 @@ differential tests, and an example-program theorem.
   `Quot.sound`.
 - Next: publish and fetch-verify this checkpoint, then add sufficient-condition
   safety corollaries and perform the combined final validation.
+
+### Scalable kernels checkpoint 4a: exact-headroom safety
+
+- Added `abs_le_of_error_headroom`, converting an absolute error theorem and
+  an exact-value margin into a magnitude bound for the approximation.
+- Added recursive exact-real headroom predicates for f32 Horner stages and f64
+  dot-product stages.  Product targets reserve one format epsilon; complete
+  multiply-add targets reserve two.  The predicates retain all finite-input
+  and magnitude assumptions while avoiding direct proof obligations about
+  rounded intermediate bit patterns.
+- Proved that these predicates construct `Horner32Safe` and `Dot64Safe`, then
+  exposed headroom versions of both generic error theorems and both larger WAT
+  execution/error theorems.
+- `lake build CodeLib.Numerical.Kernels` passed in 3,062 jobs under exact Lean
+  4.34.0-rc2.  Every new headroom, safety-construction, generic, and WAT public
+  theorem reports only `propext`, `Classical.choice`, and `Quot.sound`.
+- Next: publish and fetch-verify the safety layer, then run the combined final
+  interpreter and CodeLib validation and close the scalable-kernel agenda.

@@ -322,4 +322,6 @@ affine and two-term dot-product results are derived from the generic folds.
 Checkpoint 3 is complete: decoded unrolled WAT consumers cover a three-stage
 f32 Horner evaluation and a four-term f64 dot product, with explicit traces,
 fuel-independent termination, and error bounds supplied by the generic
-folds.  Checkpoint 4 remains pending.
+folds.  Checkpoint 4's safety layer is complete: exact-real headroom predicates
+now imply the explicit recursive safety conditions and feed both generic and
+WAT theorems.  Combined final validation remains pending.

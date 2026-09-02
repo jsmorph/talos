@@ -151,6 +151,89 @@ inductive Horner32Safe (x : UInt32) : UInt32 → List UInt32 → Prop
         coefficients) :
       Horner32Safe x accumulator (coefficient :: coefficients)
 
+/-- Exact-real sufficient conditions for a sequence of binary32 Horner
+stages.  Product headroom absorbs one unit error and stage headroom absorbs
+the multiplication-plus-addition budget. -/
+noncomputable def Horner32HeadroomStages (x accumulator : UInt32) :
+    List UInt32 → Prop
+  | [] => True
+  | coefficient :: coefficients =>
+      CodeLib.IEEE32.Finite coefficient ∧
+      |CodeLib.IEEE32.value coefficient| ≤ 1 ∧
+      |CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x| +
+          f32Epsilon ≤ 1 ∧
+      |CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x +
+          CodeLib.IEEE32.value coefficient| + 2 * f32Epsilon ≤ 1 ∧
+      Horner32HeadroomStages x
+        (Wasm.IEEE32.add (Wasm.IEEE32.mul accumulator x) coefficient)
+        coefficients
+
+theorem mul32_value_bound_of_headroom (a b : UInt32)
+    (ha : CodeLib.IEEE32.Finite a)
+    (hb : CodeLib.IEEE32.Finite b)
+    (haBound : |CodeLib.IEEE32.value a| ≤ 1)
+    (hbBound : |CodeLib.IEEE32.value b| ≤ 1)
+    (hheadroom :
+      |CodeLib.IEEE32.value a * CodeLib.IEEE32.value b| +
+        f32Epsilon ≤ 1) :
+    |CodeLib.IEEE32.value (Wasm.IEEE32.mul a b)| ≤ 1 := by
+  have hmul := CodeLib.IEEE32.mul_real_error a b ha hb haBound hbBound
+  have herror :
+      |CodeLib.IEEE32.value (Wasm.IEEE32.mul a b) -
+        CodeLib.IEEE32.value a * CodeLib.IEEE32.value b| ≤ f32Epsilon := by
+    simpa [f32Epsilon, CodeLib.IEEE32.multiplicationEpsilon] using hmul.2
+  exact CodeLib.Numerical.abs_le_of_error_headroom herror hheadroom
+
+theorem horner32_step_value_bound_of_headroom
+    (accumulator x coefficient : UInt32)
+    (haccumulator : CodeLib.IEEE32.Finite accumulator)
+    (hx : CodeLib.IEEE32.Finite x)
+    (hcoefficient : CodeLib.IEEE32.Finite coefficient)
+    (haccumulatorBound : |CodeLib.IEEE32.value accumulator| ≤ 1)
+    (hxBound : |CodeLib.IEEE32.value x| ≤ 1)
+    (hcoefficientBound : |CodeLib.IEEE32.value coefficient| ≤ 1)
+    (hproductBound :
+      |CodeLib.IEEE32.value (Wasm.IEEE32.mul accumulator x)| ≤ 1)
+    (hheadroom :
+      |CodeLib.IEEE32.value accumulator * CodeLib.IEEE32.value x +
+        CodeLib.IEEE32.value coefficient| + 2 * f32Epsilon ≤ 1) :
+    |CodeLib.IEEE32.value
+      (Wasm.IEEE32.add (Wasm.IEEE32.mul accumulator x) coefficient)| ≤ 1 := by
+  have hstep := horner32_step_real_error accumulator x coefficient
+    haccumulator hx hcoefficient haccumulatorBound hxBound
+    hcoefficientBound hproductBound
+  exact CodeLib.Numerical.abs_le_of_error_headroom hstep.2 hheadroom
+
+/-- Exact-real headroom conditions construct the explicit modeled Horner
+safety trace. -/
+theorem horner32_safe_of_headroom (x accumulator : UInt32)
+    (coefficients : List UInt32)
+    (hx : CodeLib.IEEE32.Finite x)
+    (hxBound : |CodeLib.IEEE32.value x| ≤ 1)
+    (haccumulator : CodeLib.IEEE32.Finite accumulator)
+    (haccumulatorBound : |CodeLib.IEEE32.value accumulator| ≤ 1)
+    (hstages : Horner32HeadroomStages x accumulator coefficients) :
+    Horner32Safe x accumulator coefficients := by
+  induction coefficients generalizing accumulator with
+  | nil => exact .nil haccumulator
+  | cons coefficient coefficients ih =>
+      simp only [Horner32HeadroomStages] at hstages
+      rcases hstages with
+        ⟨hcoefficient, hcoefficientBound, hproductHeadroom,
+          hnextHeadroom, htail⟩
+      have hproductBound := mul32_value_bound_of_headroom accumulator x
+        haccumulator hx haccumulatorBound hxBound hproductHeadroom
+      have hstep := horner32_step_real_error accumulator x coefficient
+        haccumulator hx hcoefficient haccumulatorBound hxBound
+        hcoefficientBound hproductBound
+      have hnextBound := horner32_step_value_bound_of_headroom
+        accumulator x coefficient haccumulator hx hcoefficient
+        haccumulatorBound hxBound hcoefficientBound hproductBound
+        hnextHeadroom
+      exact .cons haccumulator hx hcoefficient haccumulatorBound hxBound
+        hcoefficientBound hproductBound
+        (ih _ hstep.1 hnextBound htail)
+
 /-- The terminal accumulator of a safe binary32 Horner fold is finite. -/
 theorem horner32_safe_finite (x accumulator : UInt32)
     (coefficients : List UInt32)
@@ -203,6 +286,23 @@ theorem horner32_real_error (x accumulator : UInt32)
       (horner32_safe_trace x accumulator coefficients hsafe)
     rw [horner32Stages_error_sum] at herror
     simpa [horner32Exact] using herror
+
+/-- Exact-real headroom is a sufficient interface for the generic binary32
+Horner finite/error theorem. -/
+theorem horner32_real_error_of_headroom (x accumulator : UInt32)
+    (coefficients : List UInt32)
+    (hx : CodeLib.IEEE32.Finite x)
+    (hxBound : |CodeLib.IEEE32.value x| ≤ 1)
+    (haccumulator : CodeLib.IEEE32.Finite accumulator)
+    (haccumulatorBound : |CodeLib.IEEE32.value accumulator| ≤ 1)
+    (hstages : Horner32HeadroomStages x accumulator coefficients) :
+    CodeLib.IEEE32.Finite (horner32 x accumulator coefficients) ∧
+      |CodeLib.IEEE32.value (horner32 x accumulator coefficients) -
+          horner32Exact x accumulator coefficients| ≤
+        (coefficients.length : ℝ) * (2 * f32Epsilon) :=
+  horner32_real_error x accumulator coefficients hxBound
+    (horner32_safe_of_headroom x accumulator coefficients hx hxBound
+      haccumulator haccumulatorBound hstages)
 
 /-- The decoded f32 affine kernel has at most two primitive rounding errors.
 `hproductBound` is the explicit intermediate-magnitude/overflow-exclusion
@@ -285,6 +385,27 @@ theorem horner3_program_real_error (x c₃ c₂ c₁ c₀ : UInt32)
     simpa [horner3Result] using h
   exact (horner3_terminates x c₃ c₂ c₁ c₀).mono
     (fun _values _store hvalues => ⟨hvalues, hfinite, herror⟩)
+
+/-- The three-stage WAT result with exact-real headroom conditions replacing
+direct obligations about rounded intermediate products. -/
+theorem horner3_program_real_error_of_headroom (x c₃ c₂ c₁ c₀ : UInt32)
+    (hx : CodeLib.IEEE32.Finite x)
+    (hxBound : |CodeLib.IEEE32.value x| ≤ 1)
+    (hc₃ : CodeLib.IEEE32.Finite c₃)
+    (hc₃Bound : |CodeLib.IEEE32.value c₃| ≤ 1)
+    (hstages : Horner32HeadroomStages x c₃ [c₂, c₁, c₀]) :
+    SmallStep.TerminatesWith (horner3Config x c₃ c₂ c₁ c₀)
+      (fun values _ =>
+        values = [.f32 (horner3Result x c₃ c₂ c₁ c₀)] ∧
+          CodeLib.IEEE32.Finite (horner3Result x c₃ c₂ c₁ c₀) ∧
+          |CodeLib.IEEE32.value (horner3Result x c₃ c₂ c₁ c₀) -
+              (((CodeLib.IEEE32.value c₃ * CodeLib.IEEE32.value x +
+                  CodeLib.IEEE32.value c₂) * CodeLib.IEEE32.value x +
+                CodeLib.IEEE32.value c₁) * CodeLib.IEEE32.value x +
+                CodeLib.IEEE32.value c₀)| ≤ 6 * f32Epsilon) :=
+  horner3_program_real_error x c₃ c₂ c₁ c₀ hxBound
+    (horner32_safe_of_headroom x c₃ [c₂, c₁, c₀]
+      hx hxBound hc₃ hc₃Bound hstages)
 
 noncomputable def f64Epsilon : ℝ := 1 / (2 : ℝ) ^ 52
 
@@ -411,6 +532,86 @@ inductive Dot64Safe : UInt64 → List (UInt64 × UInt64) → Prop
         (Wasm.IEEE64.add accumulator (Wasm.IEEE64.mul a b)) terms) :
       Dot64Safe accumulator ((a, b) :: terms)
 
+/-- Exact-real sufficient conditions for dot-product tail stages.  Each
+product reserves one binary64 unit error and each multiply-add target reserves
+the two-unit local budget. -/
+noncomputable def Dot64HeadroomStages (accumulator : UInt64) :
+    List (UInt64 × UInt64) → Prop
+  | [] => True
+  | (a, b) :: terms =>
+      CodeLib.IEEE64.Finite a ∧
+      CodeLib.IEEE64.Finite b ∧
+      |CodeLib.IEEE64.value a| ≤ 1 ∧
+      |CodeLib.IEEE64.value b| ≤ 1 ∧
+      |CodeLib.IEEE64.value a * CodeLib.IEEE64.value b| +
+          f64Epsilon ≤ 1 ∧
+      |CodeLib.IEEE64.value accumulator +
+          CodeLib.IEEE64.value a * CodeLib.IEEE64.value b| +
+          2 * f64Epsilon ≤ 1 ∧
+      Dot64HeadroomStages
+        (Wasm.IEEE64.add accumulator (Wasm.IEEE64.mul a b)) terms
+
+theorem mul64_value_bound_of_headroom (a b : UInt64)
+    (ha : CodeLib.IEEE64.Finite a)
+    (hb : CodeLib.IEEE64.Finite b)
+    (haBound : |CodeLib.IEEE64.value a| ≤ 1)
+    (hbBound : |CodeLib.IEEE64.value b| ≤ 1)
+    (hheadroom :
+      |CodeLib.IEEE64.value a * CodeLib.IEEE64.value b| +
+        f64Epsilon ≤ 1) :
+    |CodeLib.IEEE64.value (Wasm.IEEE64.mul a b)| ≤ 1 := by
+  have hmul := CodeLib.IEEE64.mul_real_error a b ha hb haBound hbBound
+  have herror :
+      |CodeLib.IEEE64.value (Wasm.IEEE64.mul a b) -
+        CodeLib.IEEE64.value a * CodeLib.IEEE64.value b| ≤ f64Epsilon := by
+    simpa [f64Epsilon, CodeLib.IEEE64.multiplicationEpsilon] using hmul.2
+  exact CodeLib.Numerical.abs_le_of_error_headroom herror hheadroom
+
+theorem dot64_step_value_bound_of_headroom (accumulator a b : UInt64)
+    (haccumulator : CodeLib.IEEE64.Finite accumulator)
+    (ha : CodeLib.IEEE64.Finite a)
+    (hb : CodeLib.IEEE64.Finite b)
+    (haccumulatorBound : |CodeLib.IEEE64.value accumulator| ≤ 1)
+    (haBound : |CodeLib.IEEE64.value a| ≤ 1)
+    (hbBound : |CodeLib.IEEE64.value b| ≤ 1)
+    (hproductBound :
+      |CodeLib.IEEE64.value (Wasm.IEEE64.mul a b)| ≤ 1)
+    (hheadroom :
+      |CodeLib.IEEE64.value accumulator +
+        CodeLib.IEEE64.value a * CodeLib.IEEE64.value b| +
+          2 * f64Epsilon ≤ 1) :
+    |CodeLib.IEEE64.value
+      (Wasm.IEEE64.add accumulator (Wasm.IEEE64.mul a b))| ≤ 1 := by
+  have hstep := dot64_step_real_error accumulator a b haccumulator ha hb
+    haccumulatorBound haBound hbBound hproductBound
+  exact CodeLib.Numerical.abs_le_of_error_headroom hstep.2 hheadroom
+
+/-- Exact-real headroom constructs the explicit modeled dot-product safety
+trace. -/
+theorem dot64_safe_of_headroom (accumulator : UInt64)
+    (terms : List (UInt64 × UInt64))
+    (haccumulator : CodeLib.IEEE64.Finite accumulator)
+    (haccumulatorBound : |CodeLib.IEEE64.value accumulator| ≤ 1)
+    (hstages : Dot64HeadroomStages accumulator terms) :
+    Dot64Safe accumulator terms := by
+  induction terms generalizing accumulator with
+  | nil => exact .nil haccumulator
+  | cons term terms ih =>
+      rcases term with ⟨a, b⟩
+      simp only [Dot64HeadroomStages] at hstages
+      rcases hstages with
+        ⟨ha, hb, haBound, hbBound, hproductHeadroom,
+          hnextHeadroom, htail⟩
+      have hproductBound := mul64_value_bound_of_headroom a b ha hb
+        haBound hbBound hproductHeadroom
+      have hstep := dot64_step_real_error accumulator a b haccumulator ha hb
+        haccumulatorBound haBound hbBound hproductBound
+      have hnextBound := dot64_step_value_bound_of_headroom accumulator a b
+        haccumulator ha hb haccumulatorBound haBound hbBound hproductBound
+        hnextHeadroom
+      exact .cons haccumulator ha hb haccumulatorBound haBound hbBound
+        hproductBound (ih _ hstep.1 hnextBound htail)
+
 /-- An explicitly safe binary64 dot-product tail preserves an arbitrary
 initial error budget and adds two unit budgets per additional term. -/
 theorem dot64Acc_real_error (accumulator : UInt64)
@@ -501,6 +702,31 @@ theorem dot64_real_error (first : UInt64 × UInt64)
           (CodeLib.IEEE64.value first.1 * CodeLib.IEEE64.value first.2) rest| ≤
         (2 * (rest.length : ℝ) + 1) * f64Epsilon
     convert hresult.2 using 1 <;> ring
+
+/-- Exact-real headroom is a sufficient interface for the generic nonempty
+binary64 dot-product theorem. -/
+theorem dot64_real_error_of_headroom (first : UInt64 × UInt64)
+    (rest : List (UInt64 × UInt64))
+    (hfirstLeft : CodeLib.IEEE64.Finite first.1)
+    (hfirstRight : CodeLib.IEEE64.Finite first.2)
+    (hfirstLeftBound : |CodeLib.IEEE64.value first.1| ≤ 1)
+    (hfirstRightBound : |CodeLib.IEEE64.value first.2| ≤ 1)
+    (hfirstHeadroom :
+      |CodeLib.IEEE64.value first.1 * CodeLib.IEEE64.value first.2| +
+        f64Epsilon ≤ 1)
+    (hstages : Dot64HeadroomStages
+      (Wasm.IEEE64.mul first.1 first.2) rest) :
+    CodeLib.IEEE64.Finite (dot64 first rest) ∧
+      |CodeLib.IEEE64.value (dot64 first rest) - dot64Exact first rest| ≤
+        (2 * (rest.length : ℝ) + 1) * f64Epsilon := by
+  have hfirst := CodeLib.IEEE64.mul_real_error first.1 first.2
+    hfirstLeft hfirstRight hfirstLeftBound hfirstRightBound
+  have hfirstBound := mul64_value_bound_of_headroom first.1 first.2
+    hfirstLeft hfirstRight hfirstLeftBound hfirstRightBound hfirstHeadroom
+  exact dot64_real_error first rest hfirstLeft hfirstRight
+    hfirstLeftBound hfirstRightBound
+    (dot64_safe_of_headroom (Wasm.IEEE64.mul first.1 first.2) rest
+      hfirst.1 hfirstBound hstages)
 
 /-- A two-term binary64 dot product has the two multiplication errors plus the
 final addition error.  `hproduct₀Bound` and `hproduct₁Bound` explicitly
@@ -618,18 +844,60 @@ theorem dot4_program_real_error (a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃ : UInt6
   exact (dot4_terminates a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃).mono
     (fun _values _store hvalues => ⟨hvalues, hfinite, herror⟩)
 
+/-- The four-term WAT result with exact-real headroom replacing direct
+rounded-intermediate magnitude obligations. -/
+theorem dot4_program_real_error_of_headroom
+    (a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃ : UInt64)
+    (ha₀ : CodeLib.IEEE64.Finite a₀)
+    (hb₀ : CodeLib.IEEE64.Finite b₀)
+    (ha₀Bound : |CodeLib.IEEE64.value a₀| ≤ 1)
+    (hb₀Bound : |CodeLib.IEEE64.value b₀| ≤ 1)
+    (hfirstHeadroom :
+      |CodeLib.IEEE64.value a₀ * CodeLib.IEEE64.value b₀| +
+        f64Epsilon ≤ 1)
+    (hstages : Dot64HeadroomStages (Wasm.IEEE64.mul a₀ b₀)
+      [(a₁, b₁), (a₂, b₂), (a₃, b₃)]) :
+    SmallStep.TerminatesWith
+      (dot4Config a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃)
+      (fun values _ =>
+        values = [.f64 (dot4Result a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃)] ∧
+          CodeLib.IEEE64.Finite
+            (dot4Result a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃) ∧
+          |CodeLib.IEEE64.value
+              (dot4Result a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃) -
+            (((CodeLib.IEEE64.value a₀ * CodeLib.IEEE64.value b₀ +
+                CodeLib.IEEE64.value a₁ * CodeLib.IEEE64.value b₁) +
+              CodeLib.IEEE64.value a₂ * CodeLib.IEEE64.value b₂) +
+              CodeLib.IEEE64.value a₃ * CodeLib.IEEE64.value b₃)| ≤
+            7 * f64Epsilon) :=
+  dot4_program_real_error a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃
+    ha₀ hb₀ ha₀Bound hb₀Bound
+    (dot64_safe_of_headroom (Wasm.IEEE64.mul a₀ b₀)
+      [(a₁, b₁), (a₂, b₂), (a₃, b₃)]
+      (CodeLib.IEEE64.mul_real_error a₀ b₀ ha₀ hb₀
+        ha₀Bound hb₀Bound).1
+      (mul64_value_bound_of_headroom a₀ b₀ ha₀ hb₀
+        ha₀Bound hb₀Bound hfirstHeadroom)
+      hstages)
+
 #print axioms horner32_step_real_error
 #print axioms horner32_safe_finite
 #print axioms horner32_safe_trace
 #print axioms horner32_real_error
+#print axioms horner32_safe_of_headroom
+#print axioms horner32_real_error_of_headroom
 #print axioms affine_real_error
 #print axioms affine_program_real_error
 #print axioms horner3_program_real_error
+#print axioms horner3_program_real_error_of_headroom
 #print axioms dot64_step_real_error
 #print axioms dot64Acc_real_error
 #print axioms dot64_real_error
+#print axioms dot64_safe_of_headroom
+#print axioms dot64_real_error_of_headroom
 #print axioms dot_real_error
 #print axioms dot_program_real_error
 #print axioms dot4_program_real_error
+#print axioms dot4_program_real_error_of_headroom
 
 end CodeLib.Numerical.Kernels

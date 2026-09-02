@@ -76,6 +76,20 @@ theorem division_by_exact_constant {x x₀ c e : ℝ}
   rw [show x / c - x₀ / c = (x - x₀) / c by ring, abs_div]
   exact (div_le_div_iff_of_pos_right hcabs).2 hx
 
+/-- An exact value with enough magnitude headroom to absorb a known absolute
+error gives a direct magnitude bound for the approximation. -/
+theorem abs_le_of_error_headroom {approximate exact error bound : ℝ}
+    (herror : |approximate - exact| ≤ error)
+    (hheadroom : |exact| + error ≤ bound) :
+    |approximate| ≤ bound := by
+  rw [show approximate = (approximate - exact) + exact by ring]
+  calc
+    |approximate - exact + exact| ≤
+        |approximate - exact| + |exact| := abs_add_le _ _
+    _ ≤ error + |exact| := add_le_add herror (le_refl _)
+    _ = |exact| + error := add_comm _ _
+    _ ≤ bound := hheadroom
+
 /-! ## Sequential Horner evaluation -/
 
 /-- Exact Horner evaluation.  Each pair contains the next coefficient and the
@@ -202,6 +216,7 @@ theorem horner_two_step {x a b c r₁ r₂ e₁ e₂ M : ℝ}
 #print axioms sequential_perturbation
 #print axioms product_perturbations
 #print axioms division_by_exact_constant
+#print axioms abs_le_of_error_headroom
 #print axioms horner_error_recurrence
 #print axioms hornerErrorBudget_closed_form
 #print axioms horner_error_unit_interval
