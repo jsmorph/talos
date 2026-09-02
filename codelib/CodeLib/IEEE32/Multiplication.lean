@@ -1,4 +1,5 @@
 import CodeLib.IEEE32.SpecialValues
+import CodeLib.IEEE32.Rounders
 import Interpreter.Wasm.Examples.FloatMultiplication
 
 /-!
@@ -65,6 +66,100 @@ theorem mul_finite_nonzero (a b : UInt32)
   have hib := not_infinite_of_finite hb
   simp [Wasm.IEEE32.mul, hna, hnb, hia, hib, ha0, hb0]
 
+theorem natAbs_scaledValue (x : UInt32) :
+    (Wasm.IEEE32.scaledValue x).natAbs = Wasm.IEEE32.scaledMagnitude x := by
+  simp [Wasm.IEEE32.scaledValue]
+  split <;> simp
+
+/-- The finite multiplication path is uniformly the dyadic rounder, including
+signed-zero products. -/
+theorem mul_finite_rounder (a b : UInt32) (ha : Finite a) (hb : Finite b) :
+    Wasm.IEEE32.mul a b =
+      Wasm.IEEE32.roundDyadicMagnitude
+        (Wasm.IEEE32.sign a != Wasm.IEEE32.sign b)
+        (Wasm.IEEE32.scaledMagnitude a * Wasm.IEEE32.scaledMagnitude b) 149 := by
+  have hna := not_nan_of_finite ha
+  have hnb := not_nan_of_finite hb
+  have hia := not_infinite_of_finite ha
+  have hib := not_infinite_of_finite hb
+  by_cases ha0 : Wasm.IEEE32.scaledMagnitude a = 0 <;>
+    by_cases hb0 : Wasm.IEEE32.scaledMagnitude b = 0 <;>
+    simp [Wasm.IEEE32.mul, hna, hnb, hia, hib, ha0, hb0,
+      Wasm.IEEE32.roundDyadicMagnitude]
+
+/-- On the bounded domain used by the examples, multiplication incurs at
+most `2^275` after the exact equation is cleared by `2^149`.  Dividing by the
+common `2^298` real denominator gives the usual absolute `2^-23` bound. -/
+theorem mul_scaled_error (a b : UInt32) (ha : Finite a) (hb : Finite b)
+    (haBound : |Wasm.IEEE32.scaledValue a| ≤ (2 ^ 149 : Int))
+    (hbBound : |Wasm.IEEE32.scaledValue b| ≤ (2 ^ 149 : Int)) :
+    Finite (Wasm.IEEE32.mul a b) ∧
+      |Wasm.IEEE32.scaledValue (Wasm.IEEE32.mul a b) * (2 : Int) ^ 149 -
+        Wasm.IEEE32.scaledValue a * Wasm.IEEE32.scaledValue b| ≤
+          (2 ^ 275 : Nat) := by
+  have haMag : Wasm.IEEE32.scaledMagnitude a ≤ 2 ^ 149 := by
+    rw [Int.abs_eq_natAbs, natAbs_scaledValue] at haBound
+    exact_mod_cast haBound
+  have hbMag : Wasm.IEEE32.scaledMagnitude b ≤ 2 ^ 149 := by
+    rw [Int.abs_eq_natAbs, natAbs_scaledValue] at hbBound
+    exact_mod_cast hbBound
+  let n := Wasm.IEEE32.scaledMagnitude a * Wasm.IEEE32.scaledMagnitude b
+  have hn : n < 2 ^ 300 := by
+    calc
+      n ≤ 2 ^ 149 * 2 ^ 149 := Nat.mul_le_mul haMag hbMag
+      _ = 2 ^ 298 := by rw [← pow_add]
+      _ < 2 ^ 300 := Nat.pow_lt_pow_right (by omega) (by omega)
+  have hs := roundDyadicMagnitude149_spec
+    (Wasm.IEEE32.sign a != Wasm.IEEE32.sign b) n hn
+  have hmul := mul_finite_rounder a b ha hb
+  rw [hmul]
+  constructor
+  · exact hs.1
+  · have herr := hs.2.2
+    have hresultSign := hs.2.1
+    have habs (x y : Int) : |-x + y| = |x + -y| := by
+      rw [show -x + y = -(x + -y) by ring, abs_neg]
+    cases hsa : Wasm.IEEE32.sign a <;>
+      cases hsb : Wasm.IEEE32.sign b <;>
+      simp [n, hsa, hsb] at hresultSign <;>
+      simp [Wasm.IEEE32.scaledValue, hresultSign, hsa, hsb, n] at herr ⊢
+    all_goals
+      first
+      | simpa [Int.natCast_mul, sub_eq_add_neg, add_comm] using herr
+      | rw [habs]
+        simpa [Int.natCast_mul, sub_eq_add_neg, add_comm] using herr
+
+noncomputable def multiplicationEpsilon : ℝ := 1 / (2 : ℝ) ^ 23
+
+theorem mul_real_error (a b : UInt32) (ha : Finite a) (hb : Finite b)
+    (haBound : |value a| ≤ 1) (hbBound : |value b| ≤ 1) :
+    Finite (Wasm.IEEE32.mul a b) ∧
+      |value (Wasm.IEEE32.mul a b) - value a * value b| ≤
+        multiplicationEpsilon := by
+  have hs := mul_scaled_error a b ha hb
+    (scaled_abs_le_of_value_abs_le a haBound)
+    (scaled_abs_le_of_value_abs_le b hbBound)
+  constructor
+  · exact hs.1
+  · let z : Int :=
+      Wasm.IEEE32.scaledValue (Wasm.IEEE32.mul a b) * (2 : Int) ^ 149 -
+        Wasm.IEEE32.scaledValue a * Wasm.IEEE32.scaledValue b
+    have hz : |z| ≤ (2 ^ 275 : Nat) := hs.2
+    have heq :
+        value (Wasm.IEEE32.mul a b) - value a * value b =
+          (z : ℝ) / (2 : ℝ) ^ 298 := by
+      simp [value, z]
+      field_simp
+      ring
+    rw [heq, abs_div, abs_of_pos (by positivity : 0 < (2 : ℝ) ^ 298)]
+    apply (div_le_iff₀ (by positivity : 0 < (2 : ℝ) ^ 298)).2
+    have hzReal : |(z : ℝ)| ≤ (2 : ℝ) ^ 275 := by
+      exact_mod_cast hz
+    calc
+      |(z : ℝ)| ≤ (2 : ℝ) ^ 275 := hzReal
+      _ = multiplicationEpsilon * (2 : ℝ) ^ 298 := by
+        norm_num [multiplicationEpsilon]
+
 /-- The decoded WAT program terminates with the exact one-rounding dyadic
 product for every pair of finite, nonzero inputs. -/
 theorem mul_program_terminates_finite_nonzero (a b : UInt32)
@@ -101,6 +196,7 @@ theorem mul_least_subnormal_underflow_tie :
   decide
 
 #print axioms mul_finite_nonzero
+#print axioms mul_real_error
 #print axioms mul_program_terminates_finite_nonzero
 #print axioms mul_infinities
 #print axioms mul_largest_finite_by_two_overflows

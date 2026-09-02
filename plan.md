@@ -198,8 +198,10 @@ conversion seam.
    primitive f32 roundoff contracts, and attach the combined bound to the
    fuel-independent WAT execution theorem.
 
-The f64 conversion implementation is complete and pushed.  The axiom-removal
-refactor passes its targeted CodeLib build and is ready for its checkpoint.
-Quantitative rounder lemmas and the interval sine proof remain the next proof
-work.  Every passing unit above will be committed and pushed before work
-proceeds to the next unit.
+The f64 conversion implementation and axiom-removal refactor are complete and
+pushed.  The first quantitative rounder contract now proves the exact signed
+integer error of `roundDyadicMagnitude`, and its lift proves the real f32
+multiplication error is at most `2^-23` whenever both finite inputs have
+absolute value at most one.  Rational division, integer square root, and the
+interval sine proof remain the next proof work.  Every passing unit above will
+be committed and pushed before work proceeds to the next unit.

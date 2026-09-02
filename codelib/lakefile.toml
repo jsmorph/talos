@@ -21,6 +21,7 @@ roots = [
   # Compatibility lemmas for generated float-truncation proofs.
   "CodeLib.IEEE32.Exec",
   "CodeLib.IEEE32.Roundoff",
+  "CodeLib.IEEE32.Rounders",
   "CodeLib.IEEE32.SpecialValues",
   "CodeLib.IEEE32.Multiplication",
   "CodeLib.IEEE32.Division",

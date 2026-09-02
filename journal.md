@@ -354,3 +354,17 @@ differential tests, and an example-program theorem.
   blocked by the already recorded type errors in pinned Iris
   `Iris.Algebra.COFESolver`.  The failure occurs before either project target
   and is unrelated to this change.
+- Added `CodeLib.IEEE32.Rounders` and proved a quantitative contract for the
+  interpreter's exact ties-to-even dyadic rounder at binary32 scale.  The
+  theorem covers exact packing, normal rounding, significand carry, gradual
+  underflow, signs, and finiteness without a floating-point oracle.
+- Lifted that contract through `Wasm.IEEE32.mul`: for finite inputs with real
+  magnitudes at most one, the modeled f32 result is finite and differs from
+  exact real multiplication by at most `2^-23`.  This theorem shares the
+  proof-visible operation used by the existing hand-written WAT multiplication
+  program.
+- `lake build CodeLib.IEEE32.Multiplication` passes in 3,051 jobs under exact
+  Lean 4.34.0-rc2.  Axiom reports for the new rounder and multiplication error
+  theorems contain only standard logical axioms (`propext`,
+  `Classical.choice`, and `Quot.sound`); no compatibility axiom or `sorryAx`
+  remains.
