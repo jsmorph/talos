@@ -469,3 +469,16 @@ differential tests, and an example-program theorem.
   affected semantics and specification files.  `git diff --check` passed.
 - All seven items in the current execution agenda are complete.  This final
   documentation update records the validated state for the pushed branch.
+
+## 2026-09-02: Quantitative kernels phase started
+
+- Accepted the next three priorities in order: quantitative f64 arithmetic,
+  reusable error-composition lemmas, and representative f32/f64 numerical
+  kernels.
+- Confirmed the branch begins clean at remote commit `b73c860` and remains
+  pinned to exact Lean 4.34.0-rc2.
+- Phase 1 will extend the existing pure binary64 semantics rather than add a
+  second arithmetic model.  Each public error result will be paired with a
+  decoded-WAT execution theorem where an example module exists or is added.
+- Passing phases will be committed and pushed separately.  Native floating-
+  point evaluation remains confined to deterministic regression examples.

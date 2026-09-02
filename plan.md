@@ -238,3 +238,29 @@ strengthening units are complete and pushed independently.
    The compatibility declarations are now theorems with no axiom dependencies,
    and every new general numerical theorem is free of `sorryAx`, native-oracle
    axioms, and floating-point bridge axioms.
+
+## Quantitative kernel execution agenda (2026-09-02)
+
+The next work proceeds in this fixed order, with a passing commit pushed after
+each phase:
+
+1. **Quantitative f64 arithmetic.**  Prove finite real-error results for
+   binary64 addition, subtraction, multiplication, division, and square root
+   under explicit bounded-domain hypotheses.  Add fuel-independent decoded-WAT
+   theorems for representative operations and retain the native IEEE64 suite as
+   a regression oracle.
+2. **Reusable error composition.**  Add lemmas for perturbation sums,
+   perturbed products, division by exact nonzero constants, and sequential
+   Horner evaluation.  Refactor at least one existing numerical proof to use
+   these results, so the interface is tested by a concrete consumer.
+3. **Representative numerical kernels.**  Add hand-written decoded WAT and
+   fuel-independent theorems for f32 and f64 affine or Horner evaluation and a
+   dot-product kernel.  State finite-result, accumulated-error, and overflow-
+   exclusion hypotheses explicitly.
+4. **Final validation.**  Build the affected interpreter and CodeLib roots
+   with Lean 4.34.0-rc2, inspect public theorem axiom reports, scan the changed
+   sources, update this plan and `journal.md`, and push the final tree.
+
+### Current status
+
+Phase 1 is in progress.  Phases 2 through 4 remain pending.
