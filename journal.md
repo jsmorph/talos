@@ -578,3 +578,25 @@ differential tests, and an example-program theorem.
   `Quot.sound`.  `git diff --check` and the changed-source proof-hole scan pass.
 - Next: publish and fetch-verify this checkpoint, then verify decoded f32
   affine/Horner and f64 dot-product numerical kernels.
+
+### Representative numerical-kernel checkpoint
+
+- Added decoded hand-written WAT for f32 affine evaluation `(a*x)+b` and a
+  two-term f64 dot product.  Both programs have decoder-visible bodies,
+  explicit symbolic `SmallStep.Steps` traces, and fuel-independent
+  `TerminatesWith` theorems over the pure modeled IEEE operations.
+- Added `CodeLib.Numerical.Kernels`.  Its f32 theorem proves finiteness and
+  accumulated error at most `2 * 2^-23`; its f64 theorem proves finiteness and
+  accumulated error at most `3 * 2^-52`.
+- All finite-input and operand-magnitude assumptions are explicit.  The
+  modeled intermediate-product magnitude assumptions state the precise
+  overflow exclusions needed by the final additions.  Neither kernel contains
+  division, so there is no hidden denominator condition.
+- `lake build Interpreter.Wasm.Examples.FloatNumericalKernels` passed in 15
+  jobs and `lake build CodeLib.Numerical.Kernels` passed in 3,062 jobs under
+  exact Lean 4.34.0-rc2.
+- Axiom reports for both numerical theorems and both WAT execution/error
+  theorems contain only `propext`, `Classical.choice`, and `Quot.sound`.
+  `git diff --check` and the changed-source proof-hole scan pass.
+- Next: publish and fetch-verify this checkpoint, run combined affected-root
+  validation, then record and publish the final validated state.

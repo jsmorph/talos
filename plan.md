@@ -270,4 +270,8 @@ hand-written WAT with an explicit small-step trace and a fuel-independent
 execution/error theorem.  Phase 2 is complete: the format-independent error
 composition module covers sums, products, exact-constant division, and
 sequential Horner evaluation, and the f32 cubic sine proof consumes the new
-interface without changing its public result.  Phases 3 and 4 remain pending.
+interface without changing its public result.  Phase 3 is complete: decoded
+f32 affine and two-term f64 dot-product kernels
+have explicit traces, fuel-independent execution theorems, finite results, and
+accumulated absolute error bounds under explicit operand and intermediate
+magnitude assumptions.  Final combined validation remains in Phase 4.
