@@ -294,3 +294,23 @@ differential tests, and an example-program theorem.
 - `CodeLib.IEEE32.Exec` still reaches Lean's previously recorded code-139
   compiler crash after all interpreter dependencies build.  Its five legacy
   compatibility axioms remain isolated from the new operation specifications.
+
+### Final validation and delivery
+
+- A combined interpreter build passed all new IEEE32/IEEE64 regression suites,
+  all scalar/SIMD/polynomial WAT examples, and `Interpreter.Wasm.Wp.Atomic`
+  in 3,058 jobs.
+- A combined codelib build passed all nine new specification roots in 3,067
+  jobs.  Axiom reports for the general operation and exact program theorems
+  contain only `propext`, `Classical.choice`, and `Quot.sound` as applicable;
+  they do not depend on `CodeLib.IEEE32.Exec` or its compatibility axioms.
+- Concrete positive-square-root, SIMD lane-vector, binary64 arithmetic, and
+  half-input polynomial examples use `native_decide` only as executable test
+  evidence.  The corresponding general semantics/program theorems are checked
+  independently of those native-oracle theorems.
+- `git diff --check` passed, no new source file contains `sorry` or `admit`,
+  and the worktree was clean after delivery.
+- Pushed the byte-verified interpreter tree at `028d556` and the CodeLib,
+  plan, and journal tree at `1abfe86` to
+  `origin/float-associativity-verification`.  Local and remote Git tree hashes
+  matched after each branch update.
