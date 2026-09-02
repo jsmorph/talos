@@ -30,6 +30,7 @@ roots = [
   "CodeLib.IEEE32.IntegralRounding",
   "CodeLib.IEEE32.Conversions",
   "CodeLib.IEEE64.Operations",
+  "CodeLib.IEEE64.Roundoff",
   "CodeLib.IEEE64.Conversions",
   "CodeLib.IEEE32.SIMD",
   "CodeLib.IEEE32.Transcendental",

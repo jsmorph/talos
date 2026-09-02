@@ -70,19 +70,13 @@ def roundDyadicMagnitude
   if n == 0 then signMask negative
   else
     let outputShift := Nat.log2 n - (fractionalBits + 52)
-    if outputShift == 0 then
-      let rounded :=
+    let candidate :=
+      if outputShift == 0 then
         if fractionalBits == 0 then n
         else IEEE32.roundShift n fractionalBits
-      roundScaledMagnitude negative rounded
-    else
-      let rounded := IEEE32.roundShift n (fractionalBits + outputShift)
-      let (finalShift, significand) :=
-        if rounded == 2 ^ 53 then (outputShift + 1, 2 ^ 52)
-        else (outputShift, rounded)
-      let exponentField := finalShift + 1
-      if 0x7FF ≤ exponentField then infinity negative
-      else encodeFinite negative exponentField (significand - 2 ^ 52)
+      else
+        IEEE32.roundShift n (fractionalBits + outputShift) * 2 ^ outputShift
+    roundScaledMagnitude negative candidate
 
 def roundRationalMagnitude
     (negative : Bool) (numerator denominator : Nat) : UInt64 :=
@@ -91,18 +85,13 @@ def roundRationalMagnitude
   else
     let integerPart := numerator / denominator
     let outputShift := Nat.log2 integerPart - 52
-    if outputShift == 0 then
-      roundScaledMagnitude negative
-        (IEEE32.roundQuotient numerator denominator)
-    else
-      let rounded := IEEE32.roundQuotient numerator
-        (denominator * 2 ^ outputShift)
-      let (finalShift, significand) :=
-        if rounded == 2 ^ 53 then (outputShift + 1, 2 ^ 52)
-        else (outputShift, rounded)
-      let exponentField := finalShift + 1
-      if 0x7FF ≤ exponentField then infinity negative
-      else encodeFinite negative exponentField (significand - 2 ^ 52)
+    let candidate :=
+      if outputShift == 0 then
+        IEEE32.roundQuotient numerator denominator
+      else
+        IEEE32.roundQuotient numerator (denominator * 2 ^ outputShift) *
+          2 ^ outputShift
+    roundScaledMagnitude negative candidate
 
 def roundSqrtMagnitude (magnitude : Nat) : UInt64 :=
   if magnitude == 0 then 0
@@ -110,16 +99,8 @@ def roundSqrtMagnitude (magnitude : Nat) : UInt64 :=
     let radicand := magnitude * 2 ^ 1074
     let rootFloor := Nat.sqrt radicand
     let outputShift := Nat.log2 rootFloor - 52
-    if outputShift == 0 then
-      roundScaledMagnitude false (IEEE32.roundSqrtIntegral radicand 0)
-    else
-      let rounded := IEEE32.roundSqrtIntegral radicand outputShift
-      let (finalShift, significand) :=
-        if rounded == 2 ^ 53 then (outputShift + 1, 2 ^ 52)
-        else (outputShift, rounded)
-      let exponentField := finalShift + 1
-      if 0x7FF ≤ exponentField then infinity false
-      else encodeFinite false exponentField (significand - 2 ^ 52)
+    let rounded := IEEE32.roundSqrtIntegral radicand outputShift
+    roundScaledMagnitude false (rounded * 2 ^ outputShift)
 
 def add (a b : UInt64) : UInt64 :=
   if isNaN a || isNaN b then canonicalNaN

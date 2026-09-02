@@ -482,3 +482,18 @@ differential tests, and an example-program theorem.
   decoded-WAT execution theorem where an example module exists or is added.
 - Passing phases will be committed and pushed separately.  Native floating-
   point evaluation remains confined to deterministic regression examples.
+
+### Binary64 roundoff foundation
+
+- Added a binary64 real-value interpretation and proved finite decoding,
+  scaled-magnitude packing, sign preservation, and bounded scaled-value
+  rounding through the existing integer ties-to-even primitive.
+- Proved finite binary64 addition and subtraction differ from exact real
+  arithmetic by at most `2^-52` when both inputs have magnitude at most one.
+- Factored binary64 dyadic, rational, and square-root candidate packing through
+  the shared `roundScaledMagnitude` implementation.  The 1,031-case native
+  differential suite passed, followed by the full affected interpreter build;
+  `Interpreter.Wasm.SmallStep` rebuilt successfully in 364 seconds.
+- `lake build CodeLib.IEEE64.Roundoff` passed under Lean 4.34.0-rc2.  Its
+  public packing, addition, and subtraction theorems report only standard Lean
+  logical axioms.

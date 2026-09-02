@@ -1,3 +1,4 @@
+import CodeLib.IEEE64.Roundoff
 import Interpreter.Wasm.Examples.Float64Multiplication
 import Interpreter.Wasm.Examples.IEEE64
 import Mathlib.Tactic
@@ -13,8 +14,6 @@ set_option maxRecDepth 8192
 
 open Wasm
 open Wasm.Float64Multiplication
-
-def Finite (x : UInt64) : Prop := Wasm.IEEE64.isFinite x = true
 
 theorem mul_nan_left {a : UInt64} (b : UInt64)
     (ha : Wasm.IEEE64.isNaN a = true) :
