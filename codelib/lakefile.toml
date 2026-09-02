@@ -18,9 +18,7 @@ path = "../interpreter"
 name = "CodeLib"
 roots = [
   "CodeLib",
-  # Not reachable from the `CodeLib` umbrella on purpose: it declares the float
-  # bridge axioms, which should not enter every downstream module's environment.
-  # It is still a root so the codelib build keeps checking it.
+  # Compatibility lemmas for generated float-truncation proofs.
   "CodeLib.IEEE32.Exec",
   "CodeLib.IEEE32.Roundoff",
   "CodeLib.IEEE32.SpecialValues",
@@ -31,6 +29,7 @@ roots = [
   "CodeLib.IEEE32.IntegralRounding",
   "CodeLib.IEEE32.Conversions",
   "CodeLib.IEEE64.Operations",
+  "CodeLib.IEEE64.Conversions",
   "CodeLib.IEEE32.SIMD",
   "CodeLib.IEEE32.Transcendental",
   "CodeLib.Examples.Gcd",

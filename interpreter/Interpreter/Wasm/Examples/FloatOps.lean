@@ -15,6 +15,9 @@ Expected values are written as `Float`/`Float32` literals decoded to bits via
 namespace Wasm
 open SmallStep
 
+set_option exponentiation.threshold 2048
+set_option maxRecDepth 8192
+
 /-- `(2.0 + 3.0) * 4.0` in `f64` ⇒ `20.0`. -/
 def f64Arith : Program :=
   [ .f64Const (2.0 : Float).toBits, .f64Const (3.0 : Float).toBits, .f64Add,
@@ -70,6 +73,26 @@ def floatConfig (index : Nat) : Config Unit :=
     store :=
       { runtime := { instances := #[{ module := floatModule, host := {} }], entry := ⟨0⟩ }
         wasm := floatModule.initialStore } }
+
+/-- Proof-visible trace for the conversion round trip.  Unlike the executable
+regression theorem below, this result does not use native evaluation. -/
+theorem conv_roundtrip_steps :
+    Steps (floatConfig 5)
+      [(.instruction (.const 7)), (.instruction .f64ConvertI32S),
+       (.instruction .i32TruncF64S), (.administrative .finish)]
+      ⟨.done [.i32 7], (floatConfig 5).store⟩ := by
+  have htrunc : i32TruncF64S (f64ConvertI32S 7) = some 7 := by decide
+  apply Steps.cons .const
+  apply Steps.cons (.scalarFloat1 rfl rfl)
+  apply Steps.cons (.scalarTruncSuccess (value := .i32 7) (by
+    simp [evalScalarTrunc?, htrunc]))
+  apply Steps.cons .finish
+  simpa [floatConfig, floatModule, convRoundtrip] using
+    (Steps.refl (⟨.done [.i32 7], (floatConfig 5).store⟩ : Config Unit))
+
+theorem conv_roundtrip_terminates :
+    TerminatesWith (floatConfig 5) (fun values _ => values = [.i32 7]) :=
+  TerminatesWith.of_steps conv_roundtrip_steps rfl
 
 theorem f64_arith :
     (runSteps 10 (floatConfig 0)).result.values? =

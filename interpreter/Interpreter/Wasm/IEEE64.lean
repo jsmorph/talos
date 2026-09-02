@@ -218,4 +218,109 @@ def floor (a : UInt64) : UInt64 := roundIntegral .floor a
 def trunc (a : UInt64) : UInt64 := roundIntegral .trunc a
 def nearest (a : UInt64) : UInt64 := roundIntegral .nearest a
 
+/-! ## Integer conversions -/
+
+/-- Interpret an `i32` bit pattern as a signed mathematical integer. -/
+def signedI32Value (a : UInt32) : Int :=
+  if IEEE32.sign a then (a.toNat : Int) - (2 : Int) ^ 32 else a.toNat
+
+/-- Interpret an `i64` bit pattern as a signed mathematical integer. -/
+def signedI64Value (a : UInt64) : Int :=
+  if sign a then (a.toNat : Int) - (2 : Int) ^ 64 else a.toNat
+
+/-- Correctly round a mathematical integer to binary64. -/
+def fromInt (a : Int) : UInt64 :=
+  roundScaledMagnitude (a < 0) (a.natAbs * 2 ^ 1074)
+
+def convertI32S (a : UInt32) : UInt64 := fromInt (signedI32Value a)
+def convertI32U (a : UInt32) : UInt64 := fromInt a.toNat
+def convertI64S (a : UInt64) : UInt64 := fromInt (signedI64Value a)
+def convertI64U (a : UInt64) : UInt64 := fromInt a.toNat
+
+/-- Truncate a finite binary64 value toward zero as an unbounded integer.
+Exceptional inputs return `none`; target-width range checks are separate. -/
+def truncatedInt (a : UInt64) : Option Int :=
+  if isFinite a then
+    let magnitude : Nat := scaledMagnitude a / 2 ^ 1074
+    some (if sign a then -(magnitude : Int) else magnitude)
+  else none
+
+def intToUInt32 (a : Int) : UInt32 :=
+  UInt32.ofNat (if a < 0 then 2 ^ 32 - a.natAbs else a.natAbs)
+
+def intToUInt64 (a : Int) : UInt64 :=
+  UInt64.ofNat (if a < 0 then 2 ^ 64 - a.natAbs else a.natAbs)
+
+def truncI32S (a : UInt64) : Option UInt32 :=
+  match truncatedInt a with
+  | none => none
+  | some value =>
+      if -((2 : Int) ^ 31) ≤ value ∧ value < (2 : Int) ^ 31 then
+        some (intToUInt32 value)
+      else none
+
+def truncI32U (a : UInt64) : Option UInt32 :=
+  match truncatedInt a with
+  | none => none
+  | some value =>
+      if 0 ≤ value ∧ value < (2 : Int) ^ 32 then
+        some (intToUInt32 value)
+      else none
+
+def truncI64S (a : UInt64) : Option UInt64 :=
+  match truncatedInt a with
+  | none => none
+  | some value =>
+      if -((2 : Int) ^ 63) ≤ value ∧ value < (2 : Int) ^ 63 then
+        some (intToUInt64 value)
+      else none
+
+def truncI64U (a : UInt64) : Option UInt64 :=
+  match truncatedInt a with
+  | none => none
+  | some value =>
+      if 0 ≤ value ∧ value < (2 : Int) ^ 64 then
+        some (intToUInt64 value)
+      else none
+
+def truncSatI32S (a : UInt64) : UInt32 :=
+  if isNaN a then 0
+  else
+    match truncatedInt a with
+    | none => if sign a then 0x80000000 else 0x7FFFFFFF
+    | some value =>
+        if value ≤ -((2 : Int) ^ 31) then 0x80000000
+        else if (2 : Int) ^ 31 - 1 ≤ value then 0x7FFFFFFF
+        else intToUInt32 value
+
+def truncSatI32U (a : UInt64) : UInt32 :=
+  if isNaN a then 0
+  else
+    match truncatedInt a with
+    | none => if sign a then 0 else 0xFFFFFFFF
+    | some value =>
+        if value ≤ 0 then 0
+        else if (2 : Int) ^ 32 - 1 ≤ value then 0xFFFFFFFF
+        else intToUInt32 value
+
+def truncSatI64S (a : UInt64) : UInt64 :=
+  if isNaN a then 0
+  else
+    match truncatedInt a with
+    | none => if sign a then 0x8000000000000000 else 0x7FFFFFFFFFFFFFFF
+    | some value =>
+        if value ≤ -((2 : Int) ^ 63) then 0x8000000000000000
+        else if (2 : Int) ^ 63 - 1 ≤ value then 0x7FFFFFFFFFFFFFFF
+        else intToUInt64 value
+
+def truncSatI64U (a : UInt64) : UInt64 :=
+  if isNaN a then 0
+  else
+    match truncatedInt a with
+    | none => if sign a then 0 else 0xFFFFFFFFFFFFFFFF
+    | some value =>
+        if value ≤ 0 then 0
+        else if (2 : Int) ^ 64 - 1 ≤ value then 0xFFFFFFFFFFFFFFFF
+        else intToUInt64 value
+
 end Wasm.IEEE64

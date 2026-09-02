@@ -122,10 +122,10 @@ def f32ConvertI32S (a : UInt32) : UInt32 := IEEE32.convertI32S a
 def f32ConvertI32U (a : UInt32) : UInt32 := IEEE32.convertI32U a
 def f32ConvertI64S (a : UInt64) : UInt32 := IEEE32.convertI64S a
 def f32ConvertI64U (a : UInt64) : UInt32 := IEEE32.convertI64U a
-def f64ConvertI32S (a : UInt32) : UInt64 := (Float.ofInt a.toInt32.toInt).toBits
-def f64ConvertI32U (a : UInt32) : UInt64 := (Float.ofNat a.toNat).toBits
-def f64ConvertI64S (a : UInt64) : UInt64 := (Float.ofInt a.toInt64.toInt).toBits
-def f64ConvertI64U (a : UInt64) : UInt64 := (Float.ofNat a.toNat).toBits
+def f64ConvertI32S (a : UInt32) : UInt64 := IEEE64.convertI32S a
+def f64ConvertI32U (a : UInt32) : UInt64 := IEEE64.convertI32U a
+def f64ConvertI64S (a : UInt64) : UInt64 := IEEE64.convertI64S a
+def f64ConvertI64U (a : UInt64) : UInt64 := IEEE64.convertI64U a
 
 /-! ### float ↔ float -/
 
@@ -135,81 +135,31 @@ def f32DemoteF64  (a : UInt64) : UInt32 := f32Canon (Float.ofBits a).toFloat32.t
 /-! ### float → integer (trapping)
 
 `none` reports a wasm trap: NaN, infinity, or a value whose truncation falls
-outside the target's range. `f32` operands are promoted to `f64` first —
-exact, so the range checks against the integer bounds stay precise. The
-unsigned-`i64` and signed-`i64` upper bounds (`2^64`, `2^63`) are exclusive
-because the largest in-range integers are not themselves representable. -/
-
-private def truncReal (x : Float) : Option Float :=
-  if x.isNaN then none else some (if x < 0.0 then x.ceil else x.floor)
-
-private def truncI32S (x : Float) : Option UInt32 :=
-  match truncReal x with
-  | none => none
-  | some t => if (-2147483648.0 : Float) ≤ t ∧ t ≤ (2147483647.0 : Float)
-              then some t.toInt64.toUInt64.toUInt32 else none
-private def truncI32U (x : Float) : Option UInt32 :=
-  match truncReal x with
-  | none => none
-  | some t => if (0.0 : Float) ≤ t ∧ t ≤ (4294967295.0 : Float)
-              then some t.toUInt64.toUInt32 else none
-private def truncI64S (x : Float) : Option UInt64 :=
-  match truncReal x with
-  | none => none
-  | some t => if (-9223372036854775808.0 : Float) ≤ t ∧ t < (9223372036854775808.0 : Float)
-              then some t.toInt64.toUInt64 else none
-private def truncI64U (x : Float) : Option UInt64 :=
-  match truncReal x with
-  | none => none
-  | some t => if (0.0 : Float) ≤ t ∧ t < (18446744073709551616.0 : Float)
-              then some t.toUInt64 else none
+outside the target's range.  Both formats use their proof-visible exact scaled
+integer representations.  The unsigned-`i64` and signed-`i64` upper bounds
+(`2^64`, `2^63`) are exclusive. -/
 
 def i32TruncF32S (a : UInt32) : Option UInt32 := IEEE32.truncI32S a
 def i32TruncF32U (a : UInt32) : Option UInt32 := IEEE32.truncI32U a
-def i32TruncF64S (a : UInt64) : Option UInt32 := truncI32S (Float.ofBits a)
-def i32TruncF64U (a : UInt64) : Option UInt32 := truncI32U (Float.ofBits a)
+def i32TruncF64S (a : UInt64) : Option UInt32 := IEEE64.truncI32S a
+def i32TruncF64U (a : UInt64) : Option UInt32 := IEEE64.truncI32U a
 def i64TruncF32S (a : UInt32) : Option UInt64 := IEEE32.truncI64S a
 def i64TruncF32U (a : UInt32) : Option UInt64 := IEEE32.truncI64U a
-def i64TruncF64S (a : UInt64) : Option UInt64 := truncI64S (Float.ofBits a)
-def i64TruncF64U (a : UInt64) : Option UInt64 := truncI64U (Float.ofBits a)
+def i64TruncF64S (a : UInt64) : Option UInt64 := IEEE64.truncI64S a
+def i64TruncF64U (a : UInt64) : Option UInt64 := IEEE64.truncI64U a
 
 /-! ### float → integer (saturating)
 
 `trunc_sat` never traps: NaN maps to `0`, out-of-range values saturate to the
 target's minimum or maximum. -/
 
-private def satI32S (x : Float) : UInt32 :=
-  if x.isNaN then 0
-  else let t := if x < 0.0 then x.ceil else x.floor
-       if t ≤ (-2147483648.0 : Float) then 0x80000000
-       else if t ≥ (2147483647.0 : Float) then 0x7FFFFFFF
-       else t.toInt64.toUInt64.toUInt32
-private def satI32U (x : Float) : UInt32 :=
-  if x.isNaN then 0
-  else let t := if x < 0.0 then x.ceil else x.floor
-       if t ≤ (0.0 : Float) then 0
-       else if t ≥ (4294967295.0 : Float) then 0xFFFFFFFF
-       else t.toUInt64.toUInt32
-private def satI64S (x : Float) : UInt64 :=
-  if x.isNaN then 0
-  else let t := if x < 0.0 then x.ceil else x.floor
-       if t ≤ (-9223372036854775808.0 : Float) then 0x8000000000000000
-       else if t ≥ (9223372036854775808.0 : Float) then 0x7FFFFFFFFFFFFFFF
-       else t.toInt64.toUInt64
-private def satI64U (x : Float) : UInt64 :=
-  if x.isNaN then 0
-  else let t := if x < 0.0 then x.ceil else x.floor
-       if t ≤ (0.0 : Float) then 0
-       else if t ≥ (18446744073709551616.0 : Float) then 0xFFFFFFFFFFFFFFFF
-       else t.toUInt64
-
 def i32TruncSatF32S (a : UInt32) : UInt32 := IEEE32.truncSatI32S a
 def i32TruncSatF32U (a : UInt32) : UInt32 := IEEE32.truncSatI32U a
-def i32TruncSatF64S (a : UInt64) : UInt32 := satI32S (Float.ofBits a)
-def i32TruncSatF64U (a : UInt64) : UInt32 := satI32U (Float.ofBits a)
+def i32TruncSatF64S (a : UInt64) : UInt32 := IEEE64.truncSatI32S a
+def i32TruncSatF64U (a : UInt64) : UInt32 := IEEE64.truncSatI32U a
 def i64TruncSatF32S (a : UInt32) : UInt64 := IEEE32.truncSatI64S a
 def i64TruncSatF32U (a : UInt32) : UInt64 := IEEE32.truncSatI64U a
-def i64TruncSatF64S (a : UInt64) : UInt64 := satI64S (Float.ofBits a)
-def i64TruncSatF64U (a : UInt64) : UInt64 := satI64U (Float.ofBits a)
+def i64TruncSatF64S (a : UInt64) : UInt64 := IEEE64.truncSatI64S a
+def i64TruncSatF64U (a : UInt64) : UInt64 := IEEE64.truncSatI64U a
 
 end Wasm
