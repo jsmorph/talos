@@ -177,3 +177,29 @@ integer conversions; removal of the five compatibility axioms in
 for the sine polynomial.  Native floating point remains only as a regression
 oracle for the implemented operations, except for the explicitly noted f64
 conversion seam.
+
+### Strengthening execution plan
+
+1. Prove quantitative contracts for the exact dyadic, rational, and integer-
+   square-root rounders.  Lift them to real-valued f32 multiplication,
+   division, and square-root bounds under explicit finite/non-overflow domain
+   hypotheses, then compose each result with its WAT execution theorem.
+2. Replace the remaining native f64 integer-conversion seam with scaled-
+   integer definitions for all four integer-to-f64 operations, four trapping
+   conversions, and four saturating conversions.  Compare deterministic
+   full-width samples and boundary cases with native `Float`, and expose
+   operation and example-program theorems in CodeLib.
+3. Remove the five compatibility axioms in `CodeLib.IEEE32.Exec`.  Preserve
+   the names used by generated projects as proved compatibility theorems,
+   derive the positive/negative saturation lemmas from scaled-value ordering,
+   and rebuild the `FloatTrunc` and `FloatRound` specifications.
+4. Strengthen the cubic sine example from one fixed input to a stated
+   nontrivial interval.  Combine a real Taylor remainder theorem with the
+   primitive f32 roundoff contracts, and attach the combined bound to the
+   fuel-independent WAT execution theorem.
+
+The f64 conversion implementation is complete and pushed.  The axiom-removal
+refactor passes its targeted CodeLib build and is ready for its checkpoint.
+Quantitative rounder lemmas and the interval sine proof remain the next proof
+work.  Every passing unit above will be committed and pushed before work
+proceeds to the next unit.

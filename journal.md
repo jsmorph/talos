@@ -314,3 +314,43 @@ differential tests, and an example-program theorem.
   plan, and journal tree at `1abfe86` to
   `origin/float-associativity-verification`.  Local and remote Git tree hashes
   matched after each branch update.
+
+## 2026-09-02: Strengthening phase resumed
+
+- Restored the pushed `float-associativity-verification` branch at `3962f07`
+  after workspace pruning and installed the exact Lean 4.34.0-rc2 release
+  toolchain.  Dependency and mathlib cache restoration is in progress.
+- Added proof-visible binary64 integer conversions: signed and unsigned
+  `i32`/`i64` conversion to f64, trapping conversion back to both integer
+  widths, and all saturating variants.  The interpreter now delegates those
+  instructions to `Wasm.IEEE64`; native `Float` conversions are retained only
+  as differential-test oracles.
+- Added deterministic binary64 conversion comparisons and boundary tests, a
+  CodeLib conversion specification, special-value theorems, ties-to-even
+  examples, and a termination theorem for the conversion round-trip program.
+- Replaced the five declarations in `CodeLib.IEEE32.Exec` with proved
+  compatibility theorems over the authoritative IEEE32 semantics.  Reworked
+  the large-positive and large-negative i32 saturation results around exact
+  scaled-value inequalities, eliminating the exhaustive bitvector proof, and
+  removed an unused `Exec` import from `FloatRound`.
+
+### Validation and checkpoints
+
+- `lake build Interpreter.Wasm.Examples.IEEE64
+  Interpreter.Wasm.Examples.FloatOps` passed.  The native differential suite
+  accepts all 1,031 scalar cases plus the added conversion comparisons and
+  boundaries.
+- `lake build CodeLib.IEEE64.Conversions` passed in 3,050 jobs.  Its public
+  conversion definitions, finite truncation theorem, saturation theorem, and
+  direct small-step round-trip theorem use only standard Lean logical axioms.
+- Committed the proof-visible f64 seam as `d1d1f9b` locally and pushed the
+  byte-identical tree as remote commit `8a4f27f`.
+- `lake build CodeLib.IEEE32.Exec` now passes in 3,051 jobs instead of exiting
+  with code 139.  Axiom reports show that `beq_ax`, `isNaN_ax`, `ble_ax`,
+  `blt_ax`, and `satI32S_eq` depend on no axioms.  The two general saturation
+  results use only `propext`, `Classical.choice`, and `Quot.sound`.
+- A requested build of `Project.FloatTrunc.Spec` and
+  `Project.FloatRound.Spec` replayed the passing `Exec` target, then was
+  blocked by the already recorded type errors in pinned Iris
+  `Iris.Algebra.COFESolver`.  The failure occurs before either project target
+  and is unrelated to this change.
