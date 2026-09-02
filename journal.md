@@ -1015,3 +1015,27 @@ relative/underflow multiplication layer.
 
 Publish and fetch-verify this multiplication checkpoint, then add reusable
 format-independent geometric and `gamma` accumulation inequalities.
+
+### Reusable relative-error accumulation checkpoint
+
+- Published and fetch-verified the scale-aware multiplication checkpoint as
+  remote commit `0f07212`; its fetched tree exactly matches the validated
+  local tree.
+- Added `CodeLib.Numerical.RelativeError` as a focused CodeLib root.  It
+  defines transparent `unitStepFactor` and `gamma` constants and proves their
+  positivity, monotonicity, denominator, geometric-power, and standard
+  `gamma` conversion facts under the explicit pole condition `k * u < 1`.
+- Added a format-independent `RelativeDotAcc` trace.  Its step theorem tracks
+  one rounded product and one rounded addition, and its list theorem converts
+  the resulting geometric bound into `gamma (2*n+1) u` times the exact
+  absolute product mass.
+- `LD_PRELOAD=/tmp/lean_procself.so lake build
+  CodeLib.Numerical.RelativeError` passed in 3,032 jobs under exact Lean
+  4.34.0-rc2.  Every printed public theorem reports exactly
+  `[propext, Classical.choice, Quot.sound]`; the changed-source scan is clean.
+
+### Next work
+
+Publish and fetch-verify the generic accumulation checkpoint, then instantiate
+the trace with the modeled binary64 dot fold and prove its condition-number
+corollary.
