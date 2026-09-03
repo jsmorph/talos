@@ -1193,7 +1193,13 @@ quality, run the combined final validation, and close checkpoint 7.
   for safe finite inputs including subnormal products.  Invalid-address traps
   are regression cases, not formal trap theorems.
 
-### Next work
+### Publication verification
 
-Publish and fetch-verify this final plan and journal checkpoint, then record
-its remote identity and close the flagship milestone.
+- Published and fetch-verified the completed plan and journal as remote commit
+  `dce914900589ca5bbfdb69873ce369dd2e5f90ca`.  Its tree
+  `9220a8169518a5e5c2db1a171cbe930921bf0f47` is byte-identical to local
+  commit `456e496c84874d3a58b1b7efe0eb3b1ec7894880`.
+- All seven runtime f64 dot-product checkpoints are closed.  Sharper
+  `gamma_n`, mixed-subnormal relative analysis, contract automation, and
+  verified compiler provenance remain explicitly scoped future extensions,
+  not unfinished requirements of this milestone.
