@@ -1122,3 +1122,78 @@ and condition-number wrappers are completed.
 Publish and fetch-verify this exact-WAT scale-aware checkpoint, then measure
 clean/warm proof and regression costs, record the assurance boundary and bound
 quality, run the combined final validation, and close checkpoint 7.
+
+## 2026-09-03: Runtime f64 dot-product flagship completed
+
+- Published and fetch-verified the exact-WAT gamma and condition-number
+  checkpoint as remote commit
+  `5ebae1de680bbc4db166f71f558f4a06acab1362`.  Its tree
+  `b3b1823eff5da6e743ebaa2736be5d03fe7fce38` is byte-identical to local
+  commit `0f837420e1041a05a9b120ce1686bde5ba8daa84`.
+- Added `Project/F64Dot/Evaluation.md`, separating formal assurance, proven
+  bound quality, proof-build cost, artifact-regeneration cost, and executable
+  regression cost.  The report treats `gamma (2*n-1) 2^-53` as a conservative
+  operation-count bound, not the sharper specialized `gamma_n` result that a
+  future termwise dot-product analysis could provide.
+- Published and fetch-verified the evaluation report as remote commit
+  `b4888f544e0f9abb882d6e7b5f1219c9b3fa6e2e`.  Its tree
+  `8f790c6e34d235d3355f8e9ee841f2cbf4c5ebcd` is byte-identical to local
+  commit `8cde655276356528b5e4e060c2b3fd86a7e9e3ed`.
+- Reconfirmed exact Lean `4.34.0-rc2`, release commit
+  `6a10ac8c22beadecabdbb0919c2b50214762f91d`.
+
+### Final validation
+
+- From `codelib`,
+  `LD_PRELOAD=/tmp/lean_procself.so lake build CodeLib.GeneratedCore
+  CodeLib.IEEE64.Roundoff CodeLib.IEEE64.Rounders
+  CodeLib.IEEE64.Operations CodeLib.Numerical.RelativeError
+  CodeLib.Numerical.Kernels CodeLib.RustStd.MemArray.SmallStep` passed in
+  3,361 jobs.
+- From `interpreter`,
+  `LD_PRELOAD=/tmp/lean_procself.so lake build Interpreter.Wasm` passed in
+  3,333 jobs.
+- From `verifier`,
+  `LD_PRELOAD=/tmp/lean_procself.so lake build verifier` passed in 52 jobs.
+- From `programs/lean`,
+  `LD_PRELOAD=/tmp/lean_procself.so lake build Project.F64Dot.Spec` passed in
+  3,365 jobs.  A separate evaluation-worktree replay with clean local
+  Interpreter, CodeLib, and Project outputs and a shared, partially warm
+  third-party cache passed all 3,373 declared jobs in 1,485.180 seconds.  Its
+  immediate warm repetition passed in 2.151 seconds.
+- With a prebuilt verifier executable from the same validated tree, the warm
+  `verifier check --force-emit f64_dot` Cargo, emission, and focused-proof
+  pipeline passed in 2.165 seconds.  The artifact-only pipeline measured
+  0.973 seconds with an empty isolated Cargo target and 0.130 seconds on its
+  immediate warm repetition.
+- Seven fresh-process executions of
+  `node programs/rust/f64_dot/regression.mjs` all passed, with median wall
+  time 0.063 seconds and range 0.051--0.097 seconds.  Measurements used Linux
+  6.18.35 on an AMD EPYC 9V74 with 9 vCPUs and 21 GiB RAM; they are
+  environment-specific validation costs rather than performance claims.
+- Targeted `cargo fmt --check -p f64_dot`, `wasm-tools validate`, JavaScript
+  syntax checking, and the complete Node regression suite pass.  The generated
+  artifact remains the same 219-byte Wasm and 1,396-byte WAT with the recorded
+  SHA-256 identities.
+- Workspace-wide `cargo fmt --check` still reports pre-existing unrelated
+  formatting differences in `float_minmax`, `float_reinterpret`,
+  `float_round`, `rust_u64`, `rust_u64_tests`, and `total_variation`.  The
+  dedicated `f64_dot` crate is clean; no unrelated source was reformatted.
+- Public flagship theorem axiom reports contain only `propext`,
+  `Classical.choice`, and `Quot.sound`; `dotExport` is axiom-free.
+  `git diff --unified=0 23daa59..HEAD -- '*.lean'` contains no added `sorry`,
+  `admit`, axiom declaration, or `native_decide`, and
+  `git diff --check 23daa59..HEAD` passes.
+- The formal result targets the exact emitted WAT and pure IEEE64 semantics.
+  Rust source, pinned tools, artifact hashes, and generated-AST fidelity give
+  reproducibility, but do not prove rustc or the source-to-Wasm compilation.
+  The gamma theorem explicitly assumes normal-or-zero exact products,
+  aggregate headroom, and `k*u < 1`; the condition-number theorem also assumes
+  a nonzero exact result.  The more general absolute theorem remains available
+  for safe finite inputs including subnormal products.  Invalid-address traps
+  are regression cases, not formal trap theorems.
+
+### Next work
+
+Publish and fetch-verify this final plan and journal checkpoint, then record
+its remote identity and close the flagship milestone.

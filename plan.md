@@ -443,7 +443,7 @@ view while preserving the complete machine store.
 The initially planned total-WP formulation was tested and rejected for this
 branch because rebuilding its pinned Iris dependencies reproduces the existing
 `COFESolver` and `MaxPrefixList` type errors already recorded in the journal.
-The flagship execution proof will instead use explicit relational
+The flagship execution proof instead uses explicit relational
 `SmallStep.Steps` iteration traces plus `terminatesWith_of_loop`.  This remains
 an authoritative, fuel-independent total-correctness proof and avoids coupling
 the numerical milestone to an unrelated dependency failure.
@@ -462,8 +462,8 @@ Two numerical prerequisites were also completed independently while the
 operational proof was being developed.  The aggregate layer now constructs
 `Dot64Safe` from either exact absolute mass or a uniform `n * A * B` envelope,
 and the total-list layer covers the exact empty branch as well as the
-nonempty `(2 * n - 1) * 2^-52` result.  These are checkpoints 4--5 support
-lemmas; their final attachment to WAT execution still waits for checkpoint 3.
+nonempty `(2 * n - 1) * 2^-52` result.  These checkpoint 4--5 support lemmas
+are attached to the completed WAT execution theorem.
 
 Checkpoint 3 is complete.  Exact relational traces cover the generated
 zero-length branch, first product, singleton exit, continuing loop iterations,
@@ -485,9 +485,9 @@ finiteness and the piecewise error budget (zero when empty and
 records the aggregate-mass interface without weakening the raw operational
 spec.
 
-Checkpoint 6 is in progress.  Its first four independently validated
+Checkpoint 6 is complete.  Its independently validated
 subcheckpoints derive `u = 2^-53` relative rounding directly from the integer
-`roundScaledMagnitude` model and lifts it to binary64 addition.  This bound is
+`roundScaledMagnitude` model and lift it to binary64 addition.  This bound is
 valid even for cancellation and subnormal exact sums because addition remains
 on the common `2^-1074` grid.  The multiplication layer derives an adaptive
 bound: relative `u` outside underflow, half a minimum subnormal below it, plus
@@ -501,11 +501,21 @@ these results to exact WAT execution is complete as well.  Raw recursive and
 aggregate-headroom forms preserve the exact returned word and complete store;
 the public generated-export specs use only the aggregate real condition and
 make normal-or-zero products, the gamma pole, and nonzero exact result (for the
-conditioned theorem) explicit.  Checkpoint 6 is complete.
+conditioned theorem) explicit.
 
-The deterministic artifact-regression portion of checkpoint 7 is complete.
-It now exercises every required runtime length and the signed-zero,
-subnormal, tie-to-even, cancellation, headroom, page-boundary, address-wrap,
-and out-of-bounds cases using exact result bit patterns.  These checks remain
-regression oracles only.  The proof/bound/build-cost evaluation summary waits
-until the measured final validation report is complete.
+Checkpoint 7 is complete.  `Project/F64Dot/Evaluation.md` records the proof
+assurance boundary, representative bound quality, clean and warm proof-build
+costs, artifact-regeneration cost, and deterministic regression cost.  The
+expanded regression suite passes at lengths `0`, `1`, `2`, `4`, `16`, `64`,
+and `256`, including signed-zero, subnormal, tie-to-even, cancellation,
+headroom, page-boundary, address-end, and out-of-bounds cases.  These checks
+remain regression oracles only.
+
+All seven flagship checkpoints are complete.  The exact generated WAT loop
+has fuel-independent total correctness, complete-store preservation,
+absolute-error, aggregate-headroom, gamma-weighted, and condition-number
+theorems.  Public general theorems depend only on `propext`,
+`Classical.choice`, and `Quot.sound`.  Remaining extensions are a sharper
+specialized `gamma_n` analysis, a mixed subnormal relative-error result,
+automation for memory and headroom premises, and verified compiler or
+code-generation provenance.
