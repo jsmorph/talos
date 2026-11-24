@@ -1406,7 +1406,7 @@ theorem wasm_smallStep_runtime_instance_adequacy
     toAgree ⟨config.store.runtime.instances⟩
   imod (iOwn_alloc (E := runtimeInstancesElem)
       (runtimeInstancesValue • runtimeInstancesValue) (fun n =>
-        CMRA.valid_iff_validN.mp
+        ORA.valid_iff_validN.mp
           (toAgree_op_valid_iff_eq.mpr rfl) n)) with
     ⟨%runtimeInstancesName, HruntimeInstances⟩
   letI runtimeInstancesGS : WasmRuntimeInstancesGS α :=
@@ -1669,7 +1669,7 @@ theorem wasm_smallStep_instance_host_state_adequacy
     toAgree ⟨config.store.runtime.instances⟩
   imod (iOwn_alloc (E := runtimeInstancesElem)
       (runtimeInstancesValue • runtimeInstancesValue) (fun n =>
-        CMRA.valid_iff_validN.mp
+        ORA.valid_iff_validN.mp
           (toAgree_op_valid_iff_eq.mpr rfl) n)) with
     ⟨%runtimeInstancesName, HruntimeInstances⟩
   letI runtimeInstancesGS : WasmRuntimeInstancesGS α :=
@@ -4178,7 +4178,7 @@ theorem wasm_smallStep_heap_runtime_instances_adequacy
     toAgree ⟨config.store.runtime.instances⟩
   imod (iOwn_alloc (E := runtimeInstancesElem)
       (runtimeInstancesValue • runtimeInstancesValue) (fun n =>
-        CMRA.valid_iff_validN.mp
+        ORA.valid_iff_validN.mp
           (toAgree_op_valid_iff_eq.mpr rfl) n)) with
     ⟨%runtimeInstancesName, HruntimeInstances⟩
   letI runtimeInstancesGS : WasmRuntimeInstancesGS α :=
