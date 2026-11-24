@@ -12,6 +12,8 @@ magnitude condition used to exclude overflow.  Neither representative kernel
 contains division, so no denominator restriction is needed.
 -/
 
+set_option maxRecDepth 40000
+
 namespace CodeLib.Numerical.Kernels
 
 open Wasm
