@@ -566,6 +566,7 @@ theorem natAbs_lt_nat {z : Int} {n : Nat} (h : |z| < (n : Int)) :
   rw [Int.abs_eq_natAbs] at h
   exact_mod_cast h
 
+set_option maxRecDepth 40000 in
 theorem scaled_abs_le_of_value_abs_le (x : UInt64)
     (h : |value x| ≤ 1) :
     |Wasm.IEEE64.scaledValue x| ≤ (2 ^ 1074 : Int) := by
@@ -617,6 +618,7 @@ theorem add_real_error (a b : UInt64) (ha : Finite a) (hb : Finite b)
       _ = arithmeticEpsilon * (2 : ℝ) ^ 1074 := by
         norm_num [arithmeticEpsilon]
 
+set_option maxRecDepth 40000 in
 /-- Addition of finite binary64 inputs bounded by one satisfies the
 scale-aware unit-roundoff contract.  In particular, cancellation and
 subnormal sums need no separate lower-bound hypothesis because the exact sum

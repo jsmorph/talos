@@ -220,6 +220,7 @@ theorem sinResult_interval_error (x : UInt32) (hx : Finite x)
       _ < sineIntervalEpsilon := by
         norm_num [u, sineIntervalEpsilon]
 
+set_option maxRecDepth 2000 in
 /-- Fuel-independent correctness of the decoded WAT sine approximation over
 the whole interval `[-1/2, 1/2]`. -/
 theorem sin_small_program_interval_error (x : UInt32) (hx : Finite x)
