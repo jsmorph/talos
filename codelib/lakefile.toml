@@ -7,8 +7,8 @@ packagesDir = "../.lake/packages"
 name = "iris"
 git = "https://github.com/leanprover-community/iris-lean.git"
 subDir = "Iris"
-# Pin upstream master (total weakest preconditions from iris-lean#554 now merged).
-rev = "e7a0a43814c4f1154ca0c8049883ca56c2288b86"
+# Pin the v4.36.0 tag of iris-lean, which includes the total weakest preconditions of iris-lean#554.
+rev = "40e6418437a794dcd0429bfbe4d6b60fdafb2ecd"
 
 [[require]]
 name = "WasmInterpreterLean"
