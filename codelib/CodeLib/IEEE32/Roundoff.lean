@@ -656,6 +656,7 @@ theorem assocGap_scaled_spec (a b c : UInt32)
 /-- The fixed real-valued tolerance used by the end-to-end theorem. -/
 noncomputable def epsilon : ℝ := 1 / (2 : ℝ) ^ 20
 
+set_option maxRecDepth 2000 in
 theorem scaled_abs_le_of_value_abs_le (x : UInt32)
     (h : |value x| ≤ 1) :
     |Wasm.IEEE32.scaledValue x| ≤ (2 ^ 149 : Int) := by
@@ -747,6 +748,7 @@ theorem sub_real_error (a b : UInt32) (ha : Finite a) (hb : Finite b)
       _ = arithmeticEpsilon * (2 : ℝ) ^ 149 := by
         norm_num [arithmeticEpsilon]
 
+set_option maxRecDepth 2000 in
 /-- The exact result computed by the WAT body is finite and below `2^-20` for
 finite inputs whose real magnitudes are at most one. -/
 theorem assocGap_output_lt_epsilon (a b c : UInt32)
@@ -774,6 +776,7 @@ theorem assocGap_output_lt_epsilon (a b c : UInt32)
     rw [hscale]
     exact hcast
 
+set_option maxRecDepth 2000 in
 /-- Fuel-independent total correctness for the decoded instruction trace,
 strengthened with the numerical error bound. -/
 theorem assocGap_terminates_lt_epsilon (a b c : UInt32)
