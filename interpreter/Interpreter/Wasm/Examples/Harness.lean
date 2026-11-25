@@ -1,7 +1,8 @@
 module
 
-public import Interpreter.Wasm.Decoder.Wat
-public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Host
+import Interpreter.Wasm.Decoder.Wat
+import Interpreter.Wasm.SmallStep
 
 public section
 

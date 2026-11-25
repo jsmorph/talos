@@ -1,6 +1,7 @@
 module
 
-public import Interpreter.Wasm.Examples.Harness
+public import Interpreter.Wasm.SmallStep
+import Interpreter.Wasm.Examples.Harness
 meta import Interpreter.Wasm.Examples.Harness
 
 public section

@@ -1,6 +1,7 @@
 module
 
-public import Interpreter.Wasm.Float
+public import Interpreter.Wasm.IEEE64
+import Interpreter.Wasm.Float
 meta import Interpreter.Wasm.IEEE64
 
 public section

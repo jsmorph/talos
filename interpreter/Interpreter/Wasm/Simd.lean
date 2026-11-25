@@ -1,6 +1,6 @@
 module
 
-public import Interpreter.Wasm.Float
+import Interpreter.Wasm.Float
 
 public section
 
