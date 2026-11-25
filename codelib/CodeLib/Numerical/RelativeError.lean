@@ -1,4 +1,8 @@
-import Mathlib.Tactic
+module
+
+public import Mathlib.Tactic
+
+public section
 
 /-!
 # Relative-error accumulation
@@ -16,7 +20,7 @@ def unitStepFactor (u : ℝ) : ℝ := 1 + u
 
 /-- The standard accumulated relative-error factor
 `gamma k u = k * u / (1 - k * u)`. -/
-noncomputable def gamma (k : ℕ) (u : ℝ) : ℝ :=
+@[expose] noncomputable def gamma (k : ℕ) (u : ℝ) : ℝ :=
   (k : ℝ) * u / (1 - (k : ℝ) * u)
 
 theorem unitStepFactor_nonneg {u : ℝ} (hu : 0 ≤ u) :
@@ -253,13 +257,13 @@ theorem relative_mul_add_step_geometric {u approximate exact term
           (magnitude + |term|) := by ring
 
 /-- Exact sequential accumulation of real-valued product terms. -/
-def sequentialExactSum : ℝ → List ℝ → ℝ
+@[expose] def sequentialExactSum : ℝ → List ℝ → ℝ
   | accumulator, [] => accumulator
   | accumulator, term :: terms =>
       sequentialExactSum (accumulator + term) terms
 
 /-- The corresponding sum-of-magnitudes accumulator. -/
-def sequentialMagnitude : ℝ → List ℝ → ℝ
+@[expose] def sequentialMagnitude : ℝ → List ℝ → ℝ
   | magnitude, [] => magnitude
   | magnitude, term :: terms =>
       sequentialMagnitude (magnitude + |term|) terms

@@ -1,4 +1,9 @@
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.Examples.Harness
+meta import Interpreter.Wasm.Examples.Harness
+
+public section
 
 /-!
 # Binary32 associativity-gap example
@@ -137,7 +142,7 @@ theorem rounded_input_returns_two_pow_neg_23 :
 /-! ## Symbolic small-step execution -/
 
 /-- The raw binary32 result computed by `assoc_gap`. -/
-def assocGapResult (a b c : UInt32) : UInt32 :=
+@[expose] def assocGapResult (a b c : UInt32) : UInt32 :=
   f32Abs
     (f32Sub
       (f32Add a (f32Add b c))

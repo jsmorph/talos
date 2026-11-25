@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Mem
-import Interpreter.Wasm.Simd
+module
+
+public import Interpreter.Wasm.Mem
+public import Interpreter.Wasm.Simd
+
+public section
 
 namespace Wasm
 
@@ -194,10 +198,10 @@ def sizeValue (is64 : Bool) (n : Nat) : Value :=
   if is64 then .i64 (UInt64.ofNat n) else .i32 (UInt32.ofNat n)
 
 @[simp] theorem sizeValue_false (n : Nat) :
-    sizeValue false n = .i32 (UInt32.ofNat n) := rfl
+    sizeValue false n = .i32 (UInt32.ofNat n) := by rfl
 
 @[simp] theorem sizeValue_true (n : Nat) :
-    sizeValue true n = .i64 (UInt64.ofNat n) := rfl
+    sizeValue true n = .i64 (UInt64.ofNat n) := by rfl
 
 /-- Module-level globals. Indexed by position in the module's globals list. -/
 structure Globals where
@@ -604,7 +608,7 @@ structure Function where
   typeIdx : Option Nat := none
 deriving Repr, Inhabited
 
-@[inline] def Function.numParams (f : Function) : Nat := f.params.length
+@[expose, inline] def Function.numParams (f : Function) : Nat := f.params.length
 @[inline] def Function.numLocals (f : Function) : Nat := f.locals.length
 
 /-- A name-indexed entry point. The WAT decoder collects these from

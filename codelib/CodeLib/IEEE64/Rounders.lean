@@ -1,5 +1,9 @@
-import CodeLib.IEEE64.Roundoff
-import CodeLib.IEEE32.Rounders
+module
+
+public import CodeLib.IEEE64.Roundoff
+public import CodeLib.IEEE32.Rounders
+
+public section
 
 /-!
 # Quantitative specifications for binary64 nonintegral rounders

@@ -1,4 +1,9 @@
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.Examples.Harness
+meta import Interpreter.Wasm.Examples.Harness
+
+public section
 
 /-!
 # Representative floating-point numerical kernels
@@ -52,7 +57,7 @@ theorem affine_funcAt :
   congr 1
   simp [getElem!_pos, h]
 
-def affineResult (a x b : UInt32) : UInt32 :=
+@[expose] def affineResult (a x b : UInt32) : UInt32 :=
   IEEE32.add (IEEE32.mul a x) b
 
 def affineConfig (a x b : UInt32) : Config Unit :=
@@ -162,7 +167,7 @@ theorem horner3_funcAt :
   congr 1
   simp [getElem!_pos, h]
 
-def horner3Result (x c₃ c₂ c₁ c₀ : UInt32) : UInt32 :=
+@[expose] def horner3Result (x c₃ c₂ c₁ c₀ : UInt32) : UInt32 :=
   IEEE32.add
     (IEEE32.mul
       (IEEE32.add
@@ -283,7 +288,7 @@ theorem dot_funcAt : dotModule.funcs[0]? = some dotModule.funcs[0]! := by
   congr 1
   simp [getElem!_pos, h]
 
-def dotResult (a₀ b₀ a₁ b₁ : UInt64) : UInt64 :=
+@[expose] def dotResult (a₀ b₀ a₁ b₁ : UInt64) : UInt64 :=
   IEEE64.add (IEEE64.mul a₀ b₀) (IEEE64.mul a₁ b₁)
 
 def dotConfig (a₀ b₀ a₁ b₁ : UInt64) : Config Unit :=
@@ -401,7 +406,7 @@ theorem dot4_funcAt :
   congr 1
   simp [getElem!_pos, h]
 
-def dot4Result (a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃ : UInt64) : UInt64 :=
+@[expose] def dot4Result (a₀ b₀ a₁ b₁ a₂ b₂ a₃ b₃ : UInt64) : UInt64 :=
   IEEE64.add
     (IEEE64.add
       (IEEE64.add (IEEE64.mul a₀ b₀) (IEEE64.mul a₁ b₁))

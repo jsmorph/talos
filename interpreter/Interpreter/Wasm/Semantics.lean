@@ -1,8 +1,12 @@
-import Interpreter.Wasm.Syntax
-import Interpreter.Wasm.Float
-import Interpreter.Wasm.Locals
-import Interpreter.Wasm.Continuation
-import Interpreter.Wasm.Host
+module
+
+public import Interpreter.Wasm.Syntax
+public import Interpreter.Wasm.Float
+public import Interpreter.Wasm.Locals
+public import Interpreter.Wasm.Continuation
+public import Interpreter.Wasm.Host
+
+public section
 
 namespace Wasm
 

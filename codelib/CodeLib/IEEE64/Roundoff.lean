@@ -1,6 +1,10 @@
-import CodeLib.IEEE32.Roundoff
-import Interpreter.Wasm.IEEE64
-import Mathlib.Tactic
+module
+
+public import CodeLib.IEEE32.Roundoff
+public import Interpreter.Wasm.IEEE64
+public import Mathlib.Tactic
+
+public section
 
 /-!
 # Axiom-free binary64 roundoff bounds
@@ -17,10 +21,10 @@ set_option maxRecDepth 8192
 
 open Wasm
 
-noncomputable def value (x : UInt64) : ℝ :=
+@[expose] noncomputable def value (x : UInt64) : ℝ :=
   (Wasm.IEEE64.scaledValue x : ℝ) / (2 : ℝ) ^ 1074
 
-def Finite (x : UInt64) : Prop := Wasm.IEEE64.isFinite x = true
+@[expose] def Finite (x : UInt64) : Prop := Wasm.IEEE64.isFinite x = true
 
 theorem natAbs_scaledValue (x : UInt64) :
     (Wasm.IEEE64.scaledValue x).natAbs =
@@ -77,7 +81,7 @@ theorem scaledValue_encodeFinite (negative : Bool) (e f : Nat)
     sign_encodeFinite negative e f he hf]
 
 /-- The scaled magnitude selected before sign, exponent, and fraction packing. -/
-def roundedMagnitude (n : Nat) : Nat :=
+@[expose] def roundedMagnitude (n : Nat) : Nat :=
   if n < 2 ^ 53 then n
   else
     let shift := Nat.log2 n - 52
@@ -576,10 +580,10 @@ theorem scaled_abs_le_of_value_abs_le (x : UInt64)
     exact (div_le_one hpow).mp h
   exact_mod_cast hreal
 
-noncomputable def arithmeticEpsilon : ℝ := 1 / (2 : ℝ) ^ 52
+@[expose] noncomputable def arithmeticEpsilon : ℝ := 1 / (2 : ℝ) ^ 52
 
 /-- Binary64 unit roundoff for round-to-nearest, ties-to-even. -/
-noncomputable def unitRoundoff64 : ℝ := 1 / (2 : ℝ) ^ 53
+@[expose] noncomputable def unitRoundoff64 : ℝ := 1 / (2 : ℝ) ^ 53
 
 theorem add_real_error (a b : UInt64) (ha : Finite a) (hb : Finite b)
     (haBound : |value a| ≤ 1) (hbBound : |value b| ≤ 1) :

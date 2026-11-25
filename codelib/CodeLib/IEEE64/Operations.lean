@@ -1,10 +1,15 @@
-import CodeLib.IEEE64.Rounders
-import Interpreter.Wasm.Examples.Float64AddSub
-import Interpreter.Wasm.Examples.Float64Division
-import Interpreter.Wasm.Examples.Float64Multiplication
-import Interpreter.Wasm.Examples.Float64SquareRoot
-import Interpreter.Wasm.Examples.IEEE64
-import Mathlib.Tactic
+module
+
+public import CodeLib.IEEE64.Rounders
+public import Interpreter.Wasm.Examples.Float64AddSub
+public import Interpreter.Wasm.Examples.Float64Division
+public import Interpreter.Wasm.Examples.Float64Multiplication
+public import Interpreter.Wasm.Examples.Float64SquareRoot
+public import Interpreter.Wasm.Examples.IEEE64
+public import Mathlib.Tactic
+meta import Interpreter.Wasm.IEEE64
+
+public section
 
 /-!
 # Binary64 operation specifications
@@ -74,13 +79,13 @@ theorem mul_finite_rounder (a b : UInt64) (ha : Finite a) (hb : Finite b) :
     simp [Wasm.IEEE64.mul, hna, hnb, hia, hib, ha0, hb0,
       Wasm.IEEE64.roundDyadicMagnitude]
 
-noncomputable def multiplicationEpsilon : ℝ := 1 / (2 : ℝ) ^ 52
+@[expose] noncomputable def multiplicationEpsilon : ℝ := 1 / (2 : ℝ) ^ 52
 
 /-- The least positive normal binary64 magnitude. -/
-noncomputable def minNormal64 : ℝ := 1 / (2 : ℝ) ^ 1022
+@[expose] noncomputable def minNormal64 : ℝ := 1 / (2 : ℝ) ^ 1022
 
 /-- Half the least positive subnormal binary64 magnitude. -/
-noncomputable def multiplicationUnderflowEpsilon : ℝ :=
+@[expose] noncomputable def multiplicationUnderflowEpsilon : ℝ :=
   1 / (2 : ℝ) ^ 1075
 
 theorem mul_real_error (a b : UInt64) (ha : Finite a) (hb : Finite b)

@@ -1,3 +1,7 @@
+module
+
+public section
+
 /-! ## Linear memory model
 
 A `Mem` is a function from byte addresses to `UInt8`, together with a
@@ -143,7 +147,7 @@ theorem Mem.fill_read8_out (m : Mem) (offset len : Nat) (val : UInt8) (i : UInt3
   simp [Mem.fill, Mem.read8, h]
 
 theorem Mem.fill_pages (m : Mem) (offset len : Nat) (val : UInt8) :
-    (m.fill offset len val).pages = m.pages := rfl
+    (m.fill offset len val).pages = m.pages := by rfl
 
 theorem Mem.write8_fill_eq (m : Mem) (addr : UInt32) (n : Nat) (val : UInt8) :
     (m.write8 addr val).fill (addr.toNat + 1) n val = m.fill addr.toNat (n + 1) val := by
@@ -169,7 +173,7 @@ def Mem.copy (m : Mem) (dst src len : Nat) : Mem :=
       else m.bytes i }
 
 theorem Mem.copy_pages (m : Mem) (dst src len : Nat) :
-    (m.copy dst src len).pages = m.pages := rfl
+    (m.copy dst src len).pages = m.pages := by rfl
 
 theorem Mem.copy_read8_in (m : Mem) (dst src len : Nat) (i : UInt32)
     (h : dst ≤ i.toNat ∧ i.toNat < dst + len) :
@@ -290,7 +294,7 @@ def Mem.writeBytesFrom (m : Mem) (dst : Nat) (src : List UInt8)
 
 theorem Mem.writeBytesFrom_pages (m : Mem) (dst : Nat) (src : List UInt8)
     (srcOff len : Nat) :
-    (m.writeBytesFrom dst src srcOff len).pages = m.pages := rfl
+    (m.writeBytesFrom dst src srcOff len).pages = m.pages := by rfl
 
 theorem Mem.writeBytesFrom_read8_in (m : Mem) (dst : Nat) (src : List UInt8)
     (srcOff len : Nat) (i : UInt32)

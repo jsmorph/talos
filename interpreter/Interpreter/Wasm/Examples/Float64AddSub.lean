@@ -1,4 +1,9 @@
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.Examples.Harness
+meta import Interpreter.Wasm.Examples.Harness
+
+public section
 
 /-!
 # Binary64 addition and subtraction examples

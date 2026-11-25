@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Syntax
+module
+
+public import Interpreter.Wasm.Syntax
+
+public section
 
 /-!
 # Local variables and call-frame state
@@ -22,18 +26,18 @@ deriving Repr, Inhabited
 
 /-- Initialise a callee frame: copy the args into `params`, zero-init `locals`
 per their declared type, and start with an empty value stack. -/
-def Function.toLocals (f : Function) (args : List Value) : Locals :=
+@[expose] def Function.toLocals (f : Function) (args : List Value) : Locals :=
   { params := args
     locals := f.locals.map ValueType.zero
     values := [] }
 
-@[simp]
+@[simp, expose]
 def Locals.get (s : Locals) (i : Nat) : Option Value :=
   if i < s.params.length then s.params[i]?
   else if i < s.params.length + s.locals.length then s.locals[i - s.params.length]?
   else none
 
-@[simp]
+@[simp, expose]
 def Locals.set? (s : Locals) (i : Nat) (v : Value) : Option Locals :=
   if i < s.params.length then some { s with params := s.params.set i v }
   else if i < s.params.length + s.locals.length then some { s with locals := s.locals.set (i - s.params.length) v }

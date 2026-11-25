@@ -1,4 +1,8 @@
-import Interpreter.Wasm.IEEE32
+module
+
+public import Interpreter.Wasm.IEEE32
+
+public section
 
 /-!
 # Pure IEEE-754 binary64 arithmetic
@@ -10,47 +14,47 @@ changes only the field widths, scale, and special-value constants.
 
 namespace Wasm.IEEE64
 
-def canonicalNaN : UInt64 := 0x7FF8000000000000
+@[expose] def canonicalNaN : UInt64 := 0x7FF8000000000000
 
-def sign (x : UInt64) : Bool := decide (2 ^ 63 ≤ x.toNat)
-def exponent (x : UInt64) : Nat := x.toNat / 2 ^ 52 % 2 ^ 11
-def fraction (x : UInt64) : Nat := x.toNat % 2 ^ 52
+@[expose] def sign (x : UInt64) : Bool := decide (2 ^ 63 ≤ x.toNat)
+@[expose] def exponent (x : UInt64) : Nat := x.toNat / 2 ^ 52 % 2 ^ 11
+@[expose] def fraction (x : UInt64) : Nat := x.toNat % 2 ^ 52
 
-def isNaN (x : UInt64) : Bool := exponent x == 0x7FF && fraction x != 0
-def isInfinite (x : UInt64) : Bool :=
+@[expose] def isNaN (x : UInt64) : Bool := exponent x == 0x7FF && fraction x != 0
+@[expose] def isInfinite (x : UInt64) : Bool :=
   exponent x == 0x7FF && fraction x == 0
-def isFinite (x : UInt64) : Bool := exponent x != 0x7FF
+@[expose] def isFinite (x : UInt64) : Bool := exponent x != 0x7FF
 
-def scaledMagnitude (x : UInt64) : Nat :=
+@[expose] def scaledMagnitude (x : UInt64) : Nat :=
   let e := exponent x
   let f := fraction x
   if e == 0 then f else (2 ^ 52 + f) * 2 ^ (e - 1)
 
-def scaledValue (x : UInt64) : Int :=
+@[expose] def scaledValue (x : UInt64) : Int :=
   let magnitude : Int := scaledMagnitude x
   if sign x then -magnitude else magnitude
 
-def signMask (negative : Bool) : UInt64 :=
+@[expose] def signMask (negative : Bool) : UInt64 :=
   if negative then 0x8000000000000000 else 0
 
-def infinity (negative : Bool) : UInt64 :=
+@[expose] def infinity (negative : Bool) : UInt64 :=
   signMask negative ||| 0x7FF0000000000000
 
-def encodeFinite
+@[expose] def encodeFinite
     (negative : Bool) (exponentField fractionField : Nat) : UInt64 :=
   UInt64.ofNat
     ((if negative then 2 ^ 63 else 0) + exponentField * 2 ^ 52 + fractionField)
 
-def negate (x : UInt64) : UInt64 :=
+@[expose] def negate (x : UInt64) : UInt64 :=
   encodeFinite (!sign x) (exponent x) (fraction x)
 
-def abs (x : UInt64) : UInt64 :=
+@[expose] def abs (x : UInt64) : UInt64 :=
   encodeFinite false (exponent x) (fraction x)
 
 def copySign (value source : UInt64) : UInt64 :=
   encodeFinite (sign source) (exponent value) (fraction value)
 
-def roundScaledMagnitude (negative : Bool) (n : Nat) : UInt64 :=
+@[expose] def roundScaledMagnitude (negative : Bool) (n : Nat) : UInt64 :=
   if n < 2 ^ 52 then
     encodeFinite negative 0 n
   else if n < 2 ^ 53 then
@@ -65,7 +69,7 @@ def roundScaledMagnitude (negative : Bool) (n : Nat) : UInt64 :=
     if 0x7FF ≤ exponentField then infinity negative
     else encodeFinite negative exponentField (significand - 2 ^ 52)
 
-def roundDyadicMagnitude
+@[expose] def roundDyadicMagnitude
     (negative : Bool) (n fractionalBits : Nat) : UInt64 :=
   if n == 0 then signMask negative
   else
@@ -78,7 +82,7 @@ def roundDyadicMagnitude
         IEEE32.roundShift n (fractionalBits + outputShift) * 2 ^ outputShift
     roundScaledMagnitude negative candidate
 
-def roundRationalMagnitude
+@[expose] def roundRationalMagnitude
     (negative : Bool) (numerator denominator : Nat) : UInt64 :=
   if numerator == 0 then signMask negative
   else if denominator == 0 then infinity negative
@@ -93,7 +97,7 @@ def roundRationalMagnitude
           2 ^ outputShift
     roundScaledMagnitude negative candidate
 
-def roundSqrtMagnitude (magnitude : Nat) : UInt64 :=
+@[expose] def roundSqrtMagnitude (magnitude : Nat) : UInt64 :=
   if magnitude == 0 then 0
   else
     let radicand := magnitude * 2 ^ 1074
@@ -102,7 +106,7 @@ def roundSqrtMagnitude (magnitude : Nat) : UInt64 :=
     let rounded := IEEE32.roundSqrtIntegral radicand outputShift
     roundScaledMagnitude false (rounded * 2 ^ outputShift)
 
-def add (a b : UInt64) : UInt64 :=
+@[expose] def add (a b : UInt64) : UInt64 :=
   if isNaN a || isNaN b then canonicalNaN
   else if isInfinite a then
     if isInfinite b && sign a != sign b then canonicalNaN else a
@@ -113,9 +117,9 @@ def add (a b : UInt64) : UInt64 :=
       if sign a && sign b then signMask true else 0
     else roundScaledMagnitude (sum < 0) sum.natAbs
 
-def sub (a b : UInt64) : UInt64 := add a (negate b)
+@[expose] def sub (a b : UInt64) : UInt64 := add a (negate b)
 
-def mul (a b : UInt64) : UInt64 :=
+@[expose] def mul (a b : UInt64) : UInt64 :=
   if isNaN a || isNaN b then canonicalNaN
   else
     let negative := sign a != sign b
@@ -129,7 +133,7 @@ def mul (a b : UInt64) : UInt64 :=
     else roundDyadicMagnitude negative
       (scaledMagnitude a * scaledMagnitude b) 1074
 
-def div (a b : UInt64) : UInt64 :=
+@[expose] def div (a b : UInt64) : UInt64 :=
   if isNaN a || isNaN b then canonicalNaN
   else
     let negative := sign a != sign b
@@ -144,7 +148,7 @@ def div (a b : UInt64) : UInt64 :=
     else roundRationalMagnitude negative
       (scaledMagnitude a * 2 ^ 1074) (scaledMagnitude b)
 
-def sqrt (a : UInt64) : UInt64 :=
+@[expose] def sqrt (a : UInt64) : UInt64 :=
   if isNaN a then canonicalNaN
   else
     let magnitude := scaledMagnitude a
@@ -153,13 +157,13 @@ def sqrt (a : UInt64) : UInt64 :=
     else if isInfinite a then a
     else roundSqrtMagnitude magnitude
 
-def eq (a b : UInt64) : Bool :=
+@[expose] def eq (a b : UInt64) : Bool :=
   if isNaN a || isNaN b then false else scaledValue a == scaledValue b
 
-def lt (a b : UInt64) : Bool :=
+@[expose] def lt (a b : UInt64) : Bool :=
   if isNaN a || isNaN b then false else decide (scaledValue a < scaledValue b)
 
-def le (a b : UInt64) : Bool :=
+@[expose] def le (a b : UInt64) : Bool :=
   if isNaN a || isNaN b then false else decide (scaledValue a ≤ scaledValue b)
 
 def min (a b : UInt64) : UInt64 :=
@@ -210,17 +214,17 @@ def signedI64Value (a : UInt64) : Int :=
   if sign a then (a.toNat : Int) - (2 : Int) ^ 64 else a.toNat
 
 /-- Correctly round a mathematical integer to binary64. -/
-def fromInt (a : Int) : UInt64 :=
+@[expose] def fromInt (a : Int) : UInt64 :=
   roundScaledMagnitude (a < 0) (a.natAbs * 2 ^ 1074)
 
 def convertI32S (a : UInt32) : UInt64 := fromInt (signedI32Value a)
 def convertI32U (a : UInt32) : UInt64 := fromInt a.toNat
 def convertI64S (a : UInt64) : UInt64 := fromInt (signedI64Value a)
-def convertI64U (a : UInt64) : UInt64 := fromInt a.toNat
+@[expose] def convertI64U (a : UInt64) : UInt64 := fromInt a.toNat
 
 /-- Truncate a finite binary64 value toward zero as an unbounded integer.
 Exceptional inputs return `none`; target-width range checks are separate. -/
-def truncatedInt (a : UInt64) : Option Int :=
+@[expose] def truncatedInt (a : UInt64) : Option Int :=
   if isFinite a then
     let magnitude : Nat := scaledMagnitude a / 2 ^ 1074
     some (if sign a then -(magnitude : Int) else magnitude)
@@ -229,7 +233,7 @@ def truncatedInt (a : UInt64) : Option Int :=
 def intToUInt32 (a : Int) : UInt32 :=
   UInt32.ofNat (if a < 0 then 2 ^ 32 - a.natAbs else a.natAbs)
 
-def intToUInt64 (a : Int) : UInt64 :=
+@[expose] def intToUInt64 (a : Int) : UInt64 :=
   UInt64.ofNat (if a < 0 then 2 ^ 64 - a.natAbs else a.natAbs)
 
 def truncI32S (a : UInt64) : Option UInt32 :=
@@ -294,7 +298,7 @@ def truncSatI64S (a : UInt64) : UInt64 :=
         else if (2 : Int) ^ 63 - 1 ≤ value then 0x7FFFFFFFFFFFFFFF
         else intToUInt64 value
 
-def truncSatI64U (a : UInt64) : UInt64 :=
+@[expose] def truncSatI64U (a : UInt64) : UInt64 :=
   if isNaN a then 0
   else
     match truncatedInt a with

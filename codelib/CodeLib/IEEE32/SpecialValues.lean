@@ -1,4 +1,8 @@
-import CodeLib.IEEE32.Roundoff
+module
+
+public import CodeLib.IEEE32.Roundoff
+
+public section
 
 /-!
 # IEEE-754 binary32 exceptional values

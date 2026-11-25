@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Decoder.Wat
-import Interpreter.Wasm.SmallStep
+module
+
+public import Interpreter.Wasm.Decoder.Wat
+public import Interpreter.Wasm.SmallStep
+
+public section
 
 /-!
 # `Wasm.Examples` — shared harness for the worked examples

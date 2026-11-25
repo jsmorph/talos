@@ -1,6 +1,10 @@
-import CodeLib.IEEE32.SpecialValues
-import CodeLib.IEEE32.Rounders
-import Interpreter.Wasm.Examples.FloatMultiplication
+module
+
+public import CodeLib.IEEE32.SpecialValues
+public import CodeLib.IEEE32.Rounders
+public import Interpreter.Wasm.Examples.FloatMultiplication
+
+public section
 
 /-!
 # Binary32 multiplication specifications
@@ -124,7 +128,7 @@ theorem mul_scaled_error (a b : UInt32) (ha : Finite a) (hb : Finite b)
       | rw [habs]
         simpa [Int.natCast_mul, sub_eq_add_neg, add_comm] using herr
 
-noncomputable def multiplicationEpsilon : ℝ := 1 / (2 : ℝ) ^ 23
+@[expose] noncomputable def multiplicationEpsilon : ℝ := 1 / (2 : ℝ) ^ 23
 
 theorem mul_real_error (a b : UInt32) (ha : Finite a) (hb : Finite b)
     (haBound : |value a| ≤ 1) (hbBound : |value b| ≤ 1) :

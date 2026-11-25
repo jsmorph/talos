@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Float
+module
+
+public import Interpreter.Wasm.Float
+
+public section
 
 /-!
 # SIMD (v128) lane semantics

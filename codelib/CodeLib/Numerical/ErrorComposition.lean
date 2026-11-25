@@ -1,4 +1,8 @@
-import Mathlib.Tactic
+module
+
+public import Mathlib.Tactic
+
+public section
 
 /-!
 # Reusable real error-composition lemmas
@@ -94,7 +98,7 @@ theorem abs_le_of_error_headroom {approximate exact error bound : ℝ}
 
 /-- Exact Horner evaluation.  Each pair contains the next coefficient and the
 local error budget assigned to that stage; the budget is ignored here. -/
-def exactHorner (x : ℝ) : ℝ → List (ℝ × ℝ) → ℝ
+@[expose] def exactHorner (x : ℝ) : ℝ → List (ℝ × ℝ) → ℝ
   | accumulator, [] => accumulator
   | accumulator, (coefficient, _) :: stages =>
       exactHorner x (accumulator * x + coefficient) stages

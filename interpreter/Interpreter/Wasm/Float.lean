@@ -1,5 +1,9 @@
-import Interpreter.Wasm.IEEE32
-import Interpreter.Wasm.IEEE64
+module
+
+public import Interpreter.Wasm.IEEE32
+public import Interpreter.Wasm.IEEE64
+
+public section
 
 /-! ## Floating-point values and operations
 
@@ -40,7 +44,7 @@ def f64Canon (b : UInt64) : UInt64 :=
 
 Defined directly on the bits, matching the spec; NaN payloads survive. -/
 
-def f32Abs (a : UInt32) : UInt32 := IEEE32.abs a
+@[expose] def f32Abs (a : UInt32) : UInt32 := IEEE32.abs a
 def f64Abs (a : UInt64) : UInt64 := IEEE64.abs a
 def f32Neg (a : UInt32) : UInt32 := IEEE32.negate a
 def f64Neg (a : UInt64) : UInt64 := IEEE64.negate a
@@ -50,17 +54,17 @@ def f64Copysign (a b : UInt64) : UInt64 :=
 
 /-! ### Arithmetic -/
 
-def f32Add (a b : UInt32) : UInt32 := IEEE32.add a b
-def f32Sub (a b : UInt32) : UInt32 := IEEE32.sub a b
-def f32Mul (a b : UInt32) : UInt32 := IEEE32.mul a b
+@[expose] def f32Add (a b : UInt32) : UInt32 := IEEE32.add a b
+@[expose] def f32Sub (a b : UInt32) : UInt32 := IEEE32.sub a b
+@[expose] def f32Mul (a b : UInt32) : UInt32 := IEEE32.mul a b
 def f32Div (a b : UInt32) : UInt32 := IEEE32.div a b
-def f64Add (a b : UInt64) : UInt64 := IEEE64.add a b
-def f64Sub (a b : UInt64) : UInt64 := IEEE64.sub a b
-def f64Mul (a b : UInt64) : UInt64 := IEEE64.mul a b
-def f64Div (a b : UInt64) : UInt64 := IEEE64.div a b
+@[expose] def f64Add (a b : UInt64) : UInt64 := IEEE64.add a b
+@[expose] def f64Sub (a b : UInt64) : UInt64 := IEEE64.sub a b
+@[expose] def f64Mul (a b : UInt64) : UInt64 := IEEE64.mul a b
+@[expose] def f64Div (a b : UInt64) : UInt64 := IEEE64.div a b
 
 def f32Sqrt  (a : UInt32) : UInt32 := IEEE32.sqrt a
-def f64Sqrt  (a : UInt64) : UInt64 := IEEE64.sqrt a
+@[expose] def f64Sqrt  (a : UInt64) : UInt64 := IEEE64.sqrt a
 def f32Ceil  (a : UInt32) : UInt32 := IEEE32.ceil a
 def f64Ceil  (a : UInt64) : UInt64 := IEEE64.ceil a
 def f32Floor (a : UInt32) : UInt32 := IEEE32.floor a

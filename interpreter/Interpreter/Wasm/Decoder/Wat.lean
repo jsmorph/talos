@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Syntax
-import Std.Data.HashMap
+module
+
+public import Interpreter.Wasm.Syntax
+public import Std.Data.HashMap
+
+public section
 
 /-!
 # WAT decoder
@@ -444,7 +448,7 @@ private def parseBlockHeader (resolveType : BlockTypeResolver) (xs : List Sexpr)
 the signature, if it has one we can model. Pulled up before `Ctx` so the
 ctx can carry the collected type table for `call_indirect (type N)`
 resolution. -/
-private structure TypeEntry where
+structure TypeEntry where
   symId : Option String
   sig   : Option (List Wasm.ValueType × List Wasm.ValueType)
   /-- GC composite type (struct/array/func) for this entry, if recognised

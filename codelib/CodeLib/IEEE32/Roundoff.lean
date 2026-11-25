@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Examples.FloatAssociativity
-import Mathlib.Tactic
+module
+
+public import Interpreter.Wasm.Examples.FloatAssociativity
+public import Mathlib.Tactic
+
+public section
 
 /-!
 # Axiom-free binary32 roundoff bounds
@@ -14,10 +18,10 @@ open Wasm
 
 /-- The real value represented by the integer binary32 model.  The value is
 used only with a finite-bit hypothesis. -/
-noncomputable def value (x : UInt32) : ℝ :=
+@[expose] noncomputable def value (x : UInt32) : ℝ :=
   (Wasm.IEEE32.scaledValue x : ℝ) / (2 : ℝ) ^ 149
 
-def Finite (x : UInt32) : Prop := Wasm.IEEE32.isFinite x = true
+@[expose] def Finite (x : UInt32) : Prop := Wasm.IEEE32.isFinite x = true
 
 theorem natAbs_scaledValue (x : UInt32) :
     (Wasm.IEEE32.scaledValue x).natAbs =
@@ -149,7 +153,7 @@ theorem abs_int_sub_le_of_error_cases (x y error : Nat)
 
 /-- The scaled magnitude selected by the pure rounder, before it is packed
 into sign, exponent, and fraction fields. -/
-def roundedMagnitude (n : Nat) : Nat :=
+@[expose] def roundedMagnitude (n : Nat) : Nat :=
   if n < 2 ^ 24 then n
   else
     let shift := Nat.log2 n - 23
@@ -667,7 +671,7 @@ theorem scaled_abs_le_of_value_abs_le (x : UInt32)
 
 /-- Uniform absolute roundoff budget used by bounded binary32 addition and
 subtraction. -/
-noncomputable def arithmeticEpsilon : ℝ := 1 / (2 : ℝ) ^ 23
+@[expose] noncomputable def arithmeticEpsilon : ℝ := 1 / (2 : ℝ) ^ 23
 
 /-- Bounded finite binary32 addition differs from exact real addition by at
 most one binary32 unit roundoff. -/
