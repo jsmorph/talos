@@ -268,7 +268,6 @@ theorem mul_real_adaptive_error (a b : UInt64)
               norm_num [unitRoundoff64, minNormal64]
               ring
 
-set_option maxRecDepth 40000 in
 /-- Uniform multiplication error: a relative `2^-53` term plus half the least
 subnormal, so the result remains useful when the exact product underflows. -/
 theorem mul_real_mixed_error (a b : UInt64)
@@ -421,7 +420,6 @@ theorem div_scaled_error (a b : UInt64)
 
 noncomputable def divisionEpsilon : ℝ := 1 / (2 : ℝ) ^ 52
 
-set_option maxRecDepth 40000 in
 /-- For finite inputs, a nonzero denominator, and quotient magnitude at most
 one, binary64 division has absolute real error at most `2^-52`. -/
 theorem div_real_error (a b : UInt64)
@@ -514,7 +512,6 @@ theorem sqrt_positive_finite (a : UInt64)
 
 noncomputable def squareRootEpsilon : ℝ := 1 / (2 : ℝ) ^ 52
 
-set_option maxRecDepth 40000 in
 /-- On positive finite binary64 inputs no larger than one, square root differs
 from exact real square root by at most `2^-52`. -/
 theorem sqrt_real_error (a : UInt64)
