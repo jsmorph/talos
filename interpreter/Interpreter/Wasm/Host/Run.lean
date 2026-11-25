@@ -1,4 +1,8 @@
-import Interpreter.Wasm.SmallStep
+module
+
+public import Interpreter.Wasm.SmallStep
+
+public section
 
 /-!
 # Entering a module through its host

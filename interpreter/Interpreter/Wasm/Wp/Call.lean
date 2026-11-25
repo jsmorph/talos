@@ -1,6 +1,10 @@
-import Interpreter.Wasm.Wp.Defs
-import Interpreter.Wasm.Semantics.Lemmas
-import Interpreter.Wasm.Spec.Defs
+module
+
+public import Interpreter.Wasm.Wp.Defs
+public import Interpreter.Wasm.Semantics.Lemmas
+public import Interpreter.Wasm.Spec.Defs
+
+public section
 
 /-! ### Function specifications and `call`.
 
@@ -11,7 +15,7 @@ import Interpreter.Wasm.Spec.Defs
 
 namespace Wasm
 
-def FuncSpec (env : HostEnv α) (m : Module) (id : Nat)
+@[expose] def FuncSpec (env : HostEnv α) (m : Module) (id : Nat)
     (Pre : List Value → Prop) (Post : Store α → List Value → Prop) : Prop :=
   ∀ args, Pre args → ∀ initial : Store α,
     TerminatesWith env m id initial args Post

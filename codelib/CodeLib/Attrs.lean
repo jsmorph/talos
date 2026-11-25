@@ -1,4 +1,8 @@
-import Lean
+module
+
+public import Lean
+
+public section
 
 /-!
 # `@[spec_of]` and `@[proves]` — load-bearing project attributes

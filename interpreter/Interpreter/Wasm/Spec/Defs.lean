@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Semantics
-import Interpreter.Wasm.Semantics.Lemmas
+module
+
+public import Interpreter.Wasm.Semantics
+public import Interpreter.Wasm.Semantics.Lemmas
+
+public section
 
 /-!
 # Fuel-free spec predicates
@@ -33,7 +37,7 @@ namespace Wasm
 /-- Total correctness: from these args, the function call eventually
 succeeds (for some bounded fuel and all larger fuels) with a result
 satisfying `P`. -/
-def TerminatesWith (env : HostEnv α) (m : Module) (id : Nat) (initial : Store α)
+@[expose] def TerminatesWith (env : HostEnv α) (m : Module) (id : Nat) (initial : Store α)
     (args : List Value) (P : Store α → List Value → Prop) : Prop :=
   ∃ N, ∀ fuel ≥ N, ∃ vs st, run fuel m id initial args env = .Success vs st ∧ P st vs
 

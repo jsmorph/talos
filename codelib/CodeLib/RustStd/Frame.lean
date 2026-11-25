@@ -1,5 +1,9 @@
-import Interpreter.Wasm
-import Std.Tactic.BVDecide
+module
+
+public import Interpreter.Wasm
+public import Std.Tactic.BVDecide
+
+public section
 
 /-!
 # `CodeLib.RustStd.Frame`

@@ -95,7 +95,7 @@ structure HostSpec (α : Type) where
 Program theorems quantify over such satisfying environments — the
 proof only ever uses the relational facts, never the concrete
 `HostFn.invoke`. -/
-def HostEnv.Satisfies (env : HostEnv α) (m : Module) (spec : HostSpec α) : Prop :=
+@[expose] def HostEnv.Satisfies (env : HostEnv α) (m : Module) (spec : HostSpec α) : Prop :=
   ∀ i, i < m.imports.length →
     ∃ hf c, env.funcs[i]? = some hf ∧ spec.contracts[i]? = some c ∧
             ∀ st args, c st args (hf.invoke st args)

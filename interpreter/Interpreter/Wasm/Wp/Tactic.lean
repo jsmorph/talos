@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Wp.Atomic
-import Interpreter.Wasm.Wp.Block
+module
+
+public import Interpreter.Wasm.Wp.Atomic
+public import Interpreter.Wasm.Wp.Block
+
+public section
 
 /-! ### Tactics.
 

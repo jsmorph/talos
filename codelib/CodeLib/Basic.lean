@@ -1,4 +1,8 @@
-import Interpreter.Wasm
+module
+
+public import Interpreter.Wasm
+
+public section
 
 /-!
 # CodeLib.Basic — public re-exports

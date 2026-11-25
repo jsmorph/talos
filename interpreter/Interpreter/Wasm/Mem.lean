@@ -38,11 +38,11 @@ def Mem.empty (pages : Nat) : Mem :=
   { pages, bytes := fun _ => 0 }
 
 /-- Read a single byte. -/
-def Mem.read8 (m : Mem) (a : UInt32) : UInt8 :=
+@[expose] def Mem.read8 (m : Mem) (a : UInt32) : UInt8 :=
   m.bytes a.toNat
 
 /-- Read a little-endian 32-bit word starting at `a`. -/
-def Mem.read32 (m : Mem) (a : UInt32) : UInt32 :=
+@[expose] def Mem.read32 (m : Mem) (a : UInt32) : UInt32 :=
   let b0 : UInt32 := (m.bytes a.toNat).toUInt32
   let b1 : UInt32 := (m.bytes (a.toNat + 1)).toUInt32
   let b2 : UInt32 := (m.bytes (a.toNat + 2)).toUInt32
@@ -50,11 +50,11 @@ def Mem.read32 (m : Mem) (a : UInt32) : UInt32 :=
   b0 ||| (b1 <<< 8) ||| (b2 <<< 16) ||| (b3 <<< 24)
 
 /-- Write a single byte. -/
-def Mem.write8 (m : Mem) (a : UInt32) (v : UInt8) : Mem :=
+@[expose] def Mem.write8 (m : Mem) (a : UInt32) (v : UInt8) : Mem :=
   { m with bytes := fun i => if i = a.toNat then v else m.bytes i }
 
 /-- Write a little-endian 32-bit word starting at `a`. -/
-def Mem.write32 (m : Mem) (a : UInt32) (v : UInt32) : Mem :=
+@[expose] def Mem.write32 (m : Mem) (a : UInt32) (v : UInt32) : Mem :=
   let n := a.toNat
   let b0 : UInt8 := (v &&& 0xFF).toUInt8
   let b1 : UInt8 := ((v >>> 8) &&& 0xFF).toUInt8
@@ -74,7 +74,7 @@ def Mem.read16 (m : Mem) (a : UInt32) : UInt32 :=
   b0 ||| (b1 <<< 8)
 
 /-- Read a little-endian 64-bit word starting at `a`. -/
-def Mem.read64 (m : Mem) (a : UInt32) : UInt64 :=
+@[expose] def Mem.read64 (m : Mem) (a : UInt32) : UInt64 :=
   let b0 : UInt64 := (m.bytes a.toNat).toUInt64
   let b1 : UInt64 := (m.bytes (a.toNat + 1)).toUInt64
   let b2 : UInt64 := (m.bytes (a.toNat + 2)).toUInt64
@@ -97,7 +97,7 @@ def Mem.write16 (m : Mem) (a : UInt32) (v : UInt32) : Mem :=
       else m.bytes i }
 
 /-- Write a little-endian 64-bit word starting at `a`. -/
-def Mem.write64 (m : Mem) (a : UInt32) (v : UInt64) : Mem :=
+@[expose] def Mem.write64 (m : Mem) (a : UInt32) (v : UInt64) : Mem :=
   let n := a.toNat
   let b0 : UInt8 := (v &&& 0xFF).toUInt8
   let b1 : UInt8 := ((v >>> 8) &&& 0xFF).toUInt8
@@ -189,7 +189,7 @@ theorem Mem.copy_read8_out (m : Mem) (dst src len : Nat) (i : UInt32)
 page count stays within `cap`. On success returns the new memory paired
 with the *previous* page count (what `memory.grow` pushes); on failure
 returns `none`. -/
-def Mem.grow (m : Mem) (delta : UInt32) (cap : Nat) : Option (Mem × Nat) :=
+@[expose] def Mem.grow (m : Mem) (delta : UInt32) (cap : Nat) : Option (Mem × Nat) :=
   let cur := m.pages
   let newPages := cur + delta.toNat
   if newPages ≤ cap then some ({ m with pages := newPages }, cur)
@@ -197,7 +197,7 @@ def Mem.grow (m : Mem) (delta : UInt32) (cap : Nat) : Option (Mem × Nat) :=
 
 /-- Write a list of bytes starting at byte offset `offset`. The list's
 i-th element lands at address `offset + i`. -/
-def Mem.writeBytes (m : Mem) (offset : Nat) (data : List UInt8) : Mem :=
+@[expose] def Mem.writeBytes (m : Mem) (offset : Nat) (data : List UInt8) : Mem :=
   let len := data.length
   { m with bytes := fun i =>
       if h : offset ≤ i ∧ i < offset + len then

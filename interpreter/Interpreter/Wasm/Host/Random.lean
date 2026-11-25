@@ -1,4 +1,8 @@
-import Interpreter.Wasm.SmallStep
+module
+
+public import Interpreter.Wasm.SmallStep
+
+public section
 
 /-!
 # An explicit entropy-oracle host

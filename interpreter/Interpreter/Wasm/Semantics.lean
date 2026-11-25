@@ -481,7 +481,7 @@ at runtime. Real Wasm traps (division by zero, signed-divide overflow,
 
 mutual
 
-def execOne (fuel : Nat) (m : Module) (st : Store α) (s : Locals) (inst : Instruction)
+@[expose] def execOne (fuel : Nat) (m : Module) (st : Store α) (s : Locals) (inst : Instruction)
     (env : HostEnv α := {}) : Continuation α :=
   match fuel, inst with
     | 0, _ => .OutOfFuel
@@ -2257,7 +2257,7 @@ def execOne (fuel : Nat) (m : Module) (st : Store α) (s : Locals) (inst : Instr
         .Fallthrough
           { st with elementSegments := st.elementSegments.set elemIdx none } s
 
-def exec (fuel : Nat) (m : Module) (st : Store α) (s : Locals) (p : Program)
+@[expose] def exec (fuel : Nat) (m : Module) (st : Store α) (s : Locals) (p : Program)
     (env : HostEnv α := {}) : Continuation α :=
   match p with
   | [] => .Fallthrough st s

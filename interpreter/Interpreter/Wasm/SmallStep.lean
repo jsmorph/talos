@@ -7184,7 +7184,7 @@ def PartiallyMeetsOutcome (initial : Config α)
 
 /-- Finite-trace total correctness, used to preserve termination results which
 already have a concrete terminating execution argument. -/
-def TerminatesWith (initial : Config α)
+@[expose] def TerminatesWith (initial : Config α)
     (post : List Value → MachineStore α → Prop) : Prop :=
   ∃ trace values store, Steps initial trace ⟨.done values, store⟩ ∧ post values store
 

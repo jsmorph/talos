@@ -110,7 +110,7 @@ deriving Repr, Inhabited, DecidableEq, BEq
 /-- Type-indexed zero used to initialise locals at function entry. The
 zero for a float is `+0.0` (all-zero bits); for a reference type the
 null reference of that type. -/
-def ValueType.zero : ValueType → Value
+@[expose] def ValueType.zero : ValueType → Value
   | .i32       => .i32 0
   | .i64       => .i64 0
   | .f32       => .f32 0
@@ -194,7 +194,7 @@ def Value.isNullRef? : Value → Option Bool
 /-- A size/length result, typed by the owning memory/table's address
 type: `i64` for 64-bit memories/tables (memory64 proposal), `i32`
 otherwise. Used by `memory.size`, `table.size`, and the grow results. -/
-def sizeValue (is64 : Bool) (n : Nat) : Value :=
+@[expose] def sizeValue (is64 : Bool) (n : Nat) : Value :=
   if is64 then .i64 (UInt64.ofNat n) else .i32 (UInt32.ofNat n)
 
 @[simp] theorem sizeValue_false (n : Nat) :
@@ -609,7 +609,7 @@ structure Function where
 deriving Repr, Inhabited
 
 @[expose, inline] def Function.numParams (f : Function) : Nat := f.params.length
-@[inline] def Function.numLocals (f : Function) : Nat := f.locals.length
+@[expose, inline] def Function.numLocals (f : Function) : Nat := f.locals.length
 
 /-- A name-indexed entry point. The WAT decoder collects these from
 `(export "name" (func $ref))` forms (inline + top-level); the emitter
@@ -1285,7 +1285,7 @@ def Module.tableCap (m : Module) (t : Nat) : Nat :=
 
 /-- Runtime growth ceiling for memory `index`. Instantiated-resource metadata
 takes precedence over the accessing module's declaration. -/
-def Store.memoryCap (store : Store α) (m : Module) (index : Nat) : Nat :=
+@[expose] def Store.memoryCap (store : Store α) (m : Module) (index : Nat) : Nat :=
   (store.memoryCaps[index]?).getD <|
     if index = 0 then m.memoryCap
     else

@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Wp.Structural
-import Interpreter.Wasm.Semantics.Lemmas
+module
+
+public import Interpreter.Wasm.Wp.Structural
+public import Interpreter.Wasm.Semantics.Lemmas
+
+public section
 
 /-! ### Block / if-then-else: structural, no measure required.
 

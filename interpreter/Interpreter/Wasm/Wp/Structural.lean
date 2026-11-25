@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Wp.Defs
-import Interpreter.Wasm.Semantics.Lemmas
+module
+
+public import Interpreter.Wasm.Wp.Defs
+public import Interpreter.Wasm.Semantics.Lemmas
+
+public section
 
 /-! ### The skeleton shared by the structural rules.
 
@@ -27,7 +31,7 @@ namespace Wasm
 `Fallthrough` and `Break` are the two a `block` / `loop` / `if` interprets;
 every other continuation — traps, returns, `OutOfFuel` — passes straight
 through, in the semantics and in the rule's postcondition alike. -/
-def Continuation.IsPassthrough {α : Type} : Continuation α → Prop
+@[expose] def Continuation.IsPassthrough {α : Type} : Continuation α → Prop
   | .Fallthrough _ _ => False
   | .Break _ _ _     => False
   | _                => True

@@ -1,5 +1,9 @@
-import Mathlib.Tactic
-import Interpreter.Wasm.Semantics
+module
+
+public import Mathlib.Tactic
+public import Interpreter.Wasm.Semantics
+
+public section
 
 /-- Simp set used by the `wp_run` tactic to symbolically execute straight-line
     code. Tag each new atomic `wp_*_cons` lemma with `@[wp_simp]` so it is
@@ -26,7 +30,7 @@ abbrev Imply (P Q : Assertion α) := ∀ c, P c → Q c
 
 notation:50 P:51 " ⇛ " Q:51 => Imply P Q
 
-@[irreducible]
+@[expose, irreducible]
 def wp (m : Module) (c : Program) (Q : Assertion α) (st : Store α) (s : Locals)
     (env : HostEnv α := {}) : Prop :=
   ∃ N, ∀ fuel ≥ N, Q (exec fuel m st s c env)

@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Semantics
+module
+
+public import Interpreter.Wasm.Semantics
+
+public section
 
 /-!
 # Bridge lemmas between the interpreter and the wp framework

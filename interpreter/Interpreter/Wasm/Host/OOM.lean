@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Host
+module
+
+public import Interpreter.Wasm.Host
+
+public section
 
 /-!
 # Terminal out-of-memory host
@@ -35,7 +39,7 @@ the trap's final store. -/
 theorem oomResult_nil (store : Store State) :
     oomResult store [] =
       .Trap { store with host := { raised := true } } trapMessage :=
-  rfl
+  by rfl
 
 /-- Concrete implementation of the terminal OOM import. -/
 def oomHost : HostFn State :=
