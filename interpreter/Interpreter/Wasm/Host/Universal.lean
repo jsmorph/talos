@@ -4,6 +4,7 @@ public import Interpreter.Wasm.Host.Registry
 public import Interpreter.Wasm.Host.StdIO
 public import Interpreter.Wasm.Host.Random
 public import Interpreter.Wasm.Host.OOM
+public meta import Interpreter.Wasm.Host.StdIO
 
 @[expose] public section
 

@@ -4,6 +4,7 @@ public import CodeLib.Attrs
 public import Interpreter.Wasm.LeanSyntax
 public import Interpreter.Wasm.Decoder.Wat
 public import Lean.Elab.Term
+public meta import Interpreter.Wasm.Syntax
 
 @[expose] public section
 
@@ -23,6 +24,8 @@ open Lean Elab Term
 /- `watModule%` turns the decoded value into an ordinary kernel expression.
 These instances are elaborator support only: generated definitions contain the
 resulting constructors, not a decoder invocation or an `IO` action. -/
+public meta section
+
 deriving instance Lean.ToExpr for Simd.Shape
 deriving instance Lean.ToExpr for Simd.ICmp
 deriving instance Lean.ToExpr for Simd.FCmp
@@ -51,6 +54,8 @@ deriving instance Lean.ToExpr for TableDecl
 deriving instance Lean.ToExpr for ImportDecl
 deriving instance Lean.ToExpr for ElementSegment
 deriving instance Lean.ToExpr for Module
+
+end
 
 /-- Decode a WAT file while elaborating and splice its complete Wasm AST into
 the declaration as a literal expression. The source file therefore stays tiny,
