@@ -126,7 +126,7 @@ theorem wp_store_adequacy
     Hfork, (fun _ _ _ _ => fupd_intro)
   dsimp only
   imodintro
-  iframe
+  iframe Hst
   isplitl [Hwp]
   · iapply BigSepL2.bigSepL2_singleton
     iframe
@@ -610,7 +610,7 @@ theorem wasm_smallStep_stronglyNormalizing
       elementSegmentHeapAgrees_empty _,
       fun id m hm => by simp [get?_empty] at hm,
       fun id env hm => by simp [get?_empty] at hm⟩
-  · iintro _
+  · iintro -
     exact htwp
 
 /-- Total-WP strong normalization with authoritative initial memory, globals,
