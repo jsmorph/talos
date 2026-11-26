@@ -39,18 +39,18 @@ def globalInitExprWat : String := "
     global.get $g))
 "
 
-def decoded : Wasm.Module :=
+def globalInitExprDecoded : Wasm.Module :=
   Wasm.Examples.decodeOrDefault globalInitExprWat
 
 theorem decoded_global_keeps_initExpr :
-    (decoded.globals[0]?.map (·.initExpr.isEmpty)).getD true = false := by
+    (globalInitExprDecoded.globals[0]?.map (·.initExpr.isEmpty)).getD true = false := by
   native_decide
 
 theorem runConstGlobals_evaluates_initExpr :
-    (initializedStore decoded).globals.globals[0]? = some (.i32 42) := by
+    (initializedStore globalInitExprDecoded).globals.globals[0]? = some (.i32 42) := by
   native_decide
 
-def getGConfig : Config Unit := initializedConfig decoded
+def getGConfig : Config Unit := initializedConfig globalInitExprDecoded
 
 theorem getG_returns_42 :
     (runSteps 2 getGConfig).result.values? = some [.i32 42] := by

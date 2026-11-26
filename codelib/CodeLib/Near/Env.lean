@@ -948,7 +948,7 @@ def promiseReturnFn : HostFn NearState :=
 
 /-! ## The registry — single source of truth -/
 
-private def imp (name : String) (params results : List ValueType) : ImportDecl :=
+def imp (name : String) (params results : List ValueType) : ImportDecl :=
   { «module» := "env", name, params, results }
 
 /-- Canonical ordered list of NEAR host functions, paired with their import

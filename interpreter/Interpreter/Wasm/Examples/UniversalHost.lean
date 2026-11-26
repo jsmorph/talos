@@ -1,6 +1,7 @@
 module
 
 public import Interpreter.Wasm.Host.Universal
+public meta import Interpreter.Wasm.Host.Universal
 
 @[expose] public section
 

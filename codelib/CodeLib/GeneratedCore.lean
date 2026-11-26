@@ -5,6 +5,9 @@ public import Interpreter.Wasm.LeanSyntax
 public import Interpreter.Wasm.Decoder.Wat
 public import Lean.Elab.Term
 public meta import Interpreter.Wasm.Syntax
+public import CodeLib.GeneratedToExpr
+public meta import CodeLib.GeneratedToExpr
+public meta import Interpreter.Wasm.Decoder.Wat
 
 @[expose] public section
 
@@ -20,42 +23,6 @@ without building unrelated proof libraries.
 namespace Wasm
 
 open Lean Elab Term
-
-/- `watModule%` turns the decoded value into an ordinary kernel expression.
-These instances are elaborator support only: generated definitions contain the
-resulting constructors, not a decoder invocation or an `IO` action. -/
-public meta section
-
-deriving instance Lean.ToExpr for Simd.Shape
-deriving instance Lean.ToExpr for Simd.ICmp
-deriving instance Lean.ToExpr for Simd.FCmp
-deriving instance Lean.ToExpr for Simd.UnOp
-deriving instance Lean.ToExpr for Simd.BinOp
-deriving instance Lean.ToExpr for Simd.TestOp
-deriving instance Lean.ToExpr for Simd.ShiftOp
-deriving instance Lean.ToExpr for GcHeapType
-deriving instance Lean.ToExpr for ValueType
-deriving instance Lean.ToExpr for AnyRef
-deriving instance Lean.ToExpr for StorageType
-deriving instance Lean.ToExpr for FieldType
-deriving instance Lean.ToExpr for Value
-deriving instance Lean.ToExpr for CatchClause
-deriving instance Lean.ToExpr for GcOp
-deriving instance Lean.ToExpr for Instruction
-deriving instance Lean.ToExpr for Function
-deriving instance Lean.ToExpr for Export
-deriving instance Lean.ToExpr for DataSegment
-deriving instance Lean.ToExpr for MemDecl
-deriving instance Lean.ToExpr for GlobalDecl
-deriving instance Lean.ToExpr for FuncType
-deriving instance Lean.ToExpr for CompositeType
-deriving instance Lean.ToExpr for GcTypeDef
-deriving instance Lean.ToExpr for TableDecl
-deriving instance Lean.ToExpr for ImportDecl
-deriving instance Lean.ToExpr for ElementSegment
-deriving instance Lean.ToExpr for Module
-
-end
 
 /-- Decode a WAT file while elaborating and splice its complete Wasm AST into
 the declaration as a literal expression. The source file therefore stays tiny,

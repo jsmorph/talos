@@ -5,6 +5,8 @@ public import CodeLib.Examples.Quicksort
 public import CodeLib.RustStd.MemArray
 public import CodeLib.WordCodec
 public import Interpreter.Wasm.Host.StdIO
+public meta import CodeLib.Examples.MergeSort
+public meta import CodeLib.WordCodec
 
 @[expose] public section
 
