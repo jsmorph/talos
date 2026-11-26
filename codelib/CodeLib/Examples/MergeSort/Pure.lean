@@ -1,4 +1,8 @@
-import CodeLib.Examples.MergeSort
+module
+
+public import CodeLib.Examples.MergeSort
+
+@[expose] public section
 
 /-!
 # Pure mathematics used by the MiniWasm merge-sort proof

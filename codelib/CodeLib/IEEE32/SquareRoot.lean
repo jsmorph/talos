@@ -1,6 +1,10 @@
-import CodeLib.IEEE32.SpecialValues
-import CodeLib.IEEE32.Rounders
-import Interpreter.Wasm.Examples.FloatSquareRoot
+module
+
+public import CodeLib.IEEE32.SpecialValues
+public import CodeLib.IEEE32.Rounders
+public import Interpreter.Wasm.Examples.FloatSquareRoot
+
+@[expose] public section
 
 /-!
 # Binary32 square-root specifications

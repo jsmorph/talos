@@ -1,4 +1,8 @@
-import CodeLib.SepLogic.SmallStepState
+module
+
+public import CodeLib.SepLogic.SmallStepState
+
+@[expose] public section
 
 /-!
 # Outcome-valued Wasm language adapter

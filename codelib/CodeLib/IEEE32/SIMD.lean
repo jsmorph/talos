@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Examples.FloatSIMD
-import CodeLib.IEEE32.Multiplication
+module
+
+public import Interpreter.Wasm.Examples.FloatSIMD
+public import CodeLib.IEEE32.Multiplication
+
+@[expose] public section
 
 /-!
 # Lane-wise SIMD floating-point specifications

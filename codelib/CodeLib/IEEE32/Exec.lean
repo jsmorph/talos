@@ -1,4 +1,8 @@
-import CodeLib.IEEE32.Conversions
+module
+
+public import CodeLib.IEEE32.Conversions
+
+@[expose] public section
 
 open Wasm
 

@@ -1,4 +1,8 @@
-import CodeLib.RustStd.Region
+module
+
+public import CodeLib.RustStd.Region
+
+@[expose] public section
 
 /-!
 # `CodeLib.RustStd.MemArray`

@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Mem
-import Interpreter.Wasm.Simd
+module
+
+public import Interpreter.Wasm.Mem
+public import Interpreter.Wasm.Simd
+
+@[expose] public section
 
 namespace Wasm
 

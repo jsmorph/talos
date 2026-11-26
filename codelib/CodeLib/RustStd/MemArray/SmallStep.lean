@@ -1,5 +1,9 @@
-import CodeLib.RustStd.MemArray
-import Interpreter.Wasm.SmallStep
+module
+
+public import CodeLib.RustStd.MemArray
+public import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 /-!
 # Relational small-step rules for memory-resident arrays

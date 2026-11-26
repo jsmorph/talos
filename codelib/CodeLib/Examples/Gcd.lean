@@ -1,5 +1,9 @@
-import CodeLib.SepLogic.SmallStepAdequacy
-import CodeLib.SepLogic.SmallStepTotalLifting
+module
+
+public import CodeLib.SepLogic.SmallStepAdequacy
+public import CodeLib.SepLogic.SmallStepTotalLifting
+
+@[expose] public section
 
 /-!
 # Euclidean GCD

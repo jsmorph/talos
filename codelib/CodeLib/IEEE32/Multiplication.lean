@@ -1,6 +1,10 @@
-import CodeLib.IEEE32.SpecialValues
-import CodeLib.IEEE32.Rounders
-import Interpreter.Wasm.Examples.FloatMultiplication
+module
+
+public import CodeLib.IEEE32.SpecialValues
+public import CodeLib.IEEE32.Rounders
+public import Interpreter.Wasm.Examples.FloatMultiplication
+
+@[expose] public section
 
 /-!
 # Binary32 multiplication specifications

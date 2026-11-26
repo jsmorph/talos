@@ -1,4 +1,8 @@
-import CodeLib.SepLogic.SmallStepLifting
+module
+
+public import CodeLib.SepLogic.SmallStepLifting
+
+@[expose] public section
 
 /-!
 # Contextual Iris chunks for fixed-width unsigned operations

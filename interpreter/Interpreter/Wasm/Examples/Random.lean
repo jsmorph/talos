@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Host.Random.Probability
+module
+
+public import Interpreter.Wasm.Host.Random.Probability
+
+@[expose] public section
 
 /-!
 # A probabilistic Wasm coin

@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.Examples.Harness
+
+@[expose] public section
 
 /-! ## Example: `ref.test`/`ref.cast` against concrete (function) types
 

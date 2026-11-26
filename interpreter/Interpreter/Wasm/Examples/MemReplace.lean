@@ -1,5 +1,9 @@
-import Interpreter.Wasm.SmallStep
-import Std.Tactic.BVDecide
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Std.Tactic.BVDecide
+
+@[expose] public section
 
 /-! ## Example: memory replace
 

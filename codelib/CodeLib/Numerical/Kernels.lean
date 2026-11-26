@@ -1,8 +1,12 @@
-import CodeLib.IEEE32.Multiplication
-import CodeLib.IEEE64.Operations
-import CodeLib.Numerical.ErrorComposition
-import CodeLib.Numerical.RelativeError
-import Interpreter.Wasm.Examples.FloatNumericalKernels
+module
+
+public import CodeLib.IEEE32.Multiplication
+public import CodeLib.IEEE64.Operations
+public import CodeLib.Numerical.ErrorComposition
+public import CodeLib.Numerical.RelativeError
+public import Interpreter.Wasm.Examples.FloatNumericalKernels
+
+@[expose] public section
 
 /-!
 # Quantitative numerical-kernel specifications

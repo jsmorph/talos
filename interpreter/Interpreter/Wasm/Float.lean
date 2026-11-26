@@ -1,5 +1,9 @@
-import Interpreter.Wasm.IEEE32
-import Interpreter.Wasm.IEEE64
+module
+
+public import Interpreter.Wasm.IEEE32
+public import Interpreter.Wasm.IEEE64
+
+@[expose] public section
 
 /-! ## Floating-point values and operations
 

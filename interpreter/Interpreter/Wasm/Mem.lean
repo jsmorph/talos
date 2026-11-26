@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 /-! ## Linear memory model
 
 A `Mem` is a function from byte addresses to `UInt8`, together with a

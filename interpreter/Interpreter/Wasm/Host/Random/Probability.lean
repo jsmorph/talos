@@ -1,7 +1,11 @@
-import Interpreter.Wasm.Host.Random
-import Mathlib.Probability.Distributions.Uniform
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Order
+module
+
+public import Interpreter.Wasm.Host.Random
+public import Mathlib.Probability.Distributions.Uniform
+public import Mathlib.Tactic.NormNum
+public import Mathlib.Tactic.Order
+
+@[expose] public section
 
 /-!
 # Finite probability models for the entropy oracle

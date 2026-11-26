@@ -1,10 +1,14 @@
-import CodeLib.IEEE64.Rounders
-import Interpreter.Wasm.Examples.Float64AddSub
-import Interpreter.Wasm.Examples.Float64Division
-import Interpreter.Wasm.Examples.Float64Multiplication
-import Interpreter.Wasm.Examples.Float64SquareRoot
-import Interpreter.Wasm.Examples.IEEE64
-import Mathlib.Tactic
+module
+
+public import CodeLib.IEEE64.Rounders
+public import Interpreter.Wasm.Examples.Float64AddSub
+public import Interpreter.Wasm.Examples.Float64Division
+public import Interpreter.Wasm.Examples.Float64Multiplication
+public import Interpreter.Wasm.Examples.Float64SquareRoot
+public import Interpreter.Wasm.Examples.IEEE64
+public import Mathlib.Tactic
+
+@[expose] public section
 
 /-!
 # Binary64 operation specifications

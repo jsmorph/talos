@@ -1,4 +1,8 @@
-import CodeLib.Near.State
+module
+
+public import CodeLib.Near.State
+
+@[expose] public section
 
 /-!
 # NEAR host-function registry (`nearEnv`)

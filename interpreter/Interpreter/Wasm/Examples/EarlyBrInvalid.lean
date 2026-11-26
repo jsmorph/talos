@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Validate
+module
+
+public import Interpreter.Wasm.Validate
+
+@[expose] public section
 
 /-! ## Example: EarlyBrInvalid
 

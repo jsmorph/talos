@@ -1,5 +1,9 @@
-import Mathlib.Tactic
-import Interpreter.Wasm.Semantics
+module
+
+public import Mathlib.Tactic
+public import Interpreter.Wasm.Semantics
+
+@[expose] public section
 
 /-- Simp set used by the `wp_run` tactic to symbolically execute straight-line
     code. Tag each new atomic `wp_*_cons` lemma with `@[wp_simp]` so it is

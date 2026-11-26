@@ -1,4 +1,8 @@
-import CodeLib.RustStd.U64.Basic
+module
+
+public import CodeLib.RustStd.U64.Basic
+
+@[expose] public section
 
 /-! `u64::add` — contextual iris-lean chunk for `i64.add`. -/
 

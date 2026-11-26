@@ -1,6 +1,10 @@
-import Interpreter.Wasm.Examples.UIntLemmas
-import Interpreter.Wasm.SmallStep
-import Mathlib.Data.Nat.Factorial.Basic
+module
+
+public import Interpreter.Wasm.Examples.UIntLemmas
+public import Interpreter.Wasm.SmallStep
+public import Mathlib.Data.Nat.Factorial.Basic
+
+@[expose] public section
 
 /-! ## Example: Factorial
 

@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.Examples.Harness
+
+@[expose] public section
 
 /-!
 # Algorithm-level sine approximation example

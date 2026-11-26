@@ -1,5 +1,9 @@
-import CodeLib.IEEE32.SpecialValues
-import Interpreter.Wasm.Examples.FloatClamp
+module
+
+public import CodeLib.IEEE32.SpecialValues
+public import Interpreter.Wasm.Examples.FloatClamp
+
+@[expose] public section
 
 /-!
 # Binary32 comparison, selection, and sign specifications

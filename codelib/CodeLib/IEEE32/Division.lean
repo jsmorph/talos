@@ -1,6 +1,10 @@
-import CodeLib.IEEE32.Rounders
-import CodeLib.IEEE32.SpecialValues
-import Interpreter.Wasm.Examples.FloatDivision
+module
+
+public import CodeLib.IEEE32.Rounders
+public import CodeLib.IEEE32.SpecialValues
+public import Interpreter.Wasm.Examples.FloatDivision
+
+@[expose] public section
 
 /-!
 # Binary32 division specifications

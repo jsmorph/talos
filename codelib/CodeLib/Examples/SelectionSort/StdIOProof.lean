@@ -1,4 +1,8 @@
-import CodeLib.Examples.SelectionSort.StdIO
+module
+
+public import CodeLib.Examples.SelectionSort.StdIO
+
+@[expose] public section
 
 /-!
 # Correctness of the selection-sort StdIO wrappers

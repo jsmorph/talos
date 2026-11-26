@@ -1,4 +1,8 @@
-import CodeLib.IEEE32.Roundoff
+module
+
+public import CodeLib.IEEE32.Roundoff
+
+@[expose] public section
 
 /-!
 # Quantitative specifications for the non-integral binary32 rounders

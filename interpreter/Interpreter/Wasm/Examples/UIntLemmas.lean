@@ -1,4 +1,8 @@
-import Init
+module
+
+public import Init
+
+@[expose] public section
 
 /-!
 # `UInt32` counter-stepping lemmas for the examples

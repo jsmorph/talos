@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Syntax
+module
+
+public import Interpreter.Wasm.Syntax
+
+@[expose] public section
 
 /-!
 # A partial static validator (GC proposal)

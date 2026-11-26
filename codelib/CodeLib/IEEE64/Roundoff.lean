@@ -1,6 +1,10 @@
-import CodeLib.IEEE32.Roundoff
-import Interpreter.Wasm.IEEE64
-import Mathlib.Tactic
+module
+
+public import CodeLib.IEEE32.Roundoff
+public import Interpreter.Wasm.IEEE64
+public import Mathlib.Tactic
+
+@[expose] public section
 
 /-!
 # Axiom-free binary64 roundoff bounds

@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 /-!
 # Fixed-width word codecs for packed byte streams
 

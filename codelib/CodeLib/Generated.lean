@@ -1,5 +1,9 @@
-import CodeLib
-import CodeLib.GeneratedCore
+module
+
+public import CodeLib
+public import CodeLib.GeneratedCore
+
+@[expose] public section
 
 /-!
 # Legacy proof support for generated Wasm modules

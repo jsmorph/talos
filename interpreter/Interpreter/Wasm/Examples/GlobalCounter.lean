@@ -1,4 +1,8 @@
-import Interpreter.Wasm.SmallStep
+module
+
+public import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 /-! ## Example: global counter
 

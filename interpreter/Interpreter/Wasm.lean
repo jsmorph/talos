@@ -1,23 +1,27 @@
-import Interpreter.Wasm.Syntax
-import Interpreter.Wasm.Float
-import Interpreter.Wasm.Locals
-import Interpreter.Wasm.Continuation
-import Interpreter.Wasm.Semantics
-import Interpreter.Wasm.Semantics.Lemmas
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Host.Registry
-import Interpreter.Wasm.Host.StdIO
-import Interpreter.Wasm.Host.OOM
-import Interpreter.Wasm.Host.Random.Probability
-import Interpreter.Wasm.Host.Universal
-import Interpreter.Wasm.MeasureTermination
-import Interpreter.Wasm.Wp.Defs
-import Interpreter.Wasm.Wp.Atomic
-import Interpreter.Wasm.Wp.Block
-import Interpreter.Wasm.Wp.Loop
-import Interpreter.Wasm.Wp.Call
-import Interpreter.Wasm.Wp.Tactic
-import Interpreter.Wasm.Spec.Termination
+module
+
+public import Interpreter.Wasm.Syntax
+public import Interpreter.Wasm.Float
+public import Interpreter.Wasm.Locals
+public import Interpreter.Wasm.Continuation
+public import Interpreter.Wasm.Semantics
+public import Interpreter.Wasm.Semantics.Lemmas
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Host.Registry
+public import Interpreter.Wasm.Host.StdIO
+public import Interpreter.Wasm.Host.OOM
+public import Interpreter.Wasm.Host.Random.Probability
+public import Interpreter.Wasm.Host.Universal
+public import Interpreter.Wasm.MeasureTermination
+public import Interpreter.Wasm.Wp.Defs
+public import Interpreter.Wasm.Wp.Atomic
+public import Interpreter.Wasm.Wp.Block
+public import Interpreter.Wasm.Wp.Loop
+public import Interpreter.Wasm.Wp.Call
+public import Interpreter.Wasm.Wp.Tactic
+public import Interpreter.Wasm.Spec.Termination
+
+@[expose] public section
 
 /-! # Wasm
 

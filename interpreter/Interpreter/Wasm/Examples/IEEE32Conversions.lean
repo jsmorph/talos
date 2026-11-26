@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Examples.IEEE32
+module
+
+public import Interpreter.Wasm.Examples.IEEE32
+
+@[expose] public section
 
 /-!
 # Binary32 conversion differential checks

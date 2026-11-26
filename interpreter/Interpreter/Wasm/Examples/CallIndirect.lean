@@ -1,5 +1,9 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Validate
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Validate
+
+@[expose] public section
 
 /-! ## Example: `call_indirect` through a single-entry table
 

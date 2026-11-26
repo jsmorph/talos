@@ -1,4 +1,8 @@
-import Interpreter.Wasm.IEEE32
+module
+
+public import Interpreter.Wasm.IEEE32
+
+@[expose] public section
 
 /-!
 # Pure IEEE-754 binary64 arithmetic

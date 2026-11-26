@@ -1,5 +1,9 @@
-import CodeLib.IEEE32.SpecialValues
-import Interpreter.Wasm.Examples.FloatNearest
+module
+
+public import CodeLib.IEEE32.SpecialValues
+public import Interpreter.Wasm.Examples.FloatNearest
+
+@[expose] public section
 
 /-!
 # Binary32 integral-rounding specifications

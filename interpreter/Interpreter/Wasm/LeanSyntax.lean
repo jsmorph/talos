@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Syntax
-import Lean.Elab.Term
+module
+
+public import Interpreter.Wasm.Syntax
+public import Lean.Elab.Term
+
+@[expose] public section
 
 /-!
 # Compact Lean syntax for generated Wasm modules

@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Host
+module
+
+public import Interpreter.Wasm.Host
+
+@[expose] public section
 
 /-!
 # Terminal out-of-memory host

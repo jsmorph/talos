@@ -1,5 +1,9 @@
-import Iris.ProgramLogic.Language
-import Interpreter.Wasm.SmallStep
+module
+
+public import Iris.ProgramLogic.Language
+public import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 /-!
 # iris-lean language adapter for the Wasm small-step machine

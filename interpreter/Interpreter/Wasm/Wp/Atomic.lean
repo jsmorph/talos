@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Wp.Defs
+module
+
+public import Interpreter.Wasm.Wp.Defs
+
+@[expose] public section
 
 /-! ### Atomic equations.
 

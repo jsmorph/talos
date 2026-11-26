@@ -1,5 +1,9 @@
-import CodeLib.SepLogic.WasmHeap
-import Interpreter.Wasm.Mem
+module
+
+public import CodeLib.SepLogic.WasmHeap
+public import Interpreter.Wasm.Mem
+
+@[expose] public section
 
 /-! # Bridge: Talos Mem ↔ iris-lean GenHeap
 

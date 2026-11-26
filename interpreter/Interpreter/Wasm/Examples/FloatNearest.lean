@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.Examples.Harness
+
+@[expose] public section
 
 /-!
 # Binary32 integral-rounding example

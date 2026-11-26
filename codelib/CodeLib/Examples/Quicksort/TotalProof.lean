@@ -1,4 +1,8 @@
-import CodeLib.Examples.Quicksort.Laws
+module
+
+public import CodeLib.Examples.Quicksort.Laws
+
+@[expose] public section
 
 /-!
 # Total (TWP) Iris verification of the handwritten quicksort

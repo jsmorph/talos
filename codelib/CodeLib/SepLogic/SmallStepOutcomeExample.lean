@@ -1,5 +1,9 @@
-import CodeLib.SepLogic.SmallStepOutcomeLanguage
-import CodeLib.SepLogic.SmallStepTotalLifting
+module
+
+public import CodeLib.SepLogic.SmallStepOutcomeLanguage
+public import CodeLib.SepLogic.SmallStepTotalLifting
+
+@[expose] public section
 
 /-! Compile-time checks for the scoped outcome adapter and shared lifting. -/
 

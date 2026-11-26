@@ -1,8 +1,12 @@
-import Interpreter.Wasm
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Decoder.Wat
-import Interpreter.Wasm.Validate
-import Lean.Data.Json
+module
+
+public import Interpreter.Wasm
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Decoder.Wat
+public import Interpreter.Wasm.Validate
+public import Lean.Data.Json
+
+@[expose] public section
 
 /-!
 # `Interpreter.Testsuite.Exec`

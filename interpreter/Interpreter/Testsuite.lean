@@ -1,4 +1,8 @@
-import Interpreter.Testsuite.Exec
+module
+
+public import Interpreter.Testsuite.Exec
+
+@[expose] public section
 
 /-!
 # `testsuite` — run the W3C Wasm spec testsuite against this interpreter

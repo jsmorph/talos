@@ -1,5 +1,9 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Decoder.Wat
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Decoder.Wat
+
+@[expose] public section
 
 /-! ## Example: multi-value
 

@@ -1,6 +1,10 @@
-import CodeLib.SepLogic.SmallStepAdequacy
-import Interpreter.Wasm.Decoder.Wat
-import Mathlib.Data.List.Sort
+module
+
+public import CodeLib.SepLogic.SmallStepAdequacy
+public import Interpreter.Wasm.Decoder.Wat
+public import Mathlib.Data.List.Sort
+
+@[expose] public section
 
 /-!
 # Quicksort

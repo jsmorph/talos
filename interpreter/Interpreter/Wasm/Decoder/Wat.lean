@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Syntax
-import Std.Data.HashMap
+module
+
+public import Interpreter.Wasm.Syntax
+public import Std.Data.HashMap
+
+@[expose] public section
 
 /-!
 # WAT decoder

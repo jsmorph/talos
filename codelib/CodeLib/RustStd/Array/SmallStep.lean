@@ -1,6 +1,10 @@
-import CodeLib.RustStd.Array.IsEmpty
-import CodeLib.RustStd.Array.Len
-import CodeLib.SepLogic.SmallStepAdequacy
+module
+
+public import CodeLib.RustStd.Array.IsEmpty
+public import CodeLib.RustStd.Array.Len
+public import CodeLib.SepLogic.SmallStepAdequacy
+
+@[expose] public section
 
 /-! Authoritative small-step ownership for memory-resident Rust slices. -/
 

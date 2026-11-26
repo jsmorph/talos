@@ -1,4 +1,8 @@
-import CodeLib.Examples.Quicksort
+module
+
+public import CodeLib.Examples.Quicksort
+
+@[expose] public section
 
 /-!
 # Pure mathematics used by the quicksort proof

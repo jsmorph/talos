@@ -1,4 +1,8 @@
-import Interpreter.Wasm.SmallStep
+module
+
+public import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 /-!
 # Well-founded termination for the small-step semantics

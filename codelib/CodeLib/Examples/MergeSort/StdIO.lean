@@ -1,8 +1,12 @@
-import CodeLib.Examples.MergeSort.TotalProof
-import CodeLib.Examples.Quicksort
-import CodeLib.RustStd.MemArray
-import CodeLib.WordCodec
-import Interpreter.Wasm.Host.StdIO
+module
+
+public import CodeLib.Examples.MergeSort.TotalProof
+public import CodeLib.Examples.Quicksort
+public import CodeLib.RustStd.MemArray
+public import CodeLib.WordCodec
+public import Interpreter.Wasm.Host.StdIO
+
+@[expose] public section
 
 /-!
 # Merge sort as a `StdIO` program

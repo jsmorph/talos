@@ -1,5 +1,9 @@
-import CodeLib.IEEE32.SpecialValues
-import Interpreter.Wasm.Examples.FloatConversion
+module
+
+public import CodeLib.IEEE32.SpecialValues
+public import Interpreter.Wasm.Examples.FloatConversion
+
+@[expose] public section
 
 /-!
 # Binary32 conversion specifications

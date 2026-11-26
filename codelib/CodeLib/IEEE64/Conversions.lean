@@ -1,5 +1,9 @@
-import CodeLib.IEEE64.Operations
-import Interpreter.Wasm.Examples.FloatOps
+module
+
+public import CodeLib.IEEE64.Operations
+public import Interpreter.Wasm.Examples.FloatOps
+
+@[expose] public section
 
 /-!
 # Proof-visible binary64 integer conversions

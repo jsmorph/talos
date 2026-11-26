@@ -1,4 +1,8 @@
-import Interpreter.Wasm
+module
+
+public import Interpreter.Wasm
+
+@[expose] public section
 
 /-!
 # Observational equivalence of two wasm entry points

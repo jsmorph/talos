@@ -1,4 +1,8 @@
-import CodeLib.RustStd.UInt
+module
+
+public import CodeLib.RustStd.UInt
+
+@[expose] public section
 
 /-!
 # `UInt64` as a wasm `i64`

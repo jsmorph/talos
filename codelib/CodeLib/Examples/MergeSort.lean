@@ -1,5 +1,9 @@
-import CodeLib.SepLogic.SmallStepAdequacy
-import Mathlib.Data.List.Sort
+module
+
+public import CodeLib.SepLogic.SmallStepAdequacy
+public import Mathlib.Data.List.Sort
+
+@[expose] public section
 
 /-!
 # Bottom-up merge sort

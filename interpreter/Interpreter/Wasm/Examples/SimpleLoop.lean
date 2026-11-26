@@ -1,6 +1,10 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Examples.UIntLemmas
-import Mathlib.Tactic
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Examples.UIntLemmas
+public import Mathlib.Tactic
+
+@[expose] public section
 
 /-! ## Example: Simple countdown loop
 

@@ -1,6 +1,10 @@
-import CodeLib.SepLogic.SmallStepLanguage
-import CodeLib.SepLogic.WasmRules
-import Iris.ProgramLogic.WeakestPre
+module
+
+public import CodeLib.SepLogic.SmallStepLanguage
+public import CodeLib.SepLogic.WasmRules
+public import Iris.ProgramLogic.WeakestPre
+
+@[expose] public section
 
 /-!
 # Iris state interpretation for the Wasm small-step machine

@@ -1,6 +1,10 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Examples.Harness
-import Interpreter.Wasm.Validate
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Examples.Harness
+public import Interpreter.Wasm.Validate
+
+@[expose] public section
 
 /-!
 # First small-step regression slice

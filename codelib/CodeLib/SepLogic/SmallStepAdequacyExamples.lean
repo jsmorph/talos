@@ -1,5 +1,9 @@
-import CodeLib.SepLogic.SmallStepAdequacy
-import Interpreter.Wasm.Decoder.Wat
+module
+
+public import CodeLib.SepLogic.SmallStepAdequacy
+public import Interpreter.Wasm.Decoder.Wat
+
+@[expose] public section
 
 /-!
 # Concrete examples for the Wasm small-step adequacy bridge

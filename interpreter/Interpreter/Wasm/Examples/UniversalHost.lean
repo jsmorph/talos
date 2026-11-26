@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Host.Universal
+module
+
+public import Interpreter.Wasm.Host.Universal
+
+@[expose] public section
 
 /-!
 # Worked examples: one host for every module

@@ -1,7 +1,11 @@
-import CodeLib.Attrs
-import Interpreter.Wasm.LeanSyntax
-import Interpreter.Wasm.Decoder.Wat
-import Lean.Elab.Term
+module
+
+public import CodeLib.Attrs
+public import Interpreter.Wasm.LeanSyntax
+public import Interpreter.Wasm.Decoder.Wat
+public import Lean.Elab.Term
+
+@[expose] public section
 
 /-!
 # Artifact support for generated Wasm modules

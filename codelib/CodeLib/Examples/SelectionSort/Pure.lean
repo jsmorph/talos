@@ -1,5 +1,9 @@
-import CodeLib.Examples.SelectionSort
-import Mathlib.Data.List.Sort
+module
+
+public import CodeLib.Examples.SelectionSort
+public import Mathlib.Data.List.Sort
+
+@[expose] public section
 
 /-! Pure list facts shared by the recursive and loop proofs. -/
 

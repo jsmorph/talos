@@ -1,7 +1,11 @@
-import CodeLib.SepLogic.SmallStepLifting
-import CodeLib.SepLogic.SmallStepTotalLifting
-import Iris.ProgramLogic.Adequacy
-import Iris.ProgramLogic.TotalAdequacy
+module
+
+public import CodeLib.SepLogic.SmallStepLifting
+public import CodeLib.SepLogic.SmallStepTotalLifting
+public import Iris.ProgramLogic.Adequacy
+public import Iris.ProgramLogic.TotalAdequacy
+
+@[expose] public section
 
 /-!
 # Adequacy for the Wasm small-step Iris language

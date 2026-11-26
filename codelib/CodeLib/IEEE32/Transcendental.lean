@@ -1,8 +1,12 @@
-import CodeLib.IEEE32.Division
-import CodeLib.IEEE32.Multiplication
-import CodeLib.Numerical.ErrorComposition
-import Interpreter.Wasm.Examples.FloatSinPolynomial
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+module
+
+public import CodeLib.IEEE32.Division
+public import CodeLib.IEEE32.Multiplication
+public import CodeLib.Numerical.ErrorComposition
+public import Interpreter.Wasm.Examples.FloatSinPolynomial
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+
+@[expose] public section
 
 /-!
 # Algorithm-level transcendental verification

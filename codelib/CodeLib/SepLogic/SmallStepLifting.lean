@@ -1,5 +1,9 @@
-import CodeLib.SepLogic.SmallStepState
-import Iris.ProgramLogic.Lifting
+module
+
+public import CodeLib.SepLogic.SmallStepState
+public import Iris.ProgramLogic.Lifting
+
+@[expose] public section
 
 /-!
 # Primitive Iris lifting rules for Wasm small steps

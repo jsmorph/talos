@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Examples.FloatAssociativity
-import Mathlib.Tactic
+module
+
+public import Interpreter.Wasm.Examples.FloatAssociativity
+public import Mathlib.Tactic
+
+@[expose] public section
 
 /-!
 # Axiom-free binary32 roundoff bounds

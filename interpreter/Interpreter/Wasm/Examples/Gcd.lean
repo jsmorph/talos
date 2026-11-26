@@ -1,5 +1,9 @@
-import Interpreter.Wasm.SmallStep
-import Mathlib.Tactic
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Mathlib.Tactic
+
+@[expose] public section
 
 /-! ## Example: Euclidean GCD
 

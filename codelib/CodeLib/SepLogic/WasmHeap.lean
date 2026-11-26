@@ -1,13 +1,17 @@
-import Iris.ProofMode
-import Iris.Instances.Lib.FUpd
-import Iris.BI.Lib.GenHeap
-import Iris.BI.Lib.MonoNat
-import Iris.Algebra.Lib.ExclAuth
-import Interpreter.Wasm.Mem
-import Interpreter.Wasm.Syntax
-import Interpreter.Wasm.Host
-import Interpreter.Wasm.SmallStep
-import Std.Tactic.BVDecide
+module
+
+public import Iris.ProofMode
+public import Iris.Instances.Lib.FUpd
+public import Iris.BI.Lib.GenHeap
+public import Iris.BI.Lib.MonoNat
+public import Iris.Algebra.Lib.ExclAuth
+public import Interpreter.Wasm.Mem
+public import Interpreter.Wasm.Syntax
+public import Interpreter.Wasm.Host
+public import Interpreter.Wasm.SmallStep
+public import Std.Tactic.BVDecide
+
+@[expose] public section
 /-! # Wasm Memory as an Iris GenHeap
 Instantiates iris-lean's GenHeap for Wasm byte-level memory.
 Location = MemoryKey (memory id × byte address), Value = Option UInt8 (byte).

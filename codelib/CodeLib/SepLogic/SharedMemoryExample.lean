@@ -1,4 +1,8 @@
-import CodeLib.SepLogic.SmallStepAdequacy
+module
+
+public import CodeLib.SepLogic.SmallStepAdequacy
+
+@[expose] public section
 
 /-! # Shared-memory cross-instance example
 

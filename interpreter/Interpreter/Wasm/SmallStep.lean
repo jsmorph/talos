@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Semantics
+module
+
+public import Interpreter.Wasm.Semantics
+
+@[expose] public section
 
 set_option maxHeartbeats 2000000
 

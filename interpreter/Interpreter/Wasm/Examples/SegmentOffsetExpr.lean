@@ -1,5 +1,9 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Examples.Harness
+
+@[expose] public section
 
 /-! ## Example: const-expression data/element segment offsets
 

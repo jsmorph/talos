@@ -1,5 +1,9 @@
-import CodeLib.SepLogic.SmallStepAdequacy
-import CodeLib.SepLogic.SmallStepOutcomeLanguage
+module
+
+public import CodeLib.SepLogic.SmallStepAdequacy
+public import CodeLib.SepLogic.SmallStepOutcomeLanguage
+
+@[expose] public section
 
 /-!
 # Adequacy for outcome-valued Wasm total WPs
