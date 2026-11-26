@@ -3573,7 +3573,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
             arity, remainder, targetControl, calls⟩, store⟩
   | callHostReturn
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm
@@ -3589,7 +3589,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
           { store with wasm }⟩
   | callHostTrap
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm
@@ -3601,7 +3601,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
         ⟨.trapped (.host message), { store with wasm }⟩
   | callHostThrow
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm
@@ -3642,7 +3642,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
           store⟩
   | returnCallHostReturn
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm
@@ -3657,7 +3657,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
           { store with wasm }⟩
   | returnCallHostTrap
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm
@@ -3669,7 +3669,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
         ⟨.trapped (.host message), { store with wasm }⟩
   | returnCallHostThrow
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm
@@ -3812,7 +3812,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
       (htable : store.wasm.tables[tableIndex]? = some table)
       (helement : table[elementIndex]? = some (.funcref (some functionIndex)))
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hsignature : store.runtime.currentModule.funcSig? functionIndex = some signature)
       (hexpected : store.runtime.currentModule.types[typeIndex]? = some expected)
@@ -3828,7 +3828,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
       (htable : store.wasm.tables[tableIndex]? = some table)
       (helement : table[elementIndex]? = some (.funcref (some functionIndex)))
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hsignature : store.runtime.currentModule.funcSig? functionIndex = some signature)
       (hexpected : store.runtime.currentModule.types[typeIndex]? = some expected)
@@ -3850,7 +3850,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
       (htable : store.wasm.tables[tableIndex]? = some table)
       (helement : table[elementIndex]? = some (.funcref (some functionIndex)))
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hsignature : store.runtime.currentModule.funcSig? functionIndex = some signature)
       (hexpected : store.runtime.currentModule.types[typeIndex]? = some expected)
@@ -3869,7 +3869,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
       (htable : store.wasm.tables[tableIndex]? = some table)
       (helement : table[elementIndex]? = some (.funcref (some functionIndex)))
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hsignature : store.runtime.currentModule.funcSig? functionIndex = some signature)
       (hexpected : store.runtime.currentModule.types[typeIndex]? = some expected)
@@ -3899,7 +3899,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
       (htable : store.wasm.tables[tableIndex]? = some table)
       (helement : table[elementIndex]? = some (.funcref (some functionIndex)))
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hnoHost : store.runtime.currentHost.funcs.length ≤ functionIndex)
       (hsignature : store.runtime.currentModule.funcSig? functionIndex = some signature)
       (hexpected : store.runtime.currentModule.types[typeIndex]? = some expected)
@@ -3917,7 +3917,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
       (htable : store.wasm.tables[tableIndex]? = some table)
       (helement : table[elementIndex]? = some (.funcref (some functionIndex)))
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hnoHost : store.runtime.currentHost.funcs.length ≤ functionIndex)
       (hsignature : store.runtime.currentModule.funcSig? functionIndex = some signature)
       (hexpected : store.runtime.currentModule.types[typeIndex]? = some expected)
@@ -4010,7 +4010,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
       (htable : store.wasm.tables[tableIndex]? = some table)
       (helement : table[elementIndex]? = some (.funcref (some functionIndex)))
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hsignature : store.runtime.currentModule.funcSig? functionIndex = some signature)
       (hexpected : store.runtime.currentModule.types[typeIndex]? = some expected)
@@ -4026,7 +4026,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
       (htable : store.wasm.tables[tableIndex]? = some table)
       (helement : table[elementIndex]? = some (.funcref (some functionIndex)))
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hsignature : store.runtime.currentModule.funcSig? functionIndex = some signature)
       (hexpected : store.runtime.currentModule.types[typeIndex]? = some expected)
@@ -4048,7 +4048,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
       (htable : store.wasm.tables[tableIndex]? = some table)
       (helement : table[elementIndex]? = some (.funcref (some functionIndex)))
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hsignature : store.runtime.currentModule.funcSig? functionIndex = some signature)
       (hexpected : store.runtime.currentModule.types[typeIndex]? = some expected)
@@ -4067,7 +4067,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
       (htable : store.wasm.tables[tableIndex]? = some table)
       (helement : table[elementIndex]? = some (.funcref (some functionIndex)))
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hsignature : store.runtime.currentModule.funcSig? functionIndex = some signature)
       (hexpected : store.runtime.currentModule.types[typeIndex]? = some expected)
@@ -4161,7 +4161,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
         ⟨.trapped .nullFunctionReference, store⟩
   | callRefHostReturn
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm
@@ -4176,7 +4176,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
           { store with wasm }⟩
   | callRefHostTrap
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm
@@ -4188,7 +4188,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
         ⟨.trapped (.host message), { store with wasm }⟩
   | callRefHostThrow
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm
@@ -4235,7 +4235,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
         ⟨.trapped .nullFunctionReference, store⟩
   | returnCallRefHostReturn
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm
@@ -4251,7 +4251,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
           { store with wasm }⟩
   | returnCallRefHostTrap
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm
@@ -4264,7 +4264,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
         ⟨.trapped (.host message), { store with wasm }⟩
   | returnCallRefHostThrow
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hhost : store.runtime.currentHost.funcs[functionIndex]? = some hostFunction)
       (hinvoke :
         hostFunction.invoke store.wasm

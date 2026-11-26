@@ -2,6 +2,7 @@ module
 
 public import Interpreter.Wasm.Syntax
 public import Lean.Elab.Term
+public meta import Lean.Elab.Term.TermElabM
 
 @[expose] public section
 

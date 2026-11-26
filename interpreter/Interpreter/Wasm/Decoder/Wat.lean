@@ -1496,7 +1496,7 @@ element of `ops` must be a `(...)` form; each is parsed as a nested folded
 form and the results are concatenated in source order, yielding the operand
 prefix that precedes the folded head instruction. `what` names the form
 being parsed in the error message for a stray atom operand. -/
-private partial def foldedOperands (ctx : Ctx) (what : String)
+partial def foldedOperands (ctx : Ctx) (what : String)
     (ops : List Sexpr) : Except Err (List Wasm.Instruction) := do
   let mut acc : List Wasm.Instruction := []
   for s in ops do
@@ -1545,7 +1545,7 @@ partial def foldedIf (ctx : Ctx) (xs : List Sexpr)
     | _ => .error "folded if: trailing forms after (else …)"
   | _ => .error "folded if: missing (then …)"
 
-private partial def foldedWithImmediate (ctx : Ctx)
+partial def foldedWithImmediate (ctx : Ctx)
     (resolve : String → Except Err Nat)
     (mkInstrs : Nat → List Wasm.Instruction)
     : List Sexpr → Except Err (List Wasm.Instruction)
@@ -1617,7 +1617,7 @@ partial def foldedSelect (ctx : Ctx) (xs : List Sexpr)
   let acc ← foldedOperands ctx "folded select" xs'
   .ok (acc ++ [.select])
 
-private partial def parseLocalTee (ctx : Ctx) (toks : List Sexpr)
+partial def parseLocalTee (ctx : Ctx) (toks : List Sexpr)
     : Except Err (List Wasm.Instruction × List Sexpr) := do
   match toks with
   | .atom n :: rest => do
@@ -1625,13 +1625,13 @@ private partial def parseLocalTee (ctx : Ctx) (toks : List Sexpr)
     .ok ([.localTee i], rest)
   | _ => .error "local.tee expects an immediate"
 
-private partial def parseImmediateConst {α} (mk : α → Wasm.Instruction)
+partial def parseImmediateConst {α} (mk : α → Wasm.Instruction)
     (parseV : String → Except Err α) (op : String)
     : List Sexpr → Except Err (List Wasm.Instruction × List Sexpr)
   | .atom n :: rest' => do .ok ([mk (← parseV n)], rest')
   | _ => .error s!"{op} expects an immediate"
 
-private partial def parseImmediateNat (resolve : String → Except Err Nat)
+partial def parseImmediateNat (resolve : String → Except Err Nat)
     (mk : Nat → Wasm.Instruction) (op : String)
     : List Sexpr → Except Err (List Wasm.Instruction × List Sexpr)
   | .atom n :: rest' => do .ok ([mk (← resolve n)], rest')
@@ -1748,7 +1748,7 @@ partial def parseTryTable (ctx : Ctx) (toks : List Sexpr)
         dropTrailingLabel aft)
   | [] => .error "unterminated try_table"
 
-private partial def foldedTryTable (ctx : Ctx) (xs : List Sexpr)
+partial def foldedTryTable (ctx : Ctx) (xs : List Sexpr)
     : Except Err (List Wasm.Instruction) := do
   let (label, ps, rs, xs') := parseBlockHeader ctx.resolveBlockType xs
   let bodyCtx := ctx.pushLabel label
@@ -1756,7 +1756,7 @@ private partial def foldedTryTable (ctx : Ctx) (xs : List Sexpr)
   let body ← parseInstrSeq bodyCtx xs''
   .ok [.tryTable ps.length rs.length clauses body ps rs]
 
-private partial def parseStructured (ctx : Ctx)
+partial def parseStructured (ctx : Ctx)
     (mk : List Wasm.ValueType → List Wasm.ValueType →
       List Wasm.Instruction → Wasm.Instruction)
     (stops : Array String) (toks : List Sexpr)
@@ -1784,7 +1784,7 @@ partial def parseIf (ctx : Ctx) (toks : List Sexpr)
     .ok ([.iff ps.length rs.length thn [] ps rs], dropTrailingLabel aft1)
   | _ => .error "if without else/end"
 
-private partial def parseInstrsUntil (ctx : Ctx) (toks : List Sexpr)
+partial def parseInstrsUntil (ctx : Ctx) (toks : List Sexpr)
     (stops : Array String)
     : Except Err (List Wasm.Instruction × List Sexpr) := do
   let mut acc : List Wasm.Instruction := []
