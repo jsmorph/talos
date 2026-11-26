@@ -241,7 +241,7 @@ structure InternalError where
   message : String
 deriving Repr, Inhabited, DecidableEq
 
-private def gcTrapReasonOfMessage : String → TrapReason
+def gcTrapReasonOfMessage : String → TrapReason
   | "null i31 reference" => .nullI31Reference
   | "null structure reference" => .nullStructureReference
   | "null array reference" => .nullArrayReference
@@ -251,7 +251,7 @@ private def gcTrapReasonOfMessage : String → TrapReason
   | "out of bounds table access" => .outOfBoundsTable
   | message => .gc message
 
-private def returnedValues (thread : ThreadState α) : List Value :=
+def returnedValues (thread : ThreadState α) : List Value :=
   thread.locals.values.take thread.resultArity ++ thread.callerRemainder
 
 /-- Restore a suspended caller and prepend the callee's declared results to
@@ -269,7 +269,7 @@ def resumeCaller (callee : ThreadState α) (caller : CallFrame)
     control := caller.control
     calls }
 
-private def resumeExceptionCaller
+def resumeExceptionCaller
     (throwingFrame : ControlFrame) (caller : CallFrame)
     (calls : List CallFrame) : ThreadState α :=
   { locals := caller.locals
@@ -302,7 +302,7 @@ def globalAt? (store : MachineStore α) (index : Nat) : Option Value :=
 @[simp] theorem canonicalGlobalIndex_zero (store : MachineStore α) :
     canonicalGlobalIndex store 0 = 0 := rfl
 
-private def canonicalTagIndex (store : MachineStore α) (index : Nat) : Nat :=
+def canonicalTagIndex (store : MachineStore α) (index : Nat) : Nat :=
   match store.wasm.tagIds[index]? with
   | some id => (store.wasm.tagIds.findIdx? (· = id)).getD index
   | none => index
@@ -313,7 +313,7 @@ theorem canonicalTagIndex_eq (store : MachineStore α) (index : Nat) :
     | some id => (store.wasm.tagIds.findIdx? (· = id)).getD index
     | none => index := rfl
 
-private def setGlobal (store : MachineStore α) (index : Nat) (value : Value) :
+def setGlobal (store : MachineStore α) (index : Nat) (value : Value) :
     MachineStore α :=
   let index := canonicalGlobalIndex store index
   { store with wasm :=
@@ -336,7 +336,7 @@ theorem setGlobal_eq_of_canonical
               { globals := store.wasm.globals.globals.set index value } } } := by
   simp [setGlobal, h]
 
-private def setMemory (store : MachineStore α) (memory : Mem) : MachineStore α :=
+def setMemory (store : MachineStore α) (memory : Mem) : MachineStore α :=
   { store with wasm := { store.wasm with mem := memory } }
 
 /-- Public unfolding equation for proof layers that frame the primary memory.
@@ -347,11 +347,11 @@ theorem setMemory_eq (store : MachineStore α) (memory : Mem) :
       { store with wasm := { store.wasm with mem := memory } } :=
   rfl
 
-private def rawMemoryAt? (store : MachineStore α) (index : Nat) : Option Mem :=
+def rawMemoryAt? (store : MachineStore α) (index : Nat) : Option Mem :=
   if index = 0 then some store.wasm.mem
   else store.wasm.extraMems[index - 1]?
 
-private def canonicalMemoryIndex (store : MachineStore α) (index : Nat) : Nat :=
+def canonicalMemoryIndex (store : MachineStore α) (index : Nat) : Nat :=
   match store.wasm.memoryIds[index]? with
   | some id => (store.wasm.memoryIds.findIdx? (· = id)).getD index
   | none => index
@@ -368,7 +368,7 @@ def setMemoryAt
         { store.wasm with
           extraMems := store.wasm.extraMems.set (index - 1) memory } }
 
-private def enterIndexedMemory?
+def enterIndexedMemory?
     (store : MachineStore α) (index : Nat) : Option (MachineStore α) :=
   match memoryAt? store index,
       store.runtime.currentModule.extraMemories[index - 1]? with
@@ -388,7 +388,7 @@ private def enterIndexedMemory?
               memoryIds := selectedId.toList } }
   | _, _ => none
 
-private def leaveIndexedMemory
+def leaveIndexedMemory
     (original stepped : MachineStore α) (index : Nat) : MachineStore α :=
   let restored : MachineStore α :=
     { runtime := original.runtime
@@ -400,7 +400,7 @@ private def leaveIndexedMemory
           extraMems := original.wasm.extraMems } }
   setMemoryAt restored index stepped.wasm.mem
 
-private def resumeAfterIndexedMemory
+def resumeAfterIndexedMemory
     (rest : Program) (original : MachineStore α) (index : Nat)
     (config : Config α) : Config α :=
   let expr :=
@@ -410,7 +410,7 @@ private def resumeAfterIndexedMemory
     | .trapped reason => .trapped reason
   { expr, store := leaveIndexedMemory original config.store index }
 
-private def isMemOp : Instruction → Bool
+def isMemOp : Instruction → Bool
   | .memOp _ _ => true
   | _ => false
 
@@ -421,15 +421,15 @@ private def firstMemOpDepth : Config α → Nat
       | [] => 0
   | _ => 0
 
-private def setDataSegments (store : MachineStore α)
+def setDataSegments (store : MachineStore α)
     (segments : List (Option (List UInt8))) : MachineStore α :=
   { store with wasm := { store.wasm with dataSegments := segments } }
 
-private def setTables (store : MachineStore α) (tables : List TableInst) :
+def setTables (store : MachineStore α) (tables : List TableInst) :
     MachineStore α :=
   { store with wasm := { store.wasm with tables := tables } }
 
-private def setElementSegments (store : MachineStore α)
+def setElementSegments (store : MachineStore α)
     (segments : List (Option (List (Option Nat)))) : MachineStore α :=
   { store with wasm := { store.wasm with elementSegments := segments } }
 
@@ -441,7 +441,7 @@ def elementSegmentValues (store : MachineStore α) (elementIndex : Nat)
     (store.runtime.currentModule.elements[elementIndex]?.map
       ElementSegment.values).getD []
 
-private def rotateLeft32 (value count : UInt32) : UInt32 :=
+def rotateLeft32 (value count : UInt32) : UInt32 :=
   let count := count % 32
   if count = 0 then value
   else (value <<< count) ||| (value >>> (32 - count))
@@ -451,7 +451,7 @@ theorem rotateLeft32_eq (value count : UInt32) : rotateLeft32 value count =
     if count = 0 then value
     else (value <<< count) ||| (value >>> (32 - count)) := rfl
 
-private def rotateRight32 (value count : UInt32) : UInt32 :=
+def rotateRight32 (value count : UInt32) : UInt32 :=
   let count := count % 32
   if count = 0 then value
   else (value >>> count) ||| (value <<< (32 - count))
@@ -461,7 +461,7 @@ theorem rotateRight32_eq (value count : UInt32) : rotateRight32 value count =
     if count = 0 then value
     else (value >>> count) ||| (value <<< (32 - count)) := rfl
 
-private def rotateLeft64 (value count : UInt64) : UInt64 :=
+def rotateLeft64 (value count : UInt64) : UInt64 :=
   let count := count % 64
   if count = 0 then value
   else (value <<< count) ||| (value >>> (64 - count))
@@ -471,7 +471,7 @@ theorem rotateLeft64_eq (value count : UInt64) : rotateLeft64 value count =
     if count = 0 then value
     else (value <<< count) ||| (value >>> (64 - count)) := rfl
 
-private def rotateRight64 (value count : UInt64) : UInt64 :=
+def rotateRight64 (value count : UInt64) : UInt64 :=
   let count := count % 64
   if count = 0 then value
   else (value >>> count) ||| (value <<< (64 - count))
@@ -481,77 +481,77 @@ theorem rotateRight64_eq (value count : UInt64) : rotateRight64 value count =
     if count = 0 then value
     else (value >>> count) ||| (value <<< (64 - count)) := rfl
 
-private def signedDiv32 (dividend divisor : UInt32) : UInt32 :=
+def signedDiv32 (dividend divisor : UInt32) : UInt32 :=
   (Int32.ofInt
     (Int.tdiv dividend.toInt32.toInt divisor.toInt32.toInt)).toUInt32
 
 theorem signedDiv32_eq (dividend divisor : UInt32) : signedDiv32 dividend divisor =
     (Int32.ofInt (Int.tdiv dividend.toInt32.toInt divisor.toInt32.toInt)).toUInt32 := rfl
 
-private def signedRem32 (dividend divisor : UInt32) : UInt32 :=
+def signedRem32 (dividend divisor : UInt32) : UInt32 :=
   (Int32.ofInt
     (Int.tmod dividend.toInt32.toInt divisor.toInt32.toInt)).toUInt32
 
 theorem signedRem32_eq (dividend divisor : UInt32) : signedRem32 dividend divisor =
     (Int32.ofInt (Int.tmod dividend.toInt32.toInt divisor.toInt32.toInt)).toUInt32 := rfl
 
-private def signedDiv64 (dividend divisor : UInt64) : UInt64 :=
+def signedDiv64 (dividend divisor : UInt64) : UInt64 :=
   (Int64.ofInt
     (Int.tdiv dividend.toInt64.toInt divisor.toInt64.toInt)).toUInt64
 
 theorem signedDiv64_eq (dividend divisor : UInt64) : signedDiv64 dividend divisor =
     (Int64.ofInt (Int.tdiv dividend.toInt64.toInt divisor.toInt64.toInt)).toUInt64 := rfl
 
-private def signedRem64 (dividend divisor : UInt64) : UInt64 :=
+def signedRem64 (dividend divisor : UInt64) : UInt64 :=
   (Int64.ofInt
     (Int.tmod dividend.toInt64.toInt divisor.toInt64.toInt)).toUInt64
 
 theorem signedRem64_eq (dividend divisor : UInt64) : signedRem64 dividend divisor =
     (Int64.ofInt (Int.tmod dividend.toInt64.toInt divisor.toInt64.toInt)).toUInt64 := rfl
 
-private def wrap64To32 (value : UInt64) : UInt32 :=
+def wrap64To32 (value : UInt64) : UInt32 :=
   UInt32.ofNat (value.toNat % 2 ^ 32)
 
 theorem wrap64To32_eq (value : UInt64) : wrap64To32 value =
     UInt32.ofNat (value.toNat % 2 ^ 32) := rfl
 
-private def extendSigned32To64 (value : UInt32) : UInt64 :=
+def extendSigned32To64 (value : UInt32) : UInt64 :=
   (Int64.ofInt value.toInt32.toInt).toUInt64
 
 theorem extendSigned32To64_eq (value : UInt32) : extendSigned32To64 value =
     (Int64.ofInt value.toInt32.toInt).toUInt64 := rfl
 
-private def extendUnsigned32To64 (value : UInt32) : UInt64 :=
+def extendUnsigned32To64 (value : UInt32) : UInt64 :=
   UInt64.ofNat value.toNat
 
 theorem extendUnsigned32To64_eq (value : UInt32) : extendUnsigned32To64 value =
     UInt64.ofNat value.toNat := rfl
 
-private def extend8To32 (value : UInt32) : UInt32 :=
+def extend8To32 (value : UInt32) : UInt32 :=
   (Int32.ofInt (signExtend (value.toNat % 256) 8)).toUInt32
 
 theorem extend8To32_eq (value : UInt32) :
     extend8To32 value = (Int32.ofInt (signExtend (value.toNat % 256) 8)).toUInt32 := rfl
 
-private def extend16To32 (value : UInt32) : UInt32 :=
+def extend16To32 (value : UInt32) : UInt32 :=
   (Int32.ofInt (signExtend (value.toNat % 65536) 16)).toUInt32
 
 theorem extend16To32_eq (value : UInt32) :
     extend16To32 value = (Int32.ofInt (signExtend (value.toNat % 65536) 16)).toUInt32 := rfl
 
-private def extend8To64 (value : UInt64) : UInt64 :=
+def extend8To64 (value : UInt64) : UInt64 :=
   (Int64.ofInt (signExtend (value.toNat % 256) 8)).toUInt64
 
 theorem extend8To64_eq (value : UInt64) : extend8To64 value =
     (Int64.ofInt (signExtend (value.toNat % 256) 8)).toUInt64 := rfl
 
-private def extend16To64 (value : UInt64) : UInt64 :=
+def extend16To64 (value : UInt64) : UInt64 :=
   (Int64.ofInt (signExtend (value.toNat % 65536) 16)).toUInt64
 
 theorem extend16To64_eq (value : UInt64) : extend16To64 value =
     (Int64.ofInt (signExtend (value.toNat % 65536) 16)).toUInt64 := rfl
 
-private def extend32To64 (value : UInt64) : UInt64 :=
+def extend32To64 (value : UInt64) : UInt64 :=
   (Int64.ofInt (signExtend (value.toNat % 2 ^ 32) 32)).toUInt64
 
 theorem extend32To64_eq (value : UInt64) : extend32To64 value =
@@ -560,7 +560,7 @@ theorem extend32To64_eq (value : UInt64) : extend32To64 value =
 /-- The mathematical address used for bounds checks and the current reference
 memory's physical UInt32 index. Memory64 addresses above the implementation
 limit fail the bounds check before the truncated physical index is observed. -/
-private def memoryAddress? : Value → Option (Nat × UInt32)
+def memoryAddress? : Value → Option (Nat × UInt32)
   | .i32 address => some (address.toNat, address)
   | .i64 address => some (address.toNat, address.toUInt32)
   | _ => none
@@ -657,7 +657,7 @@ def evalScalarTrunc? :
             .invalidConversionToInteger else .integerOverflow)
   | _, _ => none
 
-private def simdExtractLane
+def simdExtractLane
     (shape : Simd.Shape) (signed : Bool) (lane : Nat)
     (value : BitVec 128) : Value :=
   let laneValue := Simd.getLane shape.laneBits lane value
@@ -688,7 +688,7 @@ theorem simdExtractLane_eq (shape : Simd.Shape) (signed : Bool) (lane : Nat)
     | .f32x4 => .f32 (UInt32.ofNat laneValue)
     | .f64x2 => .f64 (UInt64.ofNat laneValue) := rfl
 
-private def readV128 (memory : Mem) (address : UInt32) : BitVec 128 :=
+def readV128 (memory : Mem) (address : UInt32) : BitVec 128 :=
   let lo := memory.read64 address
   let hi := memory.read64 (address + 8)
   BitVec.ofNat 128 (lo.toNat + hi.toNat * 2 ^ 64)
@@ -698,7 +698,7 @@ theorem readV128_eq (memory : Mem) (address : UInt32) : readV128 memory address 
     let hi := memory.read64 (address + 8)
     BitVec.ofNat 128 (lo.toNat + hi.toNat * 2 ^ 64) := rfl
 
-private def writeV128
+def writeV128
     (memory : Mem) (address : UInt32) (value : BitVec 128) : Mem :=
   let lo := UInt64.ofNat (value.toNat % 2 ^ 64)
   let hi := UInt64.ofNat (value.toNat / 2 ^ 64)
@@ -710,7 +710,7 @@ theorem writeV128_eq (memory : Mem) (address : UInt32) (value : BitVec 128) :
     let hi := UInt64.ofNat (value.toNat / 2 ^ 64)
     (memory.write64 address lo).write64 (address + 8) hi := rfl
 
-private def readLaneNat (memory : Mem) (address : UInt32) (bits : Nat) : Nat :=
+def readLaneNat (memory : Mem) (address : UInt32) (bits : Nat) : Nat :=
   match bits with
   | 8 => (memory.read8 address).toNat
   | 16 => (memory.read16 address).toNat
@@ -725,7 +725,7 @@ theorem readLaneNat_eq (memory : Mem) (address : UInt32) (bits : Nat) :
     | 32 => (memory.read32 address).toNat
     | _ => (memory.read64 address).toNat := rfl
 
-private def writeLaneNat
+def writeLaneNat
     (memory : Mem) (address : UInt32) (bits value : Nat) : Mem :=
   match bits with
   | 8 => memory.write8 address (UInt8.ofNat value)
@@ -745,7 +745,7 @@ theorem writeLaneNat_eq_32 (memory : Mem) (address : UInt32) (value : Nat) :
 theorem writeLaneNat_eq_64 (memory : Mem) (address : UInt32) (value : Nat) :
     writeLaneNat memory address 64 value = memory.write64 address (UInt64.ofNat value) := rfl
 
-private def loadV128Ext
+def loadV128Ext
     (memory : Mem) (address : UInt32) (srcBits : Nat) (signed : Bool) :
     BitVec 128 :=
   let word := memory.read64 address
@@ -894,7 +894,7 @@ theorem prepareCatch_eq (tag : Nat) (arguments : List Value) (clause : CatchClau
 /-- Checked executable presentation. Unsupported and malformed configurations
 remain diagnostic errors until validation and the corresponding `Step`
 constructors are added. -/
-private def stepPlainChecked?
+def stepPlainChecked?
     (config : Config α) : Except InternalError (Option (StepKind × Config α)) :=
   match config with
   | ⟨.done _, _⟩ | ⟨.trapped _, _⟩ => .ok none
@@ -3392,7 +3392,7 @@ inductive Step : Config α → StepKind → Config α → Prop where
           store⟩
   | callCrossInstance
       (himports : functionIndex < store.runtime.currentModule.imports.length)
-      (himport : store.runtime.currentModule.imports[functionIndex] = imp)
+      (himport : store.runtime.currentModule.imports[functionIndex]'himports = imp)
       (hnoHost : store.runtime.currentHost.funcs.length ≤ functionIndex)
       (hresolved : store.runtime.currentInstance.resolvedImports[functionIndex]? =
           some (.wasm calleeId localIdx))

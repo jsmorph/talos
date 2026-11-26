@@ -1,6 +1,8 @@
 module
 
 public import Interpreter.Wasm.Float
+public meta import Interpreter.Wasm.IEEE32
+public meta import Interpreter.Wasm.Float
 
 @[expose] public section
 
@@ -14,55 +16,55 @@ not logical bridge axioms: numerical proofs use only the pure definitions.
 
 namespace Wasm.Examples.IEEE32
 
-private def nativeAdd (a b : UInt32) : UInt32 :=
+def nativeAdd (a b : UInt32) : UInt32 :=
   f32Canon (Float32.ofBits a + Float32.ofBits b).toBits
 
-private def nativeSub (a b : UInt32) : UInt32 :=
+def nativeSub (a b : UInt32) : UInt32 :=
   f32Canon (Float32.ofBits a - Float32.ofBits b).toBits
 
-private def nativeMul (a b : UInt32) : UInt32 :=
+def nativeMul (a b : UInt32) : UInt32 :=
   f32Canon (Float32.ofBits a * Float32.ofBits b).toBits
 
-private def nativeDiv (a b : UInt32) : UInt32 :=
+def nativeDiv (a b : UInt32) : UInt32 :=
   f32Canon (Float32.ofBits a / Float32.ofBits b).toBits
 
-private def nativeSqrt (a : UInt32) : UInt32 :=
+def nativeSqrt (a : UInt32) : UInt32 :=
   f32Canon (Float32.ofBits a).sqrt.toBits
 
-private def nativeMin (a b : UInt32) : UInt32 :=
+def nativeMin (a b : UInt32) : UInt32 :=
   let x := Float32.ofBits a
   let y := Float32.ofBits b
   if x.isNaN || y.isNaN then f32CanonicalNaN
   else if x.toFloat == 0.0 && y.toFloat == 0.0 then a ||| b
   else if x.toFloat < y.toFloat then a else b
 
-private def nativeMax (a b : UInt32) : UInt32 :=
+def nativeMax (a b : UInt32) : UInt32 :=
   let x := Float32.ofBits a
   let y := Float32.ofBits b
   if x.isNaN || y.isNaN then f32CanonicalNaN
   else if x.toFloat == 0.0 && y.toFloat == 0.0 then a &&& b
   else if x.toFloat < y.toFloat then b else a
 
-private def nativeEq (a b : UInt32) : Bool :=
+def nativeEq (a b : UInt32) : Bool :=
   (Float32.ofBits a).toFloat == (Float32.ofBits b).toFloat
 
-private def nativeLt (a b : UInt32) : Bool :=
+def nativeLt (a b : UInt32) : Bool :=
   decide ((Float32.ofBits a).toFloat < (Float32.ofBits b).toFloat)
 
-private def nativeLe (a b : UInt32) : Bool :=
+def nativeLe (a b : UInt32) : Bool :=
   decide ((Float32.ofBits a).toFloat ≤ (Float32.ofBits b).toFloat)
 
-private def nativeCeil (a : UInt32) : UInt32 :=
+def nativeCeil (a : UInt32) : UInt32 :=
   f32Canon (Float32.ofBits a).ceil.toBits
 
-private def nativeFloor (a : UInt32) : UInt32 :=
+def nativeFloor (a : UInt32) : UInt32 :=
   f32Canon (Float32.ofBits a).floor.toBits
 
-private def nativeTrunc (a : UInt32) : UInt32 :=
+def nativeTrunc (a : UInt32) : UInt32 :=
   let x := Float32.ofBits a
   f32Canon (if x.toFloat < 0.0 then x.ceil else x.floor).toBits
 
-private def nativeNearest (a : UInt32) : UInt32 :=
+def nativeNearest (a : UInt32) : UInt32 :=
   let x := Float32.ofBits a
   let fl := x.floor
   let cl := x.ceil

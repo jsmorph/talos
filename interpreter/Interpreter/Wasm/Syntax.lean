@@ -1121,29 +1121,29 @@ def Module.gcRecGroup (m : Module) (x : Nat) : List Nat :=
       | none   => false
   | _ => [x]
 
-private def gcHeapTypeEquivWith
+def gcHeapTypeEquivWith
     (typeEquiv : Nat → Nat → Bool) : GcHeapType → GcHeapType → Bool
   | .concrete a, .concrete b => typeEquiv a b
   | a, b => a == b
 
-private def gcValueTypeEquivWith
+def gcValueTypeEquivWith
     (typeEquiv : Nat → Nat → Bool) : ValueType → ValueType → Bool
   | .ref nullableA heapA, .ref nullableB heapB =>
       nullableA == nullableB && gcHeapTypeEquivWith typeEquiv heapA heapB
   | a, b => a == b
 
-private def gcStorageTypeEquivWith
+def gcStorageTypeEquivWith
     (typeEquiv : Nat → Nat → Bool) : StorageType → StorageType → Bool
   | .val a, .val b => gcValueTypeEquivWith typeEquiv a b
   | .packed a, .packed b => a == b
   | _, _ => false
 
-private def gcFieldTypeEquivWith
+def gcFieldTypeEquivWith
     (typeEquiv : Nat → Nat → Bool) (a b : FieldType) : Bool :=
   a.isMut == b.isMut &&
   gcStorageTypeEquivWith typeEquiv a.storage b.storage
 
-private def gcCompositeEquivWith
+def gcCompositeEquivWith
     (typeEquiv : Nat → Nat → Bool) : CompositeType → CompositeType → Bool
   | .func a, .func b =>
       a.params.length == b.params.length &&

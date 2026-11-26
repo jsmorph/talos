@@ -1,6 +1,7 @@
 module
 
 public import Interpreter.Wasm.Float
+public meta import Interpreter.Wasm.IEEE64
 
 @[expose] public section
 
@@ -13,24 +14,24 @@ integral-rounding operations are compared with the native `Float` oracle.
 
 namespace Wasm.Examples.IEEE64
 
-private def nativeCanon (b : UInt64) : UInt64 :=
+def nativeCanon (b : UInt64) : UInt64 :=
   if (Float.ofBits b).isNaN then 0x7FF8000000000000 else b
 
-private def nativeMin (a b : UInt64) : UInt64 :=
+def nativeMin (a b : UInt64) : UInt64 :=
   let x := Float.ofBits a
   let y := Float.ofBits b
   if x.isNaN || y.isNaN then 0x7FF8000000000000
   else if x == 0.0 && y == 0.0 then a ||| b
   else if x < y then a else b
 
-private def nativeMax (a b : UInt64) : UInt64 :=
+def nativeMax (a b : UInt64) : UInt64 :=
   let x := Float.ofBits a
   let y := Float.ofBits b
   if x.isNaN || y.isNaN then 0x7FF8000000000000
   else if x == 0.0 && y == 0.0 then a &&& b
   else if x < y then b else a
 
-private def nativeNearest (a : UInt64) : UInt64 :=
+def nativeNearest (a : UInt64) : UInt64 :=
   let x := Float.ofBits a
   let fl := x.floor
   let cl := x.ceil
@@ -41,48 +42,48 @@ private def nativeNearest (a : UInt64) : UInt64 :=
     else if (fl * 0.5).floor * 2.0 == fl then fl else cl
   nativeCanon r.toBits
 
-private def nativeConvertI32S (a : UInt32) : UInt64 :=
+def nativeConvertI32S (a : UInt32) : UInt64 :=
   (Float.ofInt a.toInt32.toInt).toBits
 
-private def nativeConvertI32U (a : UInt32) : UInt64 :=
+def nativeConvertI32U (a : UInt32) : UInt64 :=
   (Float.ofNat a.toNat).toBits
 
-private def nativeConvertI64S (a : UInt64) : UInt64 :=
+def nativeConvertI64S (a : UInt64) : UInt64 :=
   (Float.ofInt a.toInt64.toInt).toBits
 
-private def nativeConvertI64U (a : UInt64) : UInt64 :=
+def nativeConvertI64U (a : UInt64) : UInt64 :=
   (Float.ofNat a.toNat).toBits
 
-private def truncReal (x : Float) : Option Float :=
+def truncReal (x : Float) : Option Float :=
   if x.isNaN then none else some (if x < 0.0 then x.ceil else x.floor)
 
-private def nativeTruncI32S (a : UInt64) : Option UInt32 :=
+def nativeTruncI32S (a : UInt64) : Option UInt32 :=
   match truncReal (Float.ofBits a) with
   | none => none
   | some t => if (-2147483648.0 : Float) ≤ t ∧ t ≤ (2147483647.0 : Float)
       then some t.toInt64.toUInt64.toUInt32 else none
 
-private def nativeTruncI32U (a : UInt64) : Option UInt32 :=
+def nativeTruncI32U (a : UInt64) : Option UInt32 :=
   match truncReal (Float.ofBits a) with
   | none => none
   | some t => if (0.0 : Float) ≤ t ∧ t ≤ (4294967295.0 : Float)
       then some t.toUInt64.toUInt32 else none
 
-private def nativeTruncI64S (a : UInt64) : Option UInt64 :=
+def nativeTruncI64S (a : UInt64) : Option UInt64 :=
   match truncReal (Float.ofBits a) with
   | none => none
   | some t => if (-9223372036854775808.0 : Float) ≤ t ∧
       t < (9223372036854775808.0 : Float)
       then some t.toInt64.toUInt64 else none
 
-private def nativeTruncI64U (a : UInt64) : Option UInt64 :=
+def nativeTruncI64U (a : UInt64) : Option UInt64 :=
   match truncReal (Float.ofBits a) with
   | none => none
   | some t => if (0.0 : Float) ≤ t ∧
       t < (18446744073709551616.0 : Float)
       then some t.toUInt64 else none
 
-private def nativeSatI32S (a : UInt64) : UInt32 :=
+def nativeSatI32S (a : UInt64) : UInt32 :=
   let x := Float.ofBits a
   if x.isNaN then 0
   else let t := if x < 0.0 then x.ceil else x.floor
@@ -90,7 +91,7 @@ private def nativeSatI32S (a : UInt64) : UInt32 :=
     else if t ≥ (2147483647.0 : Float) then 0x7FFFFFFF
     else t.toInt64.toUInt64.toUInt32
 
-private def nativeSatI32U (a : UInt64) : UInt32 :=
+def nativeSatI32U (a : UInt64) : UInt32 :=
   let x := Float.ofBits a
   if x.isNaN then 0
   else let t := if x < 0.0 then x.ceil else x.floor
@@ -98,7 +99,7 @@ private def nativeSatI32U (a : UInt64) : UInt32 :=
     else if t ≥ (4294967295.0 : Float) then 0xFFFFFFFF
     else t.toUInt64.toUInt32
 
-private def nativeSatI64S (a : UInt64) : UInt64 :=
+def nativeSatI64S (a : UInt64) : UInt64 :=
   let x := Float.ofBits a
   if x.isNaN then 0
   else let t := if x < 0.0 then x.ceil else x.floor
@@ -106,7 +107,7 @@ private def nativeSatI64S (a : UInt64) : UInt64 :=
     else if t ≥ (9223372036854775808.0 : Float) then 0x7FFFFFFFFFFFFFFF
     else t.toInt64.toUInt64
 
-private def nativeSatI64U (a : UInt64) : UInt64 :=
+def nativeSatI64U (a : UInt64) : UInt64 :=
   let x := Float.ofBits a
   if x.isNaN then 0
   else let t := if x < 0.0 then x.ceil else x.floor

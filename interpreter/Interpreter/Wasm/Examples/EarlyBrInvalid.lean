@@ -1,6 +1,7 @@
 module
 
 public import Interpreter.Wasm.Validate
+public meta import Interpreter.Wasm.Validate
 
 @[expose] public section
 
