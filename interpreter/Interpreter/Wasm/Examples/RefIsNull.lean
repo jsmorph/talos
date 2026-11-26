@@ -94,20 +94,20 @@ def refIsNullDecodedConfig (index : Nat) : Config Unit :=
       { runtime := { instances := #[{ module := refIsNullDecoded, host := {} }], entry := ⟨0⟩ }
         wasm := initializedStore } }
 
-def runVals (index : Nat) : Option (List Value) :=
+def refIsNullRunVals (index : Nat) : Option (List Value) :=
   (runSteps 3 (refIsNullDecodedConfig index)).result.values?
 
 theorem decodes_six_funcs : refIsNullDecoded.funcs.length = 6 := by native_decide
 
-theorem null_is_null_runs : runVals 1 = some [.i32 1] := by native_decide
+theorem null_is_null_runs : refIsNullRunVals 1 = some [.i32 1] := by native_decide
 
-theorem func_is_null_runs : runVals 2 = some [.i32 0] := by native_decide
+theorem func_is_null_runs : refIsNullRunVals 2 = some [.i32 0] := by native_decide
 
-theorem nofunc_is_null_runs : runVals 3 = some [.i32 1] := by native_decide
+theorem nofunc_is_null_runs : refIsNullRunVals 3 = some [.i32 1] := by native_decide
 
-theorem global_func_is_null_runs : runVals 4 = some [.i32 0] := by native_decide
+theorem global_func_is_null_runs : refIsNullRunVals 4 = some [.i32 0] := by native_decide
 
-theorem global_null_is_null_runs : runVals 5 = some [.i32 1] := by native_decide
+theorem global_null_is_null_runs : refIsNullRunVals 5 = some [.i32 1] := by native_decide
 
 theorem null_is_null_spec :
     TerminatesWith (refIsNullDecodedConfig 1) (fun values _ => values = [.i32 1]) :=

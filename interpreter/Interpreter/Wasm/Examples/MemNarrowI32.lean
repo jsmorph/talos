@@ -15,7 +15,7 @@ public meta import Interpreter.Wasm.SmallStep
 namespace Wasm
 open SmallStep
 
-def initBytes : List UInt8 :=
+def memNarrowI32InitBytes : List UInt8 :=
   [0x42, 0xFF, 0xCD, 0xAB, 0xCD, 0xFF, 0, 0]
 
 def load8UBody : Program := [.const 0, .load8U 0]
@@ -37,7 +37,7 @@ def narrowI32Module : Module :=
       , { body := load16SBody, results := [.i32] }
       , { body := store8RoundtripBody, results := [.i32] }
       , { body := store16RoundtripBody, results := [.i32] } ]
-    memory := some { pagesMin := 1, data := [{ offset := some 0, bytes := initBytes }] } }
+    memory := some { pagesMin := 1, data := [{ offset := some 0, bytes := memNarrowI32InitBytes }] } }
 
 def narrowI32Store : MachineStore Unit :=
   { runtime := { instances := #[{ module := narrowI32Module, host := {} }], entry := ⟨0⟩ }

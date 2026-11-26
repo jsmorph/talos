@@ -97,7 +97,7 @@ def tableDispatchDecodedConfig (index : Nat)
       { runtime := { instances := #[{ module := tableDispatchDecoded, host := {} }], entry := ⟨0⟩ }
         wasm := tableDispatchDecoded.initialStore } }
 
-def runVals (index : Nat)
+def tableDispatchRunVals (index : Nat)
     (args : List Value) : Option (List Value) :=
   (runSteps 20 (tableDispatchDecodedConfig index args)).result.values?
 
@@ -108,19 +108,19 @@ theorem table_populated :
       [[.funcref (some 0), .funcref (some 1), .funcref none]] := by
   native_decide
 
-theorem sz_runs : runVals 2 [] = some [.i32 3] := by native_decide
+theorem sz_runs : tableDispatchRunVals 2 [] = some [.i32 3] := by native_decide
 
 theorem is_null_slot0_runs :
-    runVals 3 [.i32 0] = some [.i32 0] := by native_decide
+    tableDispatchRunVals 3 [.i32 0] = some [.i32 0] := by native_decide
 
 theorem is_null_slot2_runs :
-    runVals 3 [.i32 2] = some [.i32 1] := by native_decide
+    tableDispatchRunVals 3 [.i32 2] = some [.i32 1] := by native_decide
 
 theorem dispatch_slot0_runs :
-    runVals 4 [.i32 0] = some [.i32 10] := by native_decide
+    tableDispatchRunVals 4 [.i32 0] = some [.i32 10] := by native_decide
 
 theorem dispatch_slot1_runs :
-    runVals 4 [.i32 1] = some [.i32 20] := by native_decide
+    tableDispatchRunVals 4 [.i32 1] = some [.i32 20] := by native_decide
 
 theorem dispatch_slot0_spec :
     TerminatesWith (tableDispatchDecodedConfig 4 [.i32 0])
