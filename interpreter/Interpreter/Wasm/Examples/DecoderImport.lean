@@ -42,9 +42,9 @@ def decoderImportDecoded : Wasm.Module := Wasm.Examples.decodeOrDefault importWa
 /-- The single import is `env.inc : i32 → i32`. -/
 theorem importWat_imports :
     decoderImportDecoded.imports = [{ «module» := "env"
-                         name     := "inc"
-                         params   := [.i32]
-                         results  := [.i32] }] := by
+                                      name     := "inc"
+                                      params   := [.i32]
+                                      results  := [.i32] }] := by
   native_decide
 
 /-- Exactly one in-module function, with the expected params/results. -/

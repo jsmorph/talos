@@ -155,7 +155,8 @@ theorem read_fits (program : Executable) (input : List UInt64)
     initialStore_host, Wasm.StdIO.State.ofInput]
   have hbuffer : (UInt32.ofNat bufferBytes).toNat = bufferBytes :=
     UInt32.toNat_ofNat_of_lt' (by decide)
-  rw [hbuffer, take_eq_self_of_length_le _ _ hfit]
+  rw [hbuffer]
+  simp only [take_eq_self_of_length_le _ _ hfit]
   rw [if_pos (by
     simp only [Wasm.StdIO.rangeInBounds, array,
       initial_byteCapacity]
@@ -231,8 +232,11 @@ theorem writeBytes_encodeWord (mem : Mem) (base : UInt32) (value : UInt64) :
     · subst i; simp
     by_cases h7 : i = base.toNat + 7
     · subst i; simp
-    rw [dif_neg (by omega)]
-    simp [h0, h1, h2, h3, h4, h5, h6, h7]
+    split
+    · omega
+    · simp [h0, h1, h2, h3, h4, h5, h6, h7]
+      intros
+      omega
 
 theorem writeBytes_serialize (mem : Mem) (base : UInt32)
     (values : List UInt64)

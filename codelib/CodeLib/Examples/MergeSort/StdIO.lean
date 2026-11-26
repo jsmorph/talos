@@ -124,8 +124,11 @@ theorem writeBytes_encodeWord (mem : Mem) (base value : UInt32) :
     by_cases h3 : i = base.toNat + 3
     · subst i
       simp
-    rw [dif_neg (by omega)]
-    simp [h0, h1, h2, h3]
+    split
+    · omega
+    · simp [h0, h1, h2, h3]
+      intros
+      omega
 
 /-- Packed stream serialization and the word-array model used by the
 merge-sort proof describe exactly the same memory update. -/
