@@ -2,6 +2,7 @@ module
 
 public import Interpreter.Wasm.SmallStep
 public import Interpreter.Wasm.Decoder.Wat
+public meta import Interpreter.Wasm.Decoder.Wat
 
 @[expose] public section
 
@@ -176,7 +177,7 @@ theorem callsSwap_partial :
 /-- Tiny WAT module: declares a type `$pair = () → (i32, i32)`, then a
     function that returns two i32s by entering a `block (type $pair)`
     holding two `i32.const`s. -/
-private def multiValueWat : String :=
+def multiValueWat : String :=
   "(module
      (type $pair (func (result i32 i32)))
      (func (result i32 i32)
@@ -186,7 +187,7 @@ private def multiValueWat : String :=
 
 /-- Pull the `(paramArity, resultArity)` of the first instruction of the
     first function, if it's a `block`. -/
-private def firstBlockArity (m : Wasm.Module) : Option (Nat × Nat) :=
+def firstBlockArity (m : Wasm.Module) : Option (Nat × Nat) :=
   match m.funcs.head? with
   | some f =>
     match f.body.head? with

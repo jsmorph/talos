@@ -57,7 +57,7 @@ the declaration as a literal expression. The source file therefore stays tiny,
 while the resulting definition is just as reducible as a handwritten AST. -/
 syntax (name := watModule) "watModule% " str : term
 
-@[term_elab watModule] def elabWatModule : TermElab := fun stx _ => do
+@[term_elab watModule] meta def elabWatModule : TermElab := fun stx _ => do
   let `(watModule% $pathSyntax:str) := stx | throwUnsupportedSyntax
   let path : System.FilePath := pathSyntax.getString
   let source ← IO.FS.readFile path
@@ -72,7 +72,7 @@ to existing `wp_*` tactics, while data segments and other bulky metadata do not
 occupy committed source text. -/
 syntax (name := watModuleMetadata) "watModuleMetadata% " str : term
 
-@[term_elab watModuleMetadata] def elabWatModuleMetadata : TermElab := fun stx _ => do
+@[term_elab watModuleMetadata] meta def elabWatModuleMetadata : TermElab := fun stx _ => do
   let `(watModuleMetadata% $pathSyntax:str) := stx | throwUnsupportedSyntax
   let path : System.FilePath := pathSyntax.getString
   let source ← IO.FS.readFile path
@@ -86,7 +86,7 @@ module list, this exposes the leading instruction to unification at reducible
 transparency, which keeps the existing `wp_*` proof scripts working. -/
 syntax (name := watFunctionBody) "watFunctionBody% " str num : term
 
-@[term_elab watFunctionBody] def elabWatFunctionBody : TermElab := fun stx _ => do
+@[term_elab watFunctionBody] meta def elabWatFunctionBody : TermElab := fun stx _ => do
   let `(watFunctionBody% $pathSyntax:str $indexSyntax:num) := stx
     | throwUnsupportedSyntax
   let path : System.FilePath := pathSyntax.getString

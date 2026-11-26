@@ -2,6 +2,8 @@ module
 
 public import Interpreter.Wasm.SmallStep
 public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
 
 @[expose] public section
 
@@ -82,9 +84,9 @@ def dispatchWat : String := "
     call_indirect (type $sig)))
 "
 
-private def decoded : Wasm.Module := Wasm.Examples.decodeOrDefault dispatchWat
+def decoded : Wasm.Module := Wasm.Examples.decodeOrDefault dispatchWat
 
-private def decodedConfig (index : Nat)
+def decodedConfig (index : Nat)
     (args : List Value) : Config Unit :=
   { expr := .running
       { locals := decoded.funcs[index]!.toLocals args.reverse
@@ -95,7 +97,7 @@ private def decodedConfig (index : Nat)
       { runtime := { instances := #[{ module := decoded, host := {} }], entry := ⟨0⟩ }
         wasm := decoded.initialStore } }
 
-private def runVals (index : Nat)
+def runVals (index : Nat)
     (args : List Value) : Option (List Value) :=
   (runSteps 20 (decodedConfig index args)).result.values?
 

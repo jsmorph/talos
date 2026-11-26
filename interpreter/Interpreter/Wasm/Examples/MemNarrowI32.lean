@@ -1,6 +1,8 @@
 module
 
 public import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.SmallStep
 
 @[expose] public section
 
@@ -13,7 +15,7 @@ public import Interpreter.Wasm.SmallStep
 namespace Wasm
 open SmallStep
 
-private def initBytes : List UInt8 :=
+def initBytes : List UInt8 :=
   [0x42, 0xFF, 0xCD, 0xAB, 0xCD, 0xFF, 0, 0]
 
 def load8UBody : Program := [.const 0, .load8U 0]

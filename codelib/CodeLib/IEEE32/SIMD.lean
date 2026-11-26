@@ -2,6 +2,7 @@ module
 
 public import Interpreter.Wasm.Examples.FloatSIMD
 public import CodeLib.IEEE32.Multiplication
+public meta import Interpreter.Wasm.Examples.FloatSIMD
 
 @[expose] public section
 

@@ -52,7 +52,7 @@ def gcdFunction : Function :=
 
 def gcdModule : Module := { funcs := [gcdFunction] }
 
-private def gcdLocals (a b temporary : UInt32) : Locals :=
+def gcdLocals (a b temporary : UInt32) : Locals :=
   ⟨[.i32 a, .i32 b], [.i32 temporary], []⟩
 
 def gcdConfig (a b : UInt32) : Config Unit :=

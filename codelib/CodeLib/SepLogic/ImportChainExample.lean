@@ -1,6 +1,7 @@
 module
 
 public import CodeLib.SepLogic.SmallStepAdequacy
+public meta import Interpreter.Wasm.SmallStep
 
 @[expose] public section
 
@@ -29,10 +30,10 @@ def logHost : HostFn (List UInt32) where
 def chainHostEnv : HostEnv (List UInt32) :=
   { funcs := [logHost] }
 
-private abbrev logImp : ImportDecl :=
+abbrev logImp : ImportDecl :=
   { module := "chain", name := "log", params := [.i32], results := [] }
 
-private abbrev nopImp : ImportDecl :=
+abbrev nopImp : ImportDecl :=
   { module := "chain", name := "nop", params := [], results := [] }
 
 -- module A: calls nop (cross-instance) then logs v twice; index 0 = host log, index 1 = nop

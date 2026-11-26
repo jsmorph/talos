@@ -1,6 +1,7 @@
 module
 
 public import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.Mem
 
 @[expose] public section
 
@@ -43,7 +44,7 @@ def growStore : MachineStore Unit :=
   { runtime := { instances := #[{ module := growModule, host := {} }], entry := ⟨0⟩ }
     wasm := growInitialWasmStore }
 
-private def growConfig (body : Program) (arity : Nat) : Config Unit :=
+def growConfig (body : Program) (arity : Nat) : Config Unit :=
   { expr := .running
       { locals := {}
         code := body

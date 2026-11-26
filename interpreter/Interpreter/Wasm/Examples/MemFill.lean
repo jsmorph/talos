@@ -1,6 +1,7 @@
 module
 
 public import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.Mem
 
 @[expose] public section
 

@@ -3,6 +3,8 @@ module
 public import Interpreter.Wasm.SmallStep
 public import Interpreter.Wasm.Examples.Harness
 public import Interpreter.Wasm.Validate
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Validate
 
 @[expose] public section
 

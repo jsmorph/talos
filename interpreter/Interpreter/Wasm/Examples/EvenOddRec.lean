@@ -51,20 +51,20 @@ def evenOddModule : Module :=
       { params := [.i32], body := IsEvenRec, results := [.i32] },
       { params := [.i32], body := IsOddRec, results := [.i32] }] }
 
-private def parityStore : MachineStore Unit :=
+def parityStore : MachineStore Unit :=
   { runtime := { instances := #[{ module := evenOddModule, host := {} }], entry := ⟨0⟩ }
     wasm := evenOddModule.initialStore }
 
-private def evenValue (n : UInt32) : UInt32 :=
+def evenValue (n : UInt32) : UInt32 :=
   if n.toNat % 2 = 0 then 1 else 0
 
-private def oddValue (n : UInt32) : UInt32 :=
+def oddValue (n : UInt32) : UInt32 :=
   if n.toNat % 2 = 1 then 1 else 0
 
 private def boolNot (value : UInt32) : UInt32 :=
   if value = 0 then 1 else 0
 
-private def parityCallee
+def parityCallee
     (body : Program) (n : UInt32) (calls : List CallFrame) : Config Unit :=
   { expr := .running
       { locals := { params := [.i32 n] }

@@ -1,6 +1,8 @@
 module
 
 public import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.SmallStep
 
 @[expose] public section
 

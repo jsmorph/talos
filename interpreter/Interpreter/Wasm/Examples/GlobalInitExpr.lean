@@ -2,6 +2,9 @@ module
 
 public import Interpreter.Wasm.SmallStep
 public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.SmallStep
 
 @[expose] public section
 
@@ -16,10 +19,10 @@ namespace Wasm
 open SmallStep
 namespace GlobalInitExpr
 
-private def initializedStore (module : Module) : Store Unit :=
+def initializedStore (module : Module) : Store Unit :=
   module.runConstGlobals 64 (module.initialStore (α := Unit)) {}
 
-private def initializedConfig (module : Module) : Config Unit :=
+def initializedConfig (module : Module) : Config Unit :=
   { expr := .running
       { locals := {}
         code := module.funcs[0]!.body
@@ -36,7 +39,7 @@ def globalInitExprWat : String := "
     global.get $g))
 "
 
-private def decoded : Wasm.Module :=
+def decoded : Wasm.Module :=
   Wasm.Examples.decodeOrDefault globalInitExprWat
 
 theorem decoded_global_keeps_initExpr :
@@ -79,9 +82,9 @@ def structGlobalArithWat : String := "
     (struct.get $s 0 (global.get $g))))
 "
 
-private def decodedLeaf : Wasm.Module :=
+def decodedLeaf : Wasm.Module :=
   Wasm.Examples.decodeOrDefault structGlobalLeafWat
-private def decodedArith : Wasm.Module :=
+def decodedArith : Wasm.Module :=
   Wasm.Examples.decodeOrDefault structGlobalArithWat
 
 theorem leaf_struct_new_keeps_initExpr :

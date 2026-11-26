@@ -1,6 +1,7 @@
 module
 
 public import CodeLib.SepLogic.SmallStepAdequacy
+public meta import Interpreter.Wasm.SmallStep
 
 @[expose] public section
 
@@ -37,7 +38,7 @@ def instanceW : ModuleInstance Unit where
   resolvedImports := #[]
 
 -- module A (reader): imports write from B, calls it, reads back
-private abbrev writeImport : ImportDecl :=
+abbrev writeImport : ImportDecl :=
   { module := "W", name := "write", params := [.i32], results := [] }
 
 def moduleR : Module where

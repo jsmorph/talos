@@ -2,6 +2,8 @@ module
 
 public import Interpreter.Wasm.SmallStep
 public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
 
 @[expose] public section
 
@@ -77,12 +79,12 @@ def refWat : String := "
     ref.is_null))
 "
 
-private def decoded : Wasm.Module := Wasm.Examples.decodeOrDefault refWat
+def decoded : Wasm.Module := Wasm.Examples.decodeOrDefault refWat
 
-private def initializedStore : Store Unit :=
+def initializedStore : Store Unit :=
   decoded.runConstGlobals 64 (decoded.initialStore (α := Unit)) {}
 
-private def decodedConfig (index : Nat) : Config Unit :=
+def decodedConfig (index : Nat) : Config Unit :=
   { expr := .running
       { locals := {}
         code := decoded.funcs[index]!.body
@@ -92,7 +94,7 @@ private def decodedConfig (index : Nat) : Config Unit :=
       { runtime := { instances := #[{ module := decoded, host := {} }], entry := ⟨0⟩ }
         wasm := initializedStore } }
 
-private def runVals (index : Nat) : Option (List Value) :=
+def runVals (index : Nat) : Option (List Value) :=
   (runSteps 3 (decodedConfig index)).result.values?
 
 theorem decodes_six_funcs : decoded.funcs.length = 6 := by native_decide

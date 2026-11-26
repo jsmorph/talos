@@ -1,6 +1,7 @@
 module
 
 public import CodeLib.SepLogic.SmallStepAdequacy
+public meta import Interpreter.Wasm.SmallStep
 
 @[expose] public section
 
@@ -24,10 +25,10 @@ def readCounterHost : HostFn Nat where
 def counterHostEnv : HostEnv Nat :=
   { funcs := [incrementHost, readCounterHost] }
 
-private abbrev incrImp : ImportDecl :=
+abbrev incrImp : ImportDecl :=
   { module := "counter", name := "incr", params := [], results := [] }
 
-private abbrev readImp : ImportDecl :=
+abbrev readImp : ImportDecl :=
   { module := "counter", name := "read", params := [], results := [.i32] }
 
 -- calls incr 3 times then read, returns the count

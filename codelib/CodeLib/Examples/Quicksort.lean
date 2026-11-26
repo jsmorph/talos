@@ -3,6 +3,9 @@ module
 public import CodeLib.SepLogic.SmallStepAdequacy
 public import Interpreter.Wasm.Decoder.Wat
 public import Mathlib.Data.List.Sort
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.Decoder.Wat
 
 @[expose] public section
 
@@ -200,13 +203,13 @@ theorem quicksort_exec_sorted :
 
 /-! ## TerminatesWith witnesses -/
 
-private def configDefault : Config Unit :=
+def configDefault : Config Unit :=
   { expr := .done []
     store :=
       { runtime := { instances := #[{ module := default, host := {} }], entry := ⟨0⟩ }
         wasm := { globals := default, mem := default, host := () } } }
 
-private def quicksortExampleConfig (arr : UInt32) (input : List UInt32) : Config Unit :=
+def quicksortExampleConfig (arr : UInt32) (input : List UInt32) : Config Unit :=
   (SmallStep.initConfig
       { module := quicksortModule, host := {} } 1
       (quicksortExampleStore arr input)
@@ -268,7 +271,7 @@ theorem quicksort_small_large_agree :
 
 /-! ## Mutation tests -/
 
-private def partitionFunctionMutated1 : Function :=
+def partitionFunctionMutated1 : Function :=
   { params := [.i32, .i32, .i32]
     locals := [.i32, .i32, .i32, .i32, .i32]
     results := [.i32]
@@ -281,7 +284,7 @@ private def partitionFunctionMutated1 : Function :=
       partitionPlacePivot ++
       [.ret] }
 
-private def quicksortModuleMutated1 : Module :=
+def quicksortModuleMutated1 : Module :=
   { funcs := [partitionFunctionMutated1, quicksortFunction 0 1]
     memory := some { pagesMin := 1 } }
 
@@ -301,7 +304,7 @@ theorem quicksort_mutation_comparison :
     runQuicksortMutated1 15000 0 [5, 1, 4, 2, 3] ≠ some [1, 2, 3, 4, 5] := by
   native_decide
 
-private def partitionFunctionMutated2 : Function :=
+def partitionFunctionMutated2 : Function :=
   { params := [.i32, .i32, .i32]
     locals := [.i32, .i32, .i32, .i32, .i32]
     results := [.i32]
@@ -311,7 +314,7 @@ private def partitionFunctionMutated2 : Function :=
       swapAt 0 5 6 7 ++ [.localGet 4] ++
       [.ret] }
 
-private def quicksortModuleMutated2 : Module :=
+def quicksortModuleMutated2 : Module :=
   { funcs := [partitionFunctionMutated2, quicksortFunction 0 1]
     memory := some { pagesMin := 1 } }
 
@@ -331,7 +334,7 @@ theorem quicksort_mutation_index :
     runQuicksortMutated2 15000 0 [5, 1, 4, 2, 3] ≠ some [1, 2, 3, 4, 5] := by
   native_decide
 
-private def quicksortFunctionMutated3 : Function :=
+def quicksortFunctionMutated3 : Function :=
   { params := [.i32, .i32, .i32]
     locals := [.i32]
     body :=
@@ -342,7 +345,7 @@ private def quicksortFunctionMutated3 : Function :=
       quicksortRightCall 1 ++
       [.ret] }
 
-private def quicksortModuleMutated3 : Module :=
+def quicksortModuleMutated3 : Module :=
   { funcs := [partitionFunction, quicksortFunctionMutated3]
     memory := some { pagesMin := 1 } }
 
@@ -362,7 +365,7 @@ theorem quicksort_mutation_bound :
     runQuicksortMutated3 15000 0 [5, 1, 4, 2, 3] ≠ some [1, 2, 3, 4, 5] := by
   native_decide
 
-private def partitionFunctionMutated4 : Function :=
+def partitionFunctionMutated4 : Function :=
   { params := [.i32, .i32, .i32]
     locals := [.i32, .i32, .i32, .i32, .i32]
     results := [.i32]
@@ -375,7 +378,7 @@ private def partitionFunctionMutated4 : Function :=
       partitionPlacePivot ++
       [.ret] }
 
-private def quicksortModuleMutated4 : Module :=
+def quicksortModuleMutated4 : Module :=
   { funcs := [partitionFunctionMutated4, quicksortFunction 0 1]
     memory := some { pagesMin := 1 } }
 
@@ -648,9 +651,9 @@ theorem arrayAt_readWordArray [WasmSmallStepGS hlc α]
 
 /-! ## WAT decoder agreement -/
 
-private def quicksortWat : String := include_str "quicksort.wat"
+def quicksortWat : String := include_str "quicksort.wat"
 
-private def quicksortModuleDecoded : Module :=
+def quicksortModuleDecoded : Module :=
   match Wasm.Decoder.Wat.decode quicksortWat with
   | .ok m => m
   | .error _ => default

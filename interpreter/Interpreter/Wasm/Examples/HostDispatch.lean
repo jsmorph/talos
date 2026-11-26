@@ -1,6 +1,8 @@
 module
 
 public import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.Syntax
 
 @[expose] public section
 
@@ -103,7 +105,7 @@ def memLoadModule : Module :=
       pagesMin := 1
       data := [{ offset := some 0, bytes := [42, 0, 0, 0] }] } }
 
-private def internalConfig (m : Module) (env : HostEnv Unit)
+def internalConfig (m : Module) (env : HostEnv Unit)
     (args : List Value) : Config Unit :=
   { expr := .running
       { locals := m.funcs[0]!.toLocals args.reverse

@@ -2,6 +2,9 @@ module
 
 public import Interpreter.Wasm.SmallStep
 public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.SmallStep
 
 @[expose] public section
 
@@ -34,7 +37,7 @@ def importWat : String := "
 shape of its `imports`, `funcs` body, and `exports`. We project each
 field rather than comparing whole `Module`s because `Module` has no
 `DecidableEq` instance. -/
-private def decoded : Wasm.Module := Wasm.Examples.decodeOrDefault importWat
+def decoded : Wasm.Module := Wasm.Examples.decodeOrDefault importWat
 
 /-- The single import is `env.inc : i32 → i32`. -/
 theorem importWat_imports :
@@ -66,7 +69,7 @@ def typedStructuredWat : String := "
     end))
 "
 
-private def typedStructuredDecoded : Wasm.Module :=
+def typedStructuredDecoded : Wasm.Module :=
   Wasm.Examples.decodeOrDefault typedStructuredWat
 
 def decodedBlockSignature :

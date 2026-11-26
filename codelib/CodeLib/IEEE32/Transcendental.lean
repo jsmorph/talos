@@ -5,6 +5,7 @@ public import CodeLib.IEEE32.Multiplication
 public import CodeLib.Numerical.ErrorComposition
 public import Interpreter.Wasm.Examples.FloatSinPolynomial
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+public meta import Interpreter.Wasm.Examples.FloatSinPolynomial
 
 @[expose] public section
 

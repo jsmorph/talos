@@ -2,6 +2,9 @@ module
 
 public import Interpreter.Wasm.SmallStep
 public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.SmallStep
 
 @[expose] public section
 
@@ -32,7 +35,7 @@ def importedGlobalWat : String := "
     global.get $d))
 "
 
-private def decoded : Wasm.Module :=
+def decoded : Wasm.Module :=
   Wasm.Examples.decodeOrDefault importedGlobalWat
 
 /-- One imported global at index `0`, one declared global at index `1`. -/
@@ -44,7 +47,7 @@ theorem importedGlobalWat_global_layout :
 
 /-- Index baked into the first `global.get` of the first function, if any.
 Projected to `Option Nat` because `Instruction` has no `DecidableEq`. -/
-private def firstGlobalGetIdx (m : Module) : Option Nat :=
+def firstGlobalGetIdx (m : Module) : Option Nat :=
   match m.funcs.head?.map (·.body) with
   | some (Instruction.globalGet i :: _) => some i
   | _                                   => none

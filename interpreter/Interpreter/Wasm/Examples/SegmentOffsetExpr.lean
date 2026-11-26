@@ -2,6 +2,9 @@ module
 
 public import Interpreter.Wasm.SmallStep
 public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.SmallStep
 
 @[expose] public section
 
@@ -32,7 +35,7 @@ def segmentOffsetWat : String := "
     (call_indirect (type $ri) (i32.const 2))))
 "
 
-private def decoded : Wasm.Module :=
+def decoded : Wasm.Module :=
   Wasm.Examples.decodeOrDefault segmentOffsetWat
 
 theorem decoded_segments_keep_offsetExpr :
@@ -40,7 +43,7 @@ theorem decoded_segments_keep_offsetExpr :
     ∧ (decoded.elements[0]?.map (·.offsetExpr.isEmpty)).getD true = false := by
   constructor <;> native_decide
 
-private def store0 : Store Unit :=
+def store0 : Store Unit :=
   let module := decoded
   module.runActiveSegments 64
     (module.runConstGlobals 64 (module.initialStore (α := Unit)) {}) {}
@@ -49,7 +52,7 @@ def segmentMachineStore : MachineStore Unit :=
   { runtime := { instances := #[{ module := decoded, host := {} }], entry := ⟨0⟩ }
     wasm := store0 }
 
-private def functionConfig (index : Nat) : Config Unit :=
+def functionConfig (index : Nat) : Config Unit :=
   { expr := .running
       { locals := {}
         code := decoded.funcs[index]!.body

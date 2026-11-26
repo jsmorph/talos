@@ -1,6 +1,8 @@
 module
 
 public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
 
 @[expose] public section
 
