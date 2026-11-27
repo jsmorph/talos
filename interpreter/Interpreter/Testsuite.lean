@@ -161,7 +161,7 @@ def padR (s : String) (width : Nat) : String :=
   let n := s.length
   if n >= width then s else s ++ "".pushn ' ' (width - n)
 
-private def basename (path : String) : String :=
+def basename (path : String) : String :=
   (System.FilePath.mk path).fileName.getD path
 
 /-- Short one-line summary of the outcome, for failure detail lines. -/
@@ -205,7 +205,7 @@ def renderFile (fr : FileResult) : String := Id.run do
 section
 open Lean (Json)
 
-private def outcomeToJsonFields : Outcome → String × Json
+def outcomeToJsonFields : Outcome → String × Json
   | .pass               => ("pass",               .null)
   | .fail msg           => ("fail",               .str msg)
   | .skipped r          => ("skipped",            .str r)
@@ -214,7 +214,7 @@ private def outcomeToJsonFields : Outcome → String × Json
   | .outOfFuel          => ("out_of_fuel",        .null)
   | .moduleUnavailable  => ("module_unavailable", .null)
 
-private def cmdResultToJson (file : String) (r : CmdResult) : Json :=
+def cmdResultToJson (file : String) (r : CmdResult) : Json :=
   let (outcomeTag, detail) := outcomeToJsonFields r.outcome
   .mkObj [
     ("file",    .str file),
@@ -224,7 +224,7 @@ private def cmdResultToJson (file : String) (r : CmdResult) : Json :=
     ("detail",  detail)
   ]
 
-private def fileResultToJson (fr : FileResult) : Array Json :=
+def fileResultToJson (fr : FileResult) : Array Json :=
   let file := basename fr.path
   let rows := fr.results.map (cmdResultToJson file)
   match fr.fileError with
@@ -249,11 +249,11 @@ on incidental error wording. Free-form sources are:
 All other reasons are already stable strings (`assert_invalid`/`assert_malformed`
 + `: not rejected` when we accept an ill-formed module, and raw wast command
 names like `assert_unlinkable` from the fallthrough) and pass through. -/
-private def skippedBucket (r : String) : String :=
+def skippedBucket (r : String) : String :=
   if r.startsWith "non-integer expected" then "non-integer-expected"
   else r
 
-private def outcomeReportTag : Outcome → String
+def outcomeReportTag : Outcome → String
   | .pass               => "pass"
   | .fail _             => "fail"
   | .skipped r          => s!"skipped:{skippedBucket r}"
@@ -262,10 +262,10 @@ private def outcomeReportTag : Outcome → String
   | .outOfFuel          => "out_of_fuel"
   | .moduleUnavailable  => "module_unavailable"
 
-private def cmdResultToReportLine (file : String) (r : CmdResult) : String :=
+def cmdResultToReportLine (file : String) (r : CmdResult) : String :=
   s!"{file}:{r.line} {r.kind} {outcomeReportTag r.outcome}"
 
-private def fileResultToReportLines (fr : FileResult) : Array String :=
+def fileResultToReportLines (fr : FileResult) : Array String :=
   let file := basename fr.path
   let rows := fr.results.map (cmdResultToReportLine file)
   match fr.fileError with

@@ -31,7 +31,7 @@ explicit cap so an intentionally divergent program cannot consume the
 testsuite's full fuel allowance. Initialization failures and invariant
 violations remain observable driver errors rather than falling back to a
 second semantics. -/
-private def runSmallStep
+def runSmallStep
     (fuel : Nat) (m : Wasm.Module) (idx : Nat)
     (store : Wasm.Store Unit) (args : List Wasm.Value)
     (env : Wasm.HostEnv Unit) : Wasm.Result Unit :=
@@ -87,12 +87,12 @@ deriving Inhabited
 
 /-! ## JSON helpers -/
 
-private def jstr? (j : Json) (key : String) : Option String :=
+def jstr? (j : Json) (key : String) : Option String :=
   match j.getObjVal? key with
   | .ok v => v.getStr?.toOption
   | _ => none
 
-private def jnat? (j : Json) (key : String) : Option Nat :=
+def jnat? (j : Json) (key : String) : Option Nat :=
   match j.getObjVal? key with
   | .ok v =>
     match v.getNat? with
@@ -100,7 +100,7 @@ private def jnat? (j : Json) (key : String) : Option Nat :=
     | _ => none
   | _ => none
 
-private def jarr? (j : Json) (key : String) : Option (Array Json) :=
+def jarr? (j : Json) (key : String) : Option (Array Json) :=
   match j.getObjVal? key with
   | .ok v =>
     match v.getArr? with
@@ -108,7 +108,7 @@ private def jarr? (j : Json) (key : String) : Option (Array Json) :=
     | _ => none
   | _ => none
 
-private def jobj? (j : Json) (key : String) : Option Json :=
+def jobj? (j : Json) (key : String) : Option Json :=
   match j.getObjVal? key with
   | .ok v => some v
   | _ => none
@@ -119,7 +119,7 @@ private def jobj? (j : Json) (key : String) : Option Json :=
 `"-2147483648"` for `0x80000000`. We accept any decimal `Int` and reduce
 mod `2^32` / `2^64` to get the canonical unsigned representation. -/
 
-private def parseValueAt (ty val : String) : Except String Value :=
+def parseValueAt (ty val : String) : Except String Value :=
   match ty with
   | "i32" =>
     match val.toInt? with
@@ -175,7 +175,7 @@ private def parseValueAt (ty val : String) : Except String Value :=
       | none => .error s!"unparseable anyref value `{val}`"
   | other => .error s!"non-integer value type `{other}`"
 
-private def laneBitsOf? : String → Option Nat
+def laneBitsOf? : String → Option Nat
   | "i8"  => some 8
   | "i16" => some 16
   | "i32" => some 32
@@ -187,7 +187,7 @@ private def laneBitsOf? : String → Option Nat
 /-- Parse one v128 lane literal into its unsigned `bits`-wide value. Lane
 strings are signed decimals (integers) or the decimal of the raw bit
 pattern (floats) — both reduce the same way. -/
-private def parseLane (bits : Nat) (val : String) : Except String Nat :=
+def parseLane (bits : Nat) (val : String) : Except String Nat :=
   match val.toInt? with
   | some n =>
     let m : Int := (2 ^ bits : Nat)
@@ -195,12 +195,12 @@ private def parseLane (bits : Nat) (val : String) : Except String Nat :=
   | none => .error s!"unparseable v128 lane `{val}`"
 
 /-- Extract the lane-string array of a v128 JSON value. -/
-private def jlanes? (j : Json) : Option (Array String) := do
+def jlanes? (j : Json) : Option (Array String) := do
   let arr ← jarr? j "value"
   arr.mapM (·.getStr?.toOption)
 
 /-- Parse a v128 argument (concrete lanes only) into its bit pattern. -/
-private def parseV128Arg (j : Json) : Except String Value := do
+def parseV128Arg (j : Json) : Except String Value := do
   let laneTy := jstr? j "lane_type" |>.getD ""
   let bits ← match laneBitsOf? laneTy with
     | some b => .ok b
@@ -213,7 +213,7 @@ private def parseV128Arg (j : Json) : Except String Value := do
     acc := acc ++ [← parseLane bits l]
   return .v128 (Wasm.Simd.ofLanes bits acc)
 
-private def parseValue (j : Json) : Except String Value :=
+def parseValue (j : Json) : Except String Value :=
   match jstr? j "type" with
   | some "v128" => parseV128Arg j
   | some ty =>
@@ -222,7 +222,7 @@ private def parseValue (j : Json) : Except String Value :=
     | none => .error "value missing type/value"
   | none => .error "value missing type/value"
 
-private def parseValues (arr : Array Json) : Except String (List Value) := do
+def parseValues (arr : Array Json) : Except String (List Value) := do
   let mut acc : Array Value := #[]
   for j in arr do
     acc := acc.push (← parseValue j)
@@ -236,7 +236,7 @@ float lane) may be `nan:canonical` / `nan:arithmetic`, which match NaN
 
 /-- Pattern for one scalar float or one v128 lane, as an unsigned
 bit-pattern of width `bits`. -/
-private inductive LanePat where
+inductive LanePat where
   | exact (n : Nat)
   | canonicalNan (bits : Nat)
   | arithmeticNan (bits : Nat)
@@ -245,14 +245,14 @@ deriving Repr, Inhabited
 /-- `nan:canonical` = NaN whose payload is exactly the canonical payload
 (sign bit unconstrained); `nan:arithmetic` = NaN whose payload MSB is set
 (sign bit unconstrained). -/
-private def LanePat.matches : LanePat → Nat → Bool
+def LanePat.matches : LanePat → Nat → Bool
   | .exact e, n => n = e
   | .canonicalNan 32, n => n % 2 ^ 32 &&& 0x7FFFFFFF = 0x7FC00000
   | .canonicalNan _,  n => n &&& 0x7FFFFFFFFFFFFFFF = 0x7FF8000000000000
   | .arithmeticNan 32, n => n % 2 ^ 32 &&& 0x7FC00000 = 0x7FC00000
   | .arithmeticNan _,  n => n &&& 0x7FF8000000000000 = 0x7FF8000000000000
 
-private def lanePatOf (bits : Nat) (val : String) : Except String LanePat :=
+def lanePatOf (bits : Nat) (val : String) : Except String LanePat :=
   match val with
   | "nan:canonical"  => .ok (.canonicalNan bits)
   | "nan:arithmetic" => .ok (.arithmeticNan bits)
@@ -260,7 +260,7 @@ private def lanePatOf (bits : Nat) (val : String) : Except String LanePat :=
 
 /-- One expected result: a concrete value, a scalar float NaN-class
 pattern, or a per-lane v128 pattern. -/
-private inductive ExpectedVal where
+inductive ExpectedVal where
   | exact (v : Value)
   | f32Pat (p : LanePat)
   | f64Pat (p : LanePat)
@@ -275,7 +275,7 @@ private inductive ExpectedVal where
   | gcRef (kind : String)
 deriving Repr, Inhabited
 
-private partial def ExpectedVal.matches : ExpectedVal → Value → Bool
+partial def ExpectedVal.matches : ExpectedVal → Value → Bool
   | .exact e, v => e == v
   | .f32Pat p, .f32 b => p.matches b.toNat
   | .f64Pat p, .f64 b => p.matches b.toNat
@@ -294,7 +294,7 @@ private partial def ExpectedVal.matches : ExpectedVal → Value → Bool
     | _, _                         => false
   | _, _ => false
 
-private partial def parseExpectedValue (j : Json) : Except String ExpectedVal := do
+partial def parseExpectedValue (j : Json) : Except String ExpectedVal := do
   match jstr? j "type" with
   | some "either" =>
     let altsJ := jarr? j "values" |>.getD #[]
@@ -345,7 +345,7 @@ private partial def parseExpectedValue (j : Json) : Except String ExpectedVal :=
     | none => .error "value missing type/value"
   | none => .error "value missing type/value"
 
-private def parseExpectedValues (arr : Array Json) : Except String (List ExpectedVal) := do
+def parseExpectedValues (arr : Array Json) : Except String (List ExpectedVal) := do
   let mut acc : Array ExpectedVal := #[]
   for j in arr do
     acc := acc.push (← parseExpectedValue j)
@@ -397,7 +397,7 @@ structure ScriptState where
 /-- Look up the index of the module an action wants. With no name, it's
 the last declared one. Returning the index (rather than the slot itself)
 lets call sites write back an updated slot after a successful invoke. -/
-private def resolveModuleIdx (st : ScriptState) (name? : Option String) : Except String Nat :=
+def resolveModuleIdx (st : ScriptState) (name? : Option String) : Except String Nat :=
   match name? with
   | some n =>
     match st.named.find? (·.1 = n) with
@@ -454,12 +454,12 @@ real shared-state linking tests), and imported globals/tables/memories
 are copied into the importing instance's initial store. The ambient
 `spectest` module (no-op prints, `global_i32 = 666`, …) is built in. -/
 
-private def spectestPrintNames : List String :=
+def spectestPrintNames : List String :=
   ["print", "print_i32", "print_i64", "print_f32", "print_f64",
    "print_i32_f32", "print_f64_f64"]
 
 /-- Resolve the exporting instance for a registered module name. -/
-private def resolveRegistered (st : ScriptState) (modName : String)
+def resolveRegistered (st : ScriptState) (modName : String)
     : Option (Wasm.Module × Wasm.Store Unit × Wasm.HostEnv Unit) :=
   match st.registered.find? (·.1 = modName) with
   | some (_, j) =>
@@ -469,7 +469,7 @@ private def resolveRegistered (st : ScriptState) (modName : String)
   | none => none
 
 /-- Build the host environment backing a module's function imports. -/
-private def buildEnv (st : ScriptState) (m : Wasm.Module) (fuel : Nat)
+def buildEnv (st : ScriptState) (m : Wasm.Module) (fuel : Nat)
     : Wasm.HostEnv Unit :=
   { foreignFuncs := st.sharedFunctions.toList
     funcs := m.imports.map fun imp =>
@@ -504,7 +504,7 @@ private def buildEnv (st : ScriptState) (m : Wasm.Module) (fuel : Nat)
               .Trap s s!"unresolved import {imp.module}.{imp.name}" } }
 
 /-- Spectest's ambient global values. -/
-private def spectestGlobal? : String → Option Wasm.Value
+def spectestGlobal? : String → Option Wasm.Value
   | "global_i32" => some (.i32 666)
   | "global_i64" => some (.i64 666)
   | "global_f32" => some (.f32 (666.6 : Float).toFloat32.toBits)
@@ -515,7 +515,7 @@ private def spectestGlobal? : String → Option Wasm.Value
 initial store, then re-apply the module's active element and data
 segments so segments targeting an imported table/memory land on the
 copied contents (the re-application is idempotent for local targets). -/
-private def applyEntityImports (sst : ScriptState) (m : Wasm.Module)
+def applyEntityImports (sst : ScriptState) (m : Wasm.Module)
     (store : Wasm.Store Unit) : Wasm.Store Unit := Id.run do
   let mut store := store
   let mut gi := 0
@@ -610,7 +610,7 @@ private def applyEntityImports (sst : ScriptState) (m : Wasm.Module)
     | _, _ => pure ()
   return store
 
-private def storeMemory? (store : Wasm.Store Unit) (index : Nat) :
+def storeMemory? (store : Wasm.Store Unit) (index : Nat) :
     Option Wasm.Mem :=
   let canonical :=
     match store.memoryIds[index]? with
@@ -618,7 +618,7 @@ private def storeMemory? (store : Wasm.Store Unit) (index : Nat) :
     | none => index
   if canonical = 0 then some store.mem else store.extraMems[canonical - 1]?
 
-private def setStoreMemory (store : Wasm.Store Unit) (index : Nat)
+def setStoreMemory (store : Wasm.Store Unit) (index : Nat)
     (memory : Wasm.Mem) : Wasm.Store Unit :=
   if index = 0 then { store with mem := memory }
   else
@@ -629,7 +629,7 @@ private def setStoreMemory (store : Wasm.Store Unit) (index : Nat)
 hydrated from their canonical script-wide identities. `initialStore` and
 `applyEntityImports` necessarily run before those identities are assigned;
 without this pass their writes can be hidden by the subsequent hydration. -/
-private def reapplyLiteralActiveSegments (m : Wasm.Module)
+def reapplyLiteralActiveSegments (m : Wasm.Module)
     (store0 : Wasm.Store Unit) : Wasm.Store Unit := Id.run do
   let mut store := store0
   match m.memory with
@@ -666,7 +666,7 @@ private def reapplyLiteralActiveSegments (m : Wasm.Module)
 /-- Give every local resource a script-wide stable identity. Imported
 resources reuse the identity exported by the registered instance; locally
 defined resources append fresh entries. -/
-private def assignResourceIds (sst : ScriptState) (m : Wasm.Module)
+def assignResourceIds (sst : ScriptState) (m : Wasm.Module)
     (store0 : Wasm.Store Unit) :
     Wasm.Store Unit × Array (Wasm.Mem × Nat) ×
       Array (Wasm.TableInst × Nat) := Id.run do
@@ -748,7 +748,7 @@ private def assignResourceIds (sst : ScriptState) (m : Wasm.Module)
 
   return ({ store with memoryIds, tableIds }, memories, tables)
 
-private def assignGlobalIds (sst : ScriptState) (m : Wasm.Module)
+def assignGlobalIds (sst : ScriptState) (m : Wasm.Module)
     (store0 : Wasm.Store Unit) : Wasm.Store Unit × Array Wasm.Value := Id.run do
   let mut globals := sst.sharedGlobals
   let mut globalIds : List Nat := []
@@ -774,7 +774,7 @@ private def assignGlobalIds (sst : ScriptState) (m : Wasm.Module)
     globalIds := globalIds ++ [id]
   return ({ store0 with globalIds }, globals)
 
-private def assignTagIds (sst : ScriptState) (m : Wasm.Module)
+def assignTagIds (sst : ScriptState) (m : Wasm.Module)
     (store0 : Wasm.Store Unit) : Wasm.Store Unit × Array Unit := Id.run do
   let mut tags := sst.sharedTags
   let mut tagIds : List Nat := []
@@ -798,7 +798,7 @@ private def assignTagIds (sst : ScriptState) (m : Wasm.Module)
     tagIds := tagIds ++ [id]
   return ({ store0 with tagIds }, tags)
 
-private def assignFunctionIds (sst : ScriptState) (m : Wasm.Module)
+def assignFunctionIds (sst : ScriptState) (m : Wasm.Module)
     (store0 : Wasm.Store Unit) (env : Wasm.HostEnv Unit) (fuel : Nat) :
     Wasm.Store Unit × Array (Wasm.HostFn Unit) := Id.run do
   let mut functions := sst.sharedFunctions
@@ -842,7 +842,7 @@ private def assignFunctionIds (sst : ScriptState) (m : Wasm.Module)
     functionIds := functionIds ++ [id]
   return ({ store0 with functionIds }, functions)
 
-private def encodeSharedFuncref (store : Wasm.Store Unit) : Wasm.Value → Wasm.Value
+def encodeSharedFuncref (store : Wasm.Store Unit) : Wasm.Value → Wasm.Value
   | .funcref (some index) =>
     if Wasm.SmallStep.foreignFunctionBase ≤ index then .funcref (some index)
     else
@@ -851,7 +851,7 @@ private def encodeSharedFuncref (store : Wasm.Store Unit) : Wasm.Value → Wasm.
       | none => .funcref (some index)
   | value => value
 
-private def decodeSharedFuncref (store : Wasm.Store Unit) : Wasm.Value → Wasm.Value
+def decodeSharedFuncref (store : Wasm.Store Unit) : Wasm.Value → Wasm.Value
   | .funcref (some index) =>
     if Wasm.SmallStep.foreignFunctionBase ≤ index then
       let id := index - Wasm.SmallStep.foreignFunctionBase
@@ -863,7 +863,7 @@ private def decodeSharedFuncref (store : Wasm.Store Unit) : Wasm.Value → Wasm.
 
 /-- Refresh a module-local store from the script-wide shared resources before
 an action. -/
-private def hydrateStore (sst : ScriptState) (store0 : Wasm.Store Unit) :
+def hydrateStore (sst : ScriptState) (store0 : Wasm.Store Unit) :
     Wasm.Store Unit := Id.run do
   let mut store := store0
   for (id, index) in store0.globalIds.zipIdx do
@@ -890,13 +890,13 @@ private def hydrateStore (sst : ScriptState) (store0 : Wasm.Store Unit) :
     | none => pure ()
   return store
 
-private def hydrateSlot (sst : ScriptState) (fuel : Nat) : ModuleSlot → ModuleSlot
+def hydrateSlot (sst : ScriptState) (fuel : Nat) : ModuleSlot → ModuleSlot
   | .ok m store _ => .ok m (hydrateStore sst store) (buildEnv sst m fuel)
   | slot => slot
 
 /-- Commit a module-local post-store back to every shared resource it
 addresses. Other instances observe the update on their next action. -/
-private def commitStore (sst : ScriptState) (m : Wasm.Module)
+def commitStore (sst : ScriptState) (m : Wasm.Module)
     (store : Wasm.Store Unit) : ScriptState := Id.run do
   let mut globals := sst.sharedGlobals
   let mut memories := sst.sharedMemories
@@ -924,7 +924,7 @@ private def commitStore (sst : ScriptState) (m : Wasm.Module)
     sharedMemories := memories
     sharedTables := tables }
 
-private def commitSlot (sst : ScriptState) : ModuleSlot → ScriptState
+def commitSlot (sst : ScriptState) : ModuleSlot → ScriptState
   | .ok m store _ => commitStore sst m store
   | _ => sst
 
@@ -933,7 +933,7 @@ data segments in the WebAssembly instantiation algorithm, which is observable:
 successful writes to an imported table remain committed when a later data
 segment traps. Pending const-expression offsets are handled by the ordinary
 instantiation pass and are conservatively ignored here for now. -/
-private def activeSegmentTrap? (m : Wasm.Module) (store : Wasm.Store Unit) :
+def activeSegmentTrap? (m : Wasm.Module) (store : Wasm.Store Unit) :
     Option String :=
   let tableTrap := m.elements.findSome? fun segment =>
     match segment.tableIdx, segment.offset with
@@ -962,7 +962,7 @@ private def activeSegmentTrap? (m : Wasm.Module) (store : Wasm.Store Unit) :
 
 /-! ## Compact value rendering for failure messages -/
 
-private def renderValue : Value → String
+def renderValue : Value → String
   | .i32 u           => s!"i32:{u.toInt32.toInt}"
   | .i64 u           => s!"i64:{u.toInt64.toInt}"
   | .f32 b           => s!"f32:{(Float32.ofBits b).toFloat}"
@@ -983,7 +983,7 @@ private def renderValue : Value → String
 /-- Render a `List Value`, truncating runs longer than `maxLen` (the
 interpreter occasionally leaves big stacks around on failure and that
 otherwise drowns the report). -/
-private def renderValues (vs : List Value) (maxLen : Nat := 8) : String :=
+def renderValues (vs : List Value) (maxLen : Nat := 8) : String :=
   let n := vs.length
   if n ≤ maxLen then
     "[" ++ String.intercalate ", " (vs.map renderValue) ++ "]"
@@ -991,12 +991,12 @@ private def renderValues (vs : List Value) (maxLen : Nat := 8) : String :=
     let head := vs.take maxLen |>.map renderValue
     "[" ++ String.intercalate ", " head ++ s!", … ({n - maxLen} more)]"
 
-private def renderLanePat : LanePat → String
+def renderLanePat : LanePat → String
   | .exact n => toString n
   | .canonicalNan _ => "nan:canonical"
   | .arithmeticNan _ => "nan:arithmetic"
 
-private partial def renderExpected : ExpectedVal → String
+partial def renderExpected : ExpectedVal → String
   | .exact v => renderValue v
   | .f32Pat p => s!"f32:{renderLanePat p}"
   | .f64Pat p => s!"f64:{renderLanePat p}"
@@ -1006,7 +1006,7 @@ private partial def renderExpected : ExpectedVal → String
     "either(" ++ String.intercalate " | " (alts.map renderExpected) ++ ")"
   | .gcRef kind => s!"<any {kind}>"
 
-private def renderExpecteds (es : List ExpectedVal) : String :=
+def renderExpecteds (es : List ExpectedVal) : String :=
   "[" ++ String.intercalate ", " (es.map renderExpected) ++ "]"
 
 /-! ## Command execution -/
@@ -1120,7 +1120,7 @@ def parseInvokeAction (j : Json) : Except String (Option String × String × Lis
 
 /-! ## Per-file driver -/
 
-private def instantiateModule (st : ScriptState) (m : Wasm.Module) (fuel : Nat) :
+def instantiateModule (st : ScriptState) (m : Wasm.Module) (fuel : Nat) :
     ModuleSlot × Array Wasm.Value × Array Unit × Array (Wasm.HostFn Unit) ×
       Array (Wasm.Mem × Nat) × Array (Wasm.TableInst × Nat) :=
   let env := buildEnv st m fuel
