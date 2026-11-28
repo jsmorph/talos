@@ -1,5 +1,10 @@
-import CodeLib.Examples.MergeSort.TotalProof
-import CodeLib.SepLogic.SmallStepAdequacy
+module
+
+public import CodeLib.Examples.MergeSort.TotalProof
+public import CodeLib.SepLogic.SmallStepAdequacy
+public meta import CodeLib.Examples.MergeSort
+
+@[expose] public section
 
 namespace Wasm.Examples.MergeSort
 

@@ -1,4 +1,8 @@
-import CodeLib.RustStd.U64.Basic
+module
+
+public import CodeLib.RustStd.U64.Basic
+
+@[expose] public section
 
 /-! `u64::sub` — inlined to a single `i64.subI64`. Chunk fact + concrete
 restatement, reusing the trunk. -/

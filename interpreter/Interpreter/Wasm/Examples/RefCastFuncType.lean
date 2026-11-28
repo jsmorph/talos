@@ -1,4 +1,11 @@
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.Examples.Harness
+
+@[expose] public section
 
 /-! ## Example: `ref.test`/`ref.cast` against concrete (function) types
 
@@ -219,9 +226,9 @@ def structTwinWat : String :=
      (func (export \"f\") (result i32)
        (ref.test (ref $b) (struct.new $a (i32.const 7)))))"
 
-private def refTestM    : Module := decodeOrDefault refTestWat
-private def castCallM   : Module := decodeOrDefault castCallWat
-private def structTwinM : Module := decodeOrDefault structTwinWat
+def refTestM    : Module := decodeOrDefault refTestWat
+def castCallM   : Module := decodeOrDefault castCallWat
+def structTwinM : Module := decodeOrDefault structTwinWat
 
 /-- The decoder records `$impl`'s declared `(type $ft)`. -/
 theorem decoded_typeIdx : refTestM.funcs.map (·.typeIdx) = [some 0, none] := by

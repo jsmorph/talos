@@ -1,5 +1,12 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 /-! ## Example: decoding a WAT module with imports (M9)
 
@@ -30,27 +37,27 @@ def importWat : String := "
 shape of its `imports`, `funcs` body, and `exports`. We project each
 field rather than comparing whole `Module`s because `Module` has no
 `DecidableEq` instance. -/
-private def decoded : Wasm.Module := Wasm.Examples.decodeOrDefault importWat
+def decoderImportDecoded : Wasm.Module := Wasm.Examples.decodeOrDefault importWat
 
 /-- The single import is `env.inc : i32 → i32`. -/
 theorem importWat_imports :
-    decoded.imports = [{ «module» := "env"
-                         name     := "inc"
-                         params   := [.i32]
-                         results  := [.i32] }] := by
+    decoderImportDecoded.imports = [{ «module» := "env"
+                                      name     := "inc"
+                                      params   := [.i32]
+                                      results  := [.i32] }] := by
   native_decide
 
 /-- Exactly one in-module function, with the expected params/results. -/
 theorem importWat_funcs_shape :
-    decoded.funcs.length = 1 ∧
-    decoded.funcs.head?.map (·.params)  = some [.i32] ∧
-    decoded.funcs.head?.map (·.results) = some [.i32] := by
+    decoderImportDecoded.funcs.length = 1 ∧
+    decoderImportDecoded.funcs.head?.map (·.params)  = some [.i32] ∧
+    decoderImportDecoded.funcs.head?.map (·.results) = some [.i32] := by
   native_decide
 
 /-- The export `caller` resolves to unified index `1`
 (`imports.length + 0`), not `0`. -/
 theorem importWat_exports_funcIdx :
-    decoded.exports = [{ name := "caller", funcIdx := 1 }] := by
+    decoderImportDecoded.exports = [{ name := "caller", funcIdx := 1 }] := by
   native_decide
 
 def typedStructuredWat : String := "
@@ -62,7 +69,7 @@ def typedStructuredWat : String := "
     end))
 "
 
-private def typedStructuredDecoded : Wasm.Module :=
+def typedStructuredDecoded : Wasm.Module :=
   Wasm.Examples.decodeOrDefault typedStructuredWat
 
 def decodedBlockSignature :
@@ -93,13 +100,13 @@ def incEnv : HostEnv Unit := { funcs := [incHost] }
 /-- Small-step entry configuration for the decoded in-module caller. -/
 def callerConfig : Config Unit :=
   { expr := .running
-      { locals := decoded.funcs[0]!.toLocals [.i32 41]
-        code := decoded.funcs[0]!.body
-        resultArity := decoded.funcs[0]!.results.length
+      { locals := decoderImportDecoded.funcs[0]!.toLocals [.i32 41]
+        code := decoderImportDecoded.funcs[0]!.body
+        resultArity := decoderImportDecoded.funcs[0]!.results.length
         callerRemainder := [] }
     store :=
-      { runtime := { instances := #[{ module := decoded, host := incEnv }], entry := ⟨0⟩ }
-        wasm := decoded.initialStore } }
+      { runtime := { instances := #[{ module := decoderImportDecoded, host := incEnv }], entry := ⟨0⟩ }
+        wasm := decoderImportDecoded.initialStore } }
 
 /-- Calling `caller(41)` against `incEnv` returns `[42]` through the
 authoritative host-call step. -/

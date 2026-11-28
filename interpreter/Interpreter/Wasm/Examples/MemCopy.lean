@@ -1,4 +1,10 @@
-import Interpreter.Wasm.SmallStep
+module
+
+public import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.Mem
+public meta import Interpreter.Wasm.Syntax
+
+@[expose] public section
 
 /-! ## Example: memory.copy
 
@@ -11,7 +17,7 @@ import Interpreter.Wasm.SmallStep
 namespace Wasm
 open SmallStep
 
-private def initBytes : List UInt8 :=
+def memCopyInitBytes : List UInt8 :=
   [0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88]
 
 def copyDisjointBody : Program := [
@@ -36,13 +42,13 @@ def copyModule : Module :=
       [ { body := copyDisjointBody, results := [.i32] }
       , { body := copyOverlapBody,  results := [.i64] }
       , { body := copyTrapBody } ]
-    memory := some { pagesMin := 1, data := [{ offset := some 0, bytes := initBytes }] } }
+    memory := some { pagesMin := 1, data := [{ offset := some 0, bytes := memCopyInitBytes }] } }
 
 def copyStore : MachineStore Unit :=
   { runtime := { instances := #[{ module := copyModule, host := {} }], entry := ⟨0⟩ }
     wasm := copyModule.initialStore }
 
-private def copyConfig (body : Program) (arity : Nat) : Config Unit :=
+def copyConfig (body : Program) (arity : Nat) : Config Unit :=
   { expr := .running
       { locals := {}
         code := body

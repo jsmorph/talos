@@ -1,5 +1,9 @@
-import Interpreter.Wasm
-import CodeLib.RustStd.Frame
+module
+
+public import Interpreter.Wasm
+public import CodeLib.RustStd.Frame
+
+@[expose] public section
 
 /-!
 # `CodeLib.RustStd.Region`

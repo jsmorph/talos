@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Host.Run
+module
+
+public import Interpreter.Wasm.Host.Run
+
+@[expose] public section
 
 /-!
 # A byte-buffer standard-I/O host

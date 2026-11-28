@@ -68,26 +68,18 @@ private instance decidableForallUInt32 {P : UInt32 → Prop} [DecidablePred P] :
 
 /-! ## Float math helpers -/
 
-/-- Expose `private satI32S` body; provable by `rfl` since the kernel reduces it. -/
+/-- Expose the proof-visible saturating-conversion body. -/
 private theorem i32TruncSatF32S_expand (x : UInt32) :
-    i32TruncSatF32S x =
-    let f := (Float32.ofBits x).toFloat
-    if f.isNaN then 0
-    else let t := if f < 0.0 then f.ceil else f.floor
-         if t ≤ (-2147483648.0 : Float) then 0x80000000
-         else if t ≥ (2147483647.0 : Float) then 0x7FFFFFFF
-         else t.toInt64.toUInt64.toUInt32 := rfl
+    i32TruncSatF32S x = Wasm.IEEE32.truncSatI32S x := rfl
 
-/-- IEEE 754: `f32Ne x x = true` iff `x` encodes a NaN.
-`f32Ne x x = !(f == f)` and `Float.isNaN f = !(f == f)` (both opaque externs);
-checked for all 2^32 bit patterns by native evaluation. -/
+/-- IEEE 754: `f32Ne x x = true` iff `x` encodes a NaN. -/
 private theorem f32Ne_self_iff_isNaN (x : UInt32) :
-    f32Ne x x = (Float32.ofBits x).toFloat.isNaN :=
+    f32Ne x x = Wasm.IEEE32.isNaN x :=
   IEEE32Exec.f32Ne_self_iff_isNaN x
 
 private theorem i32TruncSatF32S_nan {x : UInt32}
-    (h : (Float32.ofBits x).toFloat.isNaN) : i32TruncSatF32S x = 0 := by
-  simp [i32TruncSatF32S_expand, h]
+    (h : Wasm.IEEE32.isNaN x) : i32TruncSatF32S x = 0 := by
+  simp [i32TruncSatF32S_expand, Wasm.IEEE32.truncSatI32S, h]
 
 /-- `2^31` as a `Float32` bit pattern is `0x4F000000 = 1325400064`. When
 `f ≥ 2^31`, `floor f ≥ 2^31 > 2147483647`, so `satI32S` saturates to `MAX`.
@@ -548,7 +540,7 @@ theorem func0_body_to_ret_smallStep_wp
         iapply wp_br rfl
         inext
         simp only [List.take, List.nil_append]
-        have hisNaN : (Float32.ofBits x).toFloat.isNaN = true :=
+        have hisNaN : Wasm.IEEE32.isNaN x = true :=
           (f32Ne_self_iff_isNaN x).symm.trans hnan
         have heq := i32TruncSatF32S_nan hisNaN
         iapply func0_tail_to_ret_smallStep_wp
@@ -821,7 +813,7 @@ theorem twp_func0_body_to_ret
     · iintro Hword
       iapply twp_br rfl
       simp only [List.take, List.nil_append]
-      have hisNaN : (Float32.ofBits x).toFloat.isNaN = true :=
+      have hisNaN : Wasm.IEEE32.isNaN x = true :=
         (f32Ne_self_iff_isNaN x).symm.trans hnan
       have heq := i32TruncSatF32S_nan hisNaN
       iapply twp_func0_tail_to_ret Rglobal x 0 calls

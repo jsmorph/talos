@@ -1,8 +1,14 @@
-import CodeLib.Examples.MergeSort.TotalProof
-import CodeLib.Examples.Quicksort
-import CodeLib.RustStd.MemArray
-import CodeLib.WordCodec
-import Interpreter.Wasm.Host.StdIO
+module
+
+public import CodeLib.Examples.MergeSort.TotalProof
+public import CodeLib.Examples.Quicksort
+public import CodeLib.RustStd.MemArray
+public import CodeLib.WordCodec
+public import Interpreter.Wasm.Host.StdIO
+public meta import CodeLib.Examples.MergeSort
+public meta import CodeLib.WordCodec
+
+@[expose] public section
 
 /-!
 # Merge sort as a `StdIO` program
@@ -118,8 +124,11 @@ theorem writeBytes_encodeWord (mem : Mem) (base value : UInt32) :
     by_cases h3 : i = base.toNat + 3
     · subst i
       simp
-    rw [dif_neg (by omega)]
-    simp [h0, h1, h2, h3]
+    split
+    · omega
+    · simp [h0, h1, h2, h3]
+      intros
+      omega
 
 /-- Packed stream serialization and the word-array model used by the
 merge-sort proof describe exactly the same memory update. -/

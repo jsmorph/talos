@@ -1,4 +1,10 @@
-import Interpreter.Wasm.SmallStep
+module
+
+public import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 /-! ## Example: i64 memory loads/stores
 
@@ -9,7 +15,7 @@ import Interpreter.Wasm.SmallStep
 namespace Wasm
 open SmallStep
 
-private def initBytes : List UInt8 :=
+def memI64InitBytes : List UInt8 :=
   [0x88, 0xFF, 0x66, 0x55, 0x44, 0x33, 0x22, 0xFF]
 
 def load64Body : Program := [.const 0, .load64 0]
@@ -45,7 +51,7 @@ def i64MemModule : Module :=
       , { body := store16I64RoundtripBody, results := [.i64] }
       , { body := store32I64RoundtripBody, results := [.i64] }
       , { body := store64RoundtripBody, results := [.i64] } ]
-    memory := some { pagesMin := 1, data := [{ offset := some 0, bytes := initBytes }] } }
+    memory := some { pagesMin := 1, data := [{ offset := some 0, bytes := memI64InitBytes }] } }
 
 def i64MemStore : MachineStore Unit :=
   { runtime := { instances := #[{ module := i64MemModule, host := {} }], entry := ⟨0⟩ }

@@ -16,6 +16,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "f64_dot"
+version = "0.1.0"
+
+[[package]]
 name = "float_minmax"
 version = "0.1.0"
 

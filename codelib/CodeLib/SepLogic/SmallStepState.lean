@@ -1,6 +1,10 @@
-import CodeLib.SepLogic.SmallStepLanguage
-import CodeLib.SepLogic.WasmRules
-import Iris.ProgramLogic.WeakestPre
+module
+
+public import CodeLib.SepLogic.SmallStepLanguage
+public import CodeLib.SepLogic.WasmRules
+public import Iris.ProgramLogic.WeakestPre
+
+@[expose] public section
 
 /-!
 # Iris state interpretation for the Wasm small-step machine
@@ -197,8 +201,8 @@ theorem heapDomain_init (σ : WasmHeapMap (Option UInt8)) :
     exists 18
   imod (iOwn_alloc (E := heapFrontierElem)
       (ExclAuth.auth (⟨UInt32.size⟩ : DiscreteO Nat))
-      (CMRA.valid_iff_validN.mpr (fun n => CMRA.validN_op_l
-        (CMRA.valid_iff_validN.mp
+      (ORA.valid_iff_validN.mpr (fun n => ORA.validN_op_l
+        (ORA.valid_iff_validN.mp
           (ExclAuth.valid
             (a := (⟨UInt32.size⟩ : DiscreteO Nat))) n)))) with
     ⟨%heapFrontierName, HheapFrontierAuth⟩

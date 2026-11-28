@@ -1,5 +1,9 @@
-import CodeLib.SepLogic.SmallStepLifting
-import CodeLib.SepLogic.SmallStepTotalLifting
+module
+
+public import CodeLib.SepLogic.SmallStepLifting
+public import CodeLib.SepLogic.SmallStepTotalLifting
+
+@[expose] public section
 
 /-!
 # Well-founded loop family rule for total Wasm weakest preconditions

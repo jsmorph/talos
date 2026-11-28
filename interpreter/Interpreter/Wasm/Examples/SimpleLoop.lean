@@ -1,6 +1,10 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Examples.UIntLemmas
-import Mathlib.Tactic
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Examples.UIntLemmas
+public import Mathlib.Tactic
+
+@[expose] public section
 
 /-! ## Example: Simple countdown loop
 
@@ -155,7 +159,7 @@ private theorem simpleLoopHead_steps (x y : UInt32) :
       Steps (simpleLoopHead x y) trace
         ⟨.done [.i32 (x + y)], (simpleLoopConfig x).store⟩ := by
   induction h : x.toNat using Nat.strong_induction_on generalizing x y with
-  | h n ih =>
+  | ind n ih =>
     subst n
     by_cases hx : x = 0
     · subst x

@@ -1,4 +1,8 @@
-import CodeLib.RustStd.Array.Basic
+module
+
+public import CodeLib.RustStd.Array.Basic
+
+@[expose] public section
 
 /-! Contextual iris-lean chunk for `&[T]::is_empty`. -/
 

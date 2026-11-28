@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Syntax
-import Interpreter.Wasm.Locals
+module
+
+public import Interpreter.Wasm.Syntax
+public import Interpreter.Wasm.Locals
+
+@[expose] public section
 
 /-!
 # Continuation and Result types

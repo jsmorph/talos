@@ -1,5 +1,13 @@
-import CodeLib.SepLogic.SmallStepAdequacy
-import Interpreter.Wasm.Decoder.Wat
+module
+
+public import CodeLib.SepLogic.SmallStepAdequacy
+public import Interpreter.Wasm.Decoder.Wat
+public meta import CodeLib.SepLogic.WasmHeap
+public meta import Interpreter.Wasm.Syntax
+public meta import CodeLib.SepLogic.WasmRules
+public meta import Interpreter.Wasm.Decoder.Wat
+
+@[expose] public section
 
 /-!
 # Concrete examples for the Wasm small-step adequacy bridge
@@ -32,7 +40,7 @@ private theorem sep_pair_pure_rotate
     · iexact HP
     · iexact HQ
 
-private def globalGetAdequacyConfig : Config Unit :=
+def globalGetAdequacyConfig : Config Unit :=
   let runtimeModule : Module := { funcs := [] }
   let initial : Store Unit := runtimeModule.initialStore
   { expr := .running
@@ -2544,14 +2552,14 @@ theorem exceptionLifecycle_terminatesWith (arg : UInt32) :
 Each example's `.wat` source decodes to a module that behaves identically to
 the hand-written one on a spread of concrete inputs. -/
 
-private def signedBranchWat : String := include_str "signed_branch.wat"
+def signedBranchWat : String := include_str "signed_branch.wat"
 
-private def signedBranchModuleDecoded : Module :=
+def signedBranchModuleDecoded : Module :=
   match Wasm.Decoder.Wat.decode signedBranchWat with
   | .ok m => m
   | .error _ => default
 
-private def runSignedBranch (fuel : Nat) (m : Module) (a b : UInt32) : Option (List Value) :=
+def runSignedBranch (fuel : Nat) (m : Module) (a b : UInt32) : Option (List Value) :=
   match initConfig { module := m, host := (default : HostEnv Unit) } 0
       m.initialStore [.i32 a, .i32 b] with
   | .error _ => none
@@ -2569,14 +2577,14 @@ theorem signedBranch_decoded_agrees :
       runSignedBranch 100 signedBranchModuleDecoded 42 43 := by
   native_decide
 
-private def fillThenReadWat : String := include_str "fill_then_read.wat"
+def fillThenReadWat : String := include_str "fill_then_read.wat"
 
-private def fillThenReadModuleDecoded : Module :=
+def fillThenReadModuleDecoded : Module :=
   match Wasm.Decoder.Wat.decode fillThenReadWat with
   | .ok m => m
   | .error _ => default
 
-private def runFillThenRead (fuel : Nat) (m : Module) (val : UInt32) : Option (List Value) :=
+def runFillThenRead (fuel : Nat) (m : Module) (val : UInt32) : Option (List Value) :=
   match initConfig { module := m, host := (default : HostEnv Unit) } 0
       m.initialStore [.i32 val] with
   | .error _ => none
@@ -2591,14 +2599,14 @@ theorem fillThenRead_decoded_agrees :
       runFillThenRead 100 fillThenReadModuleDecoded 1000 := by
   native_decide
 
-private def exceptionLifecycleWat : String := include_str "exception_lifecycle.wat"
+def exceptionLifecycleWat : String := include_str "exception_lifecycle.wat"
 
-private def exceptionLifecycleModuleDecoded : Module :=
+def exceptionLifecycleModuleDecoded : Module :=
   match Wasm.Decoder.Wat.decode exceptionLifecycleWat with
   | .ok m => m
   | .error _ => default
 
-private def runExceptionLifecycle (fuel : Nat) (m : Module) (arg : UInt32) :
+def runExceptionLifecycle (fuel : Nat) (m : Module) (arg : UInt32) :
     Option (List Value) :=
   match initConfig { module := m, host := (default : HostEnv Unit) } 0
       m.initialStore [.i32 arg] with

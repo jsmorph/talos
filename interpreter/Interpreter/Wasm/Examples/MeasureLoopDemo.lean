@@ -1,7 +1,11 @@
-import Interpreter.Wasm.MeasureTermination
-import Interpreter.Wasm.Examples.SimpleLoop
-import Interpreter.Wasm.Examples.UIntLemmas
-import Mathlib.Tactic
+module
+
+public import Interpreter.Wasm.MeasureTermination
+public import Interpreter.Wasm.Examples.SimpleLoop
+public import Interpreter.Wasm.Examples.UIntLemmas
+public import Mathlib.Tactic
+
+@[expose] public section
 
 /-! ## Demo: the countdown loop, terminated by `terminatesWith_of_loop`
 

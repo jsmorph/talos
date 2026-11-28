@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Wp.Structural
-import Interpreter.Wasm.Semantics.Lemmas
+module
+
+public import Interpreter.Wasm.Wp.Structural
+public import Interpreter.Wasm.Semantics.Lemmas
+
+@[expose] public section
 
 /-! ### Loop with a variant.
 

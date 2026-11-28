@@ -1,4 +1,8 @@
-import CodeLib.RustStd.U64.Basic
+module
+
+public import CodeLib.RustStd.U64.Basic
+
+@[expose] public section
 
 /-! `u64::not` (`!a`) — inlined to `constI64 0xFFFF…FFFF; xor`. The
 `a ^^^ MAX_U64 = ~~~a` identity is the only `bv_decide` here, proven once in the

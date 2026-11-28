@@ -1,4 +1,9 @@
-import CodeLib.SepLogic.SmallStepAdequacy
+module
+
+public import CodeLib.SepLogic.SmallStepAdequacy
+public meta import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 namespace Wasm.SmallStep
 
@@ -15,7 +20,7 @@ def writeByteHost : HostFn Unit where
       .Return [] { wasmStore with mem := wasmStore.mem.write8 addr val.toUInt8 }
     | _ => .Trap wasmStore "writeByteHost: bad args"
 
-private abbrev writeByteImp : ImportDecl :=
+abbrev writeByteImp : ImportDecl :=
   { module := "", name := "writeByte", params := [.i32, .i32], results := [] }
 
 def writeByteModule : Module where

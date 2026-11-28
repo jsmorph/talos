@@ -1,4 +1,8 @@
-import Interpreter.Wasm.SmallStep
+module
+
+public import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 /-! ## Example: InfiniteLoop
 
@@ -12,7 +16,7 @@ open SmallStep
 
 def InfiniteLoop : Program := [.loop 0 0 [.br 0]]
 
-private def infiniteFrame (values : List Value) : ControlFrame :=
+def infiniteFrame (values : List Value) : ControlFrame :=
   { kind := .loop
     paramArity := 0
     resultArity := 0

@@ -1,4 +1,8 @@
-import CodeLib.RustStd.U64.Basic
+module
+
+public import CodeLib.RustStd.U64.Basic
+
+@[expose] public section
 
 /-! `u64::bitor` — inlined to a single `i64.orI64`. Chunk fact + concrete
 restatement, reusing the trunk. -/

@@ -1,6 +1,10 @@
-import CodeLib.Examples.SelectionSort.Pure
-import CodeLib.SepLogic.SmallStepAdequacy
-import CodeLib.SepLogic.SmallStepTotalLoop
+module
+
+public import CodeLib.Examples.SelectionSort.Pure
+public import CodeLib.SepLogic.SmallStepAdequacy
+public import CodeLib.SepLogic.SmallStepTotalLoop
+
+@[expose] public section
 
 /-!
 # Total Iris proofs for the two selection-sort implementations

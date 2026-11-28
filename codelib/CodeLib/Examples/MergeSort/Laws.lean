@@ -1,5 +1,9 @@
-import CodeLib.Examples.MergeSort.Pure
-import CodeLib.SepLogic.SmallStepTotalLifting
+module
+
+public import CodeLib.Examples.MergeSort.Pure
+public import CodeLib.SepLogic.SmallStepTotalLifting
+
+@[expose] public section
 
 /-!
 # Derived laws for the merge-sort proof

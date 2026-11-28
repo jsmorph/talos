@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Wp.Defs
+module
+
+public import Interpreter.Wasm.Wp.Defs
+
+@[expose] public section
 
 /-! ### Atomic equations.
 
@@ -1535,7 +1539,7 @@ macro "wp_atomic" : tactic => `(tactic|
      | .f32 a :: vs =>
        match i32TruncF32S a with
        | some r => wp m rest Q st { s with values := .i32 r :: vs } env
-       | none => if (Float32.ofBits a).isNaN then Q (.Trap st "invalid conversion to integer")
+       | none => if IEEE32.isNaN a then Q (.Trap st "invalid conversion to integer")
                  else Q (.Trap st "integer overflow")
      | _ => Q (.Invalid "i32TruncF32S: ill-shaped operand stack")) := by
   wp_atomic
@@ -1546,7 +1550,7 @@ macro "wp_atomic" : tactic => `(tactic|
      | .f32 a :: vs =>
        match i32TruncF32U a with
        | some r => wp m rest Q st { s with values := .i32 r :: vs } env
-       | none => if (Float32.ofBits a).isNaN then Q (.Trap st "invalid conversion to integer")
+       | none => if IEEE32.isNaN a then Q (.Trap st "invalid conversion to integer")
                  else Q (.Trap st "integer overflow")
      | _ => Q (.Invalid "i32TruncF32U: ill-shaped operand stack")) := by
   wp_atomic
@@ -1579,7 +1583,7 @@ macro "wp_atomic" : tactic => `(tactic|
      | .f32 a :: vs =>
        match i64TruncF32S a with
        | some r => wp m rest Q st { s with values := .i64 r :: vs } env
-       | none => if (Float32.ofBits a).isNaN then Q (.Trap st "invalid conversion to integer")
+       | none => if IEEE32.isNaN a then Q (.Trap st "invalid conversion to integer")
                  else Q (.Trap st "integer overflow")
      | _ => Q (.Invalid "i64TruncF32S: ill-shaped operand stack")) := by
   wp_atomic
@@ -1590,7 +1594,7 @@ macro "wp_atomic" : tactic => `(tactic|
      | .f32 a :: vs =>
        match i64TruncF32U a with
        | some r => wp m rest Q st { s with values := .i64 r :: vs } env
-       | none => if (Float32.ofBits a).isNaN then Q (.Trap st "invalid conversion to integer")
+       | none => if IEEE32.isNaN a then Q (.Trap st "invalid conversion to integer")
                  else Q (.Trap st "integer overflow")
      | _ => Q (.Invalid "i64TruncF32U: ill-shaped operand stack")) := by
   wp_atomic

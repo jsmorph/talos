@@ -1,4 +1,8 @@
-import CodeLib.SepLogic.SmallStepAdequacy
+module
+
+public import CodeLib.SepLogic.SmallStepAdequacy
+
+@[expose] public section
 
 namespace Wasm.SmallStep
 
@@ -12,7 +16,7 @@ def xFn : Function where
   results := []
   body    := [.ret]
 
-private abbrev xImp : ImportDecl :=
+abbrev xImp : ImportDecl :=
   { module := "", name := "f", params := [], results := [] }
 
 def xModule : Module where

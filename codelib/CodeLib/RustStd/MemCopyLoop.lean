@@ -1,6 +1,10 @@
-import CodeLib.RustStd.MemArray
-import CodeLib.SepLogic.SmallStepLifting
-import CodeLib.SepLogic.SmallStepTotalLoop
+module
+
+public import CodeLib.RustStd.MemArray
+public import CodeLib.SepLogic.SmallStepLifting
+public import CodeLib.SepLogic.SmallStepTotalLoop
+
+@[expose] public section
 
 /-!
 # A verified copy loop over a `u32` array

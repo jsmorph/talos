@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Spec.Defs
-import Interpreter.Wasm.Wp.Call
+module
+
+public import Interpreter.Wasm.Spec.Defs
+public import Interpreter.Wasm.Wp.Call
+
+@[expose] public section
 
 /-!
 # Fuel-free spec predicate bridges

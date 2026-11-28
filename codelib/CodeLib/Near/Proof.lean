@@ -1,4 +1,8 @@
-import CodeLib.Near.Env
+module
+
+public import CodeLib.Near.Env
+
+@[expose] public section
 
 /-!
 # Proof-facing NEAR helpers

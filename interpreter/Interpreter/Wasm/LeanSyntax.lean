@@ -1,5 +1,10 @@
-import Interpreter.Wasm.Syntax
-import Lean.Elab.Term
+module
+
+public import Interpreter.Wasm.Syntax
+public import Lean.Elab.Term
+public meta import Lean.Elab.Term.TermElabM
+
+@[expose] public section
 
 /-!
 # Compact Lean syntax for generated Wasm modules
@@ -15,13 +20,13 @@ open Lean Elab Term
 
 syntax (name := hexBytes) "hexBytes% " str : term
 
-private def hexDigit? (c : Char) : Option Nat :=
+meta def hexDigit? (c : Char) : Option Nat :=
   if '0' ≤ c && c ≤ '9' then some (c.toNat - '0'.toNat)
   else if 'a' ≤ c && c ≤ 'f' then some (10 + c.toNat - 'a'.toNat)
   else if 'A' ≤ c && c ≤ 'F' then some (10 + c.toNat - 'A'.toNat)
   else none
 
-private def decodeHex : List Char → Except String (List Nat)
+meta def decodeHex : List Char → Except String (List Nat)
   | [] => .ok []
   | hi :: lo :: rest => do
       let some h := hexDigit? hi | throw s!"invalid hex digit `{hi}`"
@@ -29,7 +34,7 @@ private def decodeHex : List Char → Except String (List Nat)
       return (16 * h + l) :: (← decodeHex rest)
   | [_] => .error "hex byte literal must contain an even number of digits"
 
-@[term_elab hexBytes] def elabHexBytes : TermElab := fun stx expectedType? => do
+@[term_elab hexBytes] meta def elabHexBytes : TermElab := fun stx expectedType? => do
   let `(hexBytes% $value:str) := stx | throwUnsupportedSyntax
   let bytes ← match decodeHex value.getString.toList with
     | .ok bytes => pure bytes

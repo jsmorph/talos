@@ -1,3 +1,7 @@
+module
+
+@[expose] public section
+
 /-!
 # `UInt32` arithmetic helpers used by corpus specs
 

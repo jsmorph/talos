@@ -1,4 +1,9 @@
-import CodeLib.SepLogic.SmallStepAdequacy
+module
+
+public import CodeLib.SepLogic.SmallStepAdequacy
+public meta import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 namespace Wasm.SmallStep
 
@@ -22,7 +27,7 @@ def instanceB : ModuleInstance Unit where
   resolvedImports := #[]
 
 -- caller module (A): imports add from B, no local functions
-private abbrev addFromB : ImportDecl :=
+abbrev addFromB : ImportDecl :=
   { module := "B", name := "add", params := [.i32, .i32], results := [.i32] }
 
 def moduleA : Module where

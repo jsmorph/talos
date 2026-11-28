@@ -1,5 +1,9 @@
-import Interpreter.Wasm
-import Interpreter.Wasm.Spec.Termination
+module
+
+public import Interpreter.Wasm
+public import Interpreter.Wasm.Spec.Termination
+
+@[expose] public section
 
 /-!
 # NEAR host state (`α := NearState`)

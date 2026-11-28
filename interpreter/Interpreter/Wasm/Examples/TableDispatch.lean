@@ -1,5 +1,11 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
+
+@[expose] public section
 
 /-! ## Example: table inspection and decoded indirect dispatch
 
@@ -78,46 +84,46 @@ def dispatchWat : String := "
     call_indirect (type $sig)))
 "
 
-private def decoded : Wasm.Module := Wasm.Examples.decodeOrDefault dispatchWat
+def tableDispatchDecoded : Wasm.Module := Wasm.Examples.decodeOrDefault dispatchWat
 
-private def decodedConfig (index : Nat)
+def tableDispatchDecodedConfig (index : Nat)
     (args : List Value) : Config Unit :=
   { expr := .running
-      { locals := decoded.funcs[index]!.toLocals args.reverse
-        code := decoded.funcs[index]!.body
-        resultArity := decoded.funcs[index]!.results.length
+      { locals := tableDispatchDecoded.funcs[index]!.toLocals args.reverse
+        code := tableDispatchDecoded.funcs[index]!.body
+        resultArity := tableDispatchDecoded.funcs[index]!.results.length
         callerRemainder := [] }
     store :=
-      { runtime := { instances := #[{ module := decoded, host := {} }], entry := ⟨0⟩ }
-        wasm := decoded.initialStore } }
+      { runtime := { instances := #[{ module := tableDispatchDecoded, host := {} }], entry := ⟨0⟩ }
+        wasm := tableDispatchDecoded.initialStore } }
 
-private def runVals (index : Nat)
+def tableDispatchRunVals (index : Nat)
     (args : List Value) : Option (List Value) :=
-  (runSteps 20 (decodedConfig index args)).result.values?
+  (runSteps 20 (tableDispatchDecodedConfig index args)).result.values?
 
-theorem decodes_five_funcs : decoded.funcs.length = 5 := by native_decide
+theorem decodes_five_funcs : tableDispatchDecoded.funcs.length = 5 := by native_decide
 
 theorem table_populated :
-    (decoded.initialStore (α := Unit)).tables =
+    (tableDispatchDecoded.initialStore (α := Unit)).tables =
       [[.funcref (some 0), .funcref (some 1), .funcref none]] := by
   native_decide
 
-theorem sz_runs : runVals 2 [] = some [.i32 3] := by native_decide
+theorem sz_runs : tableDispatchRunVals 2 [] = some [.i32 3] := by native_decide
 
 theorem is_null_slot0_runs :
-    runVals 3 [.i32 0] = some [.i32 0] := by native_decide
+    tableDispatchRunVals 3 [.i32 0] = some [.i32 0] := by native_decide
 
 theorem is_null_slot2_runs :
-    runVals 3 [.i32 2] = some [.i32 1] := by native_decide
+    tableDispatchRunVals 3 [.i32 2] = some [.i32 1] := by native_decide
 
 theorem dispatch_slot0_runs :
-    runVals 4 [.i32 0] = some [.i32 10] := by native_decide
+    tableDispatchRunVals 4 [.i32 0] = some [.i32 10] := by native_decide
 
 theorem dispatch_slot1_runs :
-    runVals 4 [.i32 1] = some [.i32 20] := by native_decide
+    tableDispatchRunVals 4 [.i32 1] = some [.i32 20] := by native_decide
 
 theorem dispatch_slot0_spec :
-    TerminatesWith (decodedConfig 4 [.i32 0])
+    TerminatesWith (tableDispatchDecodedConfig 4 [.i32 0])
       (fun values _ => values = [.i32 10]) :=
   runSteps_values_terminates dispatch_slot0_runs
 

@@ -1,46 +1,52 @@
-import Interpreter.Wasm.Examples.IsEven
-import Interpreter.Wasm.Examples.SimpleLoop
-import Interpreter.Wasm.Examples.Factorial
-import Interpreter.Wasm.Examples.InfiniteLoop
-import Interpreter.Wasm.Examples.EvenOddRec
-import Interpreter.Wasm.Examples.CallIndirect
-import Interpreter.Wasm.Examples.SumI64
-import Interpreter.Wasm.Examples.IfAbs
-import Interpreter.Wasm.Examples.Switch
-import Interpreter.Wasm.Examples.SelectMin
-import Interpreter.Wasm.Examples.RefIsNull
-import Interpreter.Wasm.Examples.TableDispatch
-import Interpreter.Wasm.Examples.EarlyReturn
-import Interpreter.Wasm.Examples.EarlyBr
-import Interpreter.Wasm.Examples.EarlyBrInvalid
-import Interpreter.Wasm.Examples.TrapDivZero
-import Interpreter.Wasm.Examples.TrapUnreachable
-import Interpreter.Wasm.Examples.MemDataSection
-import Interpreter.Wasm.Examples.MemReplace
-import Interpreter.Wasm.Examples.MemNarrowI32
-import Interpreter.Wasm.Examples.MemI64
-import Interpreter.Wasm.Examples.MemGrow
-import Interpreter.Wasm.Examples.MemFill
-import Interpreter.Wasm.Examples.MemCopy
-import Interpreter.Wasm.Examples.GlobalCounter
-import Interpreter.Wasm.Examples.MultiValue
-import Interpreter.Wasm.Examples.ClzPopcnt
-import Interpreter.Wasm.Examples.HostDispatch
-import Interpreter.Wasm.Examples.Counter
-import Interpreter.Wasm.Examples.Random
-import Interpreter.Wasm.Examples.UniversalHost
-import Interpreter.Wasm.Examples.DecoderImport
-import Interpreter.Wasm.Examples.DecoderImportedGlobal
-import Interpreter.Wasm.Examples.FloatOps
-import Interpreter.Wasm.Examples.Gcd
-import Interpreter.Wasm.Examples.SelectAbs
-import Interpreter.Wasm.Examples.GlobalInitExpr
-import Interpreter.Wasm.Examples.SegmentOffsetExpr
-import Interpreter.Wasm.Examples.CallIndirectSubtype
-import Interpreter.Wasm.Examples.RefCastFuncType
-import Interpreter.Wasm.Examples.SmallStep
-import Interpreter.Wasm.Examples.Validation
-import Interpreter.Wasm.Examples.MeasureLoopDemo
+module
+
+public import Interpreter.Wasm.Examples.IsEven
+public import Interpreter.Wasm.Examples.SimpleLoop
+public import Interpreter.Wasm.Examples.Factorial
+public import Interpreter.Wasm.Examples.InfiniteLoop
+public import Interpreter.Wasm.Examples.EvenOddRec
+public import Interpreter.Wasm.Examples.CallIndirect
+public import Interpreter.Wasm.Examples.SumI64
+public import Interpreter.Wasm.Examples.IfAbs
+public import Interpreter.Wasm.Examples.Switch
+public import Interpreter.Wasm.Examples.SelectMin
+public import Interpreter.Wasm.Examples.RefIsNull
+public import Interpreter.Wasm.Examples.TableDispatch
+public import Interpreter.Wasm.Examples.EarlyReturn
+public import Interpreter.Wasm.Examples.EarlyBr
+public import Interpreter.Wasm.Examples.EarlyBrInvalid
+public import Interpreter.Wasm.Examples.TrapDivZero
+public import Interpreter.Wasm.Examples.TrapUnreachable
+public import Interpreter.Wasm.Examples.MemDataSection
+public import Interpreter.Wasm.Examples.MemReplace
+public import Interpreter.Wasm.Examples.MemNarrowI32
+public import Interpreter.Wasm.Examples.MemI64
+public import Interpreter.Wasm.Examples.MemGrow
+public import Interpreter.Wasm.Examples.MemFill
+public import Interpreter.Wasm.Examples.MemCopy
+public import Interpreter.Wasm.Examples.GlobalCounter
+public import Interpreter.Wasm.Examples.MultiValue
+public import Interpreter.Wasm.Examples.ClzPopcnt
+public import Interpreter.Wasm.Examples.HostDispatch
+public import Interpreter.Wasm.Examples.Counter
+public import Interpreter.Wasm.Examples.Random
+public import Interpreter.Wasm.Examples.UniversalHost
+public import Interpreter.Wasm.Examples.DecoderImport
+public import Interpreter.Wasm.Examples.DecoderImportedGlobal
+public import Interpreter.Wasm.Examples.FloatOps
+public import Interpreter.Wasm.Examples.IEEE32
+public import Interpreter.Wasm.Examples.FloatAssociativity
+public import Interpreter.Wasm.Examples.Gcd
+public import Interpreter.Wasm.Examples.SelectAbs
+public import Interpreter.Wasm.Examples.GlobalInitExpr
+public import Interpreter.Wasm.Examples.SegmentOffsetExpr
+public import Interpreter.Wasm.Examples.CallIndirectSubtype
+public import Interpreter.Wasm.Examples.RefCastFuncType
+public import Interpreter.Wasm.Examples.SmallStep
+public import Interpreter.Wasm.Examples.Validation
+public import Interpreter.Wasm.Examples.MeasureLoopDemo
+
+@[expose] public section
 
 /-! # Wasm.Examples.Basic
 

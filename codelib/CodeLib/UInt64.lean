@@ -1,5 +1,9 @@
-import Interpreter.Wasm
-import Mathlib.Data.Nat.Bitwise
+module
+
+public import Interpreter.Wasm
+public import Mathlib.Data.Nat.Bitwise
+
+@[expose] public section
 
 /-!
 # `UInt64` arithmetic helpers used by corpus specs

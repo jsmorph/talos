@@ -4,24 +4,43 @@ defaultTargets = ["CodeLib"]
 packagesDir = "../.lake/packages"
 
 [[require]]
-name = "WasmInterpreterLean"
-path = "../interpreter"
+name = "iris"
+git = "https://github.com/leanprover-community/iris-lean.git"
+subDir = "Iris"
+# Pin the v4.36.0 tag of iris-lean, which includes the total weakest preconditions of iris-lean#554.
+rev = "40e6418437a794dcd0429bfbe4d6b60fdafb2ecd"
 
 [[require]]
-name = "iris"
-git.url = "https://github.com/leanprover-community/iris-lean.git"
-git.subDir = "Iris"
-# Pin upstream master (total weakest preconditions from iris-lean#554 now merged).
-rev = "e7a0a43814c4f1154ca0c8049883ca56c2288b86"
+name = "WasmInterpreterLean"
+path = "../interpreter"
 
 [[lean_lib]]
 name = "CodeLib"
 roots = [
   "CodeLib",
-  # Not reachable from the `CodeLib` umbrella on purpose: it declares the float
-  # bridge axioms, which should not enter every downstream module's environment.
-  # It is still a root so the codelib build keeps checking it.
+  # Artifact quotation/fidelity support without the full proof umbrella.
+  "CodeLib.GeneratedCore",
+  # Compatibility lemmas for generated float-truncation proofs.
   "CodeLib.IEEE32.Exec",
+  "CodeLib.IEEE32.Roundoff",
+  "CodeLib.IEEE32.Rounders",
+  "CodeLib.IEEE32.SpecialValues",
+  "CodeLib.IEEE32.Multiplication",
+  "CodeLib.IEEE32.Division",
+  "CodeLib.IEEE32.SquareRoot",
+  "CodeLib.IEEE32.Selection",
+  "CodeLib.IEEE32.IntegralRounding",
+  "CodeLib.IEEE32.Conversions",
+  "CodeLib.IEEE64.Operations",
+  "CodeLib.IEEE64.Roundoff",
+  "CodeLib.IEEE64.Rounders",
+  "CodeLib.IEEE64.Conversions",
+  "CodeLib.IEEE32.SIMD",
+  "CodeLib.IEEE32.Transcendental",
+  "CodeLib.Numerical.ErrorComposition",
+  "CodeLib.Numerical.RelativeError",
+  "CodeLib.Numerical.Kernels",
+  "CodeLib.RustStd.MemArray.SmallStep",
   "CodeLib.Examples.Gcd",
   "CodeLib.Examples.MergeSort.StdIO",
   "CodeLib.Examples.Quicksort.TotalProof",

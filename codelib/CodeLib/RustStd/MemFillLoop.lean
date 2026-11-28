@@ -1,5 +1,9 @@
-import CodeLib.RustStd.MemArray
-import CodeLib.SepLogic.SmallStepLifting
+module
+
+public import CodeLib.RustStd.MemArray
+public import CodeLib.SepLogic.SmallStepLifting
+
+@[expose] public section
 
 /-!
 # A universally-quantified loop-over-memory proof

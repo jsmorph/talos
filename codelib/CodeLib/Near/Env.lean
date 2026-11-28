@@ -1,4 +1,8 @@
-import CodeLib.Near.State
+module
+
+public import CodeLib.Near.State
+
+@[expose] public section
 
 /-!
 # NEAR host-function registry (`nearEnv`)
@@ -944,7 +948,7 @@ def promiseReturnFn : HostFn NearState :=
 
 /-! ## The registry — single source of truth -/
 
-private def imp (name : String) (params results : List ValueType) : ImportDecl :=
+def imp (name : String) (params results : List ValueType) : ImportDecl :=
   { «module» := "env", name, params, results }
 
 /-- Canonical ordered list of NEAR host functions, paired with their import

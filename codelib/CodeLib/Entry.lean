@@ -1,4 +1,8 @@
-import Interpreter.Wasm
+module
+
+public import Interpreter.Wasm
+
+@[expose] public section
 
 /-!
 # Entry bridges: fuel-free `TerminatesWith` spec ⇒ `wp` goal on the body

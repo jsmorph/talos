@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Decoder.Wat
-import Interpreter.Wasm.SmallStep
+module
+
+public import Interpreter.Wasm.Decoder.Wat
+public import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 /-!
 # `Wasm.Examples` — shared harness for the worked examples
@@ -22,7 +26,7 @@ open Wasm.SmallStep
 /-- Legacy example fuel counted recursive big steps rather than individual
 machine transitions. Compatibility projections deliberately over-approximate
 it; no specification may depend on this scaling. -/
-private def smallStepFuel (fuel : Nat) : Nat := fuel * 16
+def smallStepFuel (fuel : Nat) : Nat := fuel * 16
 
 /-- Run `m`'s function `idx` and keep the returned stack, or `[]` on any
 non-`Success` outcome. Total, so `native_decide` can evaluate it without

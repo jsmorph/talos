@@ -1,7 +1,11 @@
-import CodeLib.SepLogic.SmallStepLifting
-import CodeLib.SepLogic.SmallStepTotalLifting
-import Iris.ProgramLogic.Adequacy
-import Iris.ProgramLogic.TotalAdequacy
+module
+
+public import CodeLib.SepLogic.SmallStepLifting
+public import CodeLib.SepLogic.SmallStepTotalLifting
+public import Iris.ProgramLogic.Adequacy
+public import Iris.ProgramLogic.TotalAdequacy
+
+@[expose] public section
 
 /-!
 # Adequacy for the Wasm small-step Iris language
@@ -126,7 +130,7 @@ theorem wp_store_adequacy
     Hfork, (fun _ _ _ _ => fupd_intro)
   dsimp only
   imodintro
-  iframe
+  iframe Hst
   isplitl [Hwp]
   · iapply BigSepL2.bigSepL2_singleton
     iframe
@@ -610,7 +614,7 @@ theorem wasm_smallStep_stronglyNormalizing
       elementSegmentHeapAgrees_empty _,
       fun id m hm => by simp [get?_empty] at hm,
       fun id env hm => by simp [get?_empty] at hm⟩
-  · iintro _
+  · iintro -
     exact htwp
 
 /-- Total-WP strong normalization with authoritative initial memory, globals,
@@ -1406,7 +1410,7 @@ theorem wasm_smallStep_runtime_instance_adequacy
     toAgree ⟨config.store.runtime.instances⟩
   imod (iOwn_alloc (E := runtimeInstancesElem)
       (runtimeInstancesValue • runtimeInstancesValue) (fun n =>
-        CMRA.valid_iff_validN.mp
+        ORA.valid_iff_validN.mp
           (toAgree_op_valid_iff_eq.mpr rfl) n)) with
     ⟨%runtimeInstancesName, HruntimeInstances⟩
   letI runtimeInstancesGS : WasmRuntimeInstancesGS α :=
@@ -1669,7 +1673,7 @@ theorem wasm_smallStep_instance_host_state_adequacy
     toAgree ⟨config.store.runtime.instances⟩
   imod (iOwn_alloc (E := runtimeInstancesElem)
       (runtimeInstancesValue • runtimeInstancesValue) (fun n =>
-        CMRA.valid_iff_validN.mp
+        ORA.valid_iff_validN.mp
           (toAgree_op_valid_iff_eq.mpr rfl) n)) with
     ⟨%runtimeInstancesName, HruntimeInstances⟩
   letI runtimeInstancesGS : WasmRuntimeInstancesGS α :=
@@ -4178,7 +4182,7 @@ theorem wasm_smallStep_heap_runtime_instances_adequacy
     toAgree ⟨config.store.runtime.instances⟩
   imod (iOwn_alloc (E := runtimeInstancesElem)
       (runtimeInstancesValue • runtimeInstancesValue) (fun n =>
-        CMRA.valid_iff_validN.mp
+        ORA.valid_iff_validN.mp
           (toAgree_op_valid_iff_eq.mpr rfl) n)) with
     ⟨%runtimeInstancesName, HruntimeInstances⟩
   letI runtimeInstancesGS : WasmRuntimeInstancesGS α :=

@@ -1,7 +1,15 @@
-import Interpreter.Wasm.Host.Registry
-import Interpreter.Wasm.Host.StdIO
-import Interpreter.Wasm.Host.Random
-import Interpreter.Wasm.Host.OOM
+module
+
+public import Interpreter.Wasm.Host.Registry
+public import Interpreter.Wasm.Host.StdIO
+public import Interpreter.Wasm.Host.Random
+public import Interpreter.Wasm.Host.OOM
+public meta import Interpreter.Wasm.Host.StdIO
+public meta import Interpreter.Wasm.Host.Random
+public meta import Interpreter.Wasm.Host.OOM
+public meta import Interpreter.Wasm.Host.Registry
+
+@[expose] public section
 
 /-!
 # The universal host

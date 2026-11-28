@@ -1,5 +1,9 @@
-import CodeLib.Entry
-import CodeLib.Near.Proof
+module
+
+public import CodeLib.Entry
+public import CodeLib.Near.Proof
+
+@[expose] public section
 
 /-!
 # Example: a NEAR key-value setter

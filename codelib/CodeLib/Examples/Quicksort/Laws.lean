@@ -1,5 +1,9 @@
-import CodeLib.Examples.Quicksort.Pure
-import CodeLib.SepLogic.SmallStepTotalLifting
+module
+
+public import CodeLib.Examples.Quicksort.Pure
+public import CodeLib.SepLogic.SmallStepTotalLifting
+
+@[expose] public section
 
 /-!
 # Derived laws for the quicksort proof

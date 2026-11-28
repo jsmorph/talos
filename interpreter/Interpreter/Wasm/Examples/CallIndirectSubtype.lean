@@ -1,4 +1,10 @@
-import Interpreter.Wasm.SmallStep
+module
+
+public import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.SmallStep
+public meta import Interpreter.Wasm.Syntax
+
+@[expose] public section
 
 /-! ## Example: `(return_)call_indirect` rejects a non-subtype (issue #95)
 

@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Syntax
+module
+
+public import Interpreter.Wasm.Syntax
+
+@[expose] public section
 
 /-!
 # Local variables and call-frame state

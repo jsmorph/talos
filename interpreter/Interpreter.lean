@@ -1,5 +1,9 @@
-import Interpreter.Wasm
-import Interpreter.Wasm.Examples.Basic
+module
+
+public import Interpreter.Wasm
+public import Interpreter.Wasm.Examples.Basic
+
+@[expose] public section
 
 /-!
 # Interpreter — public surface

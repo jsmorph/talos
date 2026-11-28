@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Wp.Defs
-import Interpreter.Wasm.Semantics.Lemmas
+module
+
+public import Interpreter.Wasm.Wp.Defs
+public import Interpreter.Wasm.Semantics.Lemmas
+
+@[expose] public section
 
 /-! ### The skeleton shared by the structural rules.
 

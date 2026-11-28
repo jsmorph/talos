@@ -1,4 +1,8 @@
-import Interpreter.Wasm.Float
+module
+
+public import Interpreter.Wasm.Float
+
+@[expose] public section
 
 /-!
 # SIMD (v128) lane semantics
@@ -137,13 +141,13 @@ def FCmp.eval64 (op : FCmp) (a b : UInt64) : Bool :=
 
 /-! ## Float lane wrappers (bit-pattern in, bit-pattern out, as `Nat`) -/
 
-private def f32LaneUn (f : UInt32 → UInt32) (n : Nat) : Nat :=
+def f32LaneUn (f : UInt32 → UInt32) (n : Nat) : Nat :=
   (f (UInt32.ofNat n)).toNat
-private def f64LaneUn (f : UInt64 → UInt64) (n : Nat) : Nat :=
+def f64LaneUn (f : UInt64 → UInt64) (n : Nat) : Nat :=
   (f (UInt64.ofNat n)).toNat
-private def f32LaneBin (f : UInt32 → UInt32 → UInt32) (a b : Nat) : Nat :=
+def f32LaneBin (f : UInt32 → UInt32 → UInt32) (a b : Nat) : Nat :=
   (f (UInt32.ofNat a) (UInt32.ofNat b)).toNat
-private def f64LaneBin (f : UInt64 → UInt64 → UInt64) (a b : Nat) : Nat :=
+def f64LaneBin (f : UInt64 → UInt64 → UInt64) (a b : Nat) : Nat :=
   (f (UInt64.ofNat a) (UInt64.ofNat b)).toNat
 
 /-- The `pmin`/`pmax` family (f32 and f64): `pmin a b = b < a ? b : a` and
@@ -176,7 +180,7 @@ inductive UnOp where
   | f64x2PromoteLowF32x4
 deriving Repr, DecidableEq, Inhabited
 
-private def popcntNat : Nat → Nat
+def popcntNat : Nat → Nat
   | 0 => 0
   | n + 1 => (n + 1) % 2 + popcntNat ((n + 1) / 2)
 

@@ -1,5 +1,9 @@
-import CodeLib.SepLogic.SmallStepAdequacy
-import CodeLib.SepLogic.SmallStepTotalLifting
+module
+
+public import CodeLib.SepLogic.SmallStepAdequacy
+public import CodeLib.SepLogic.SmallStepTotalLifting
+
+@[expose] public section
 
 /-!
 # Euclidean GCD
@@ -48,7 +52,7 @@ def gcdFunction : Function :=
 
 def gcdModule : Module := { funcs := [gcdFunction] }
 
-private def gcdLocals (a b temporary : UInt32) : Locals :=
+def gcdLocals (a b temporary : UInt32) : Locals :=
   ⟨[.i32 a, .i32 b], [.i32 temporary], []⟩
 
 def gcdConfig (a b : UInt32) : Config Unit :=

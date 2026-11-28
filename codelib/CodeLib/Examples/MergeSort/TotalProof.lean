@@ -1,5 +1,9 @@
-import CodeLib.Examples.MergeSort.Laws
-import CodeLib.SepLogic.SmallStepTotalLifting
+module
+
+public import CodeLib.Examples.MergeSort.Laws
+public import CodeLib.SepLogic.SmallStepTotalLifting
+
+@[expose] public section
 
 /-!
 # Total Iris verification of the handwritten merge sort

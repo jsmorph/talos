@@ -1,5 +1,9 @@
-import CodeLib.SepLogic.WasmHeap
-import Interpreter.Wasm.Mem
+module
+
+public import CodeLib.SepLogic.WasmHeap
+public import Interpreter.Wasm.Mem
+
+@[expose] public section
 
 /-! # Bridge: Talos Mem ↔ iris-lean GenHeap
 
@@ -388,19 +392,15 @@ theorem fill16_four_AB_eq_write32 (mem : Mem) :
     by_cases h0 : i = 16
     · subst i
       simp
-      bv_decide
     by_cases h1 : i = 17
     · subst i
       simp
-      bv_decide
     by_cases h2 : i = 18
     · subst i
       simp
-      bv_decide
     by_cases h3 : i = 19
     · subst i
       simp
-      bv_decide
     simp [h0, h1, h2, h3]
     omega
 
@@ -417,19 +417,15 @@ theorem init16_four_eq_write32 (mem : Mem) :
     by_cases h0 : i = 16
     · subst i
       simp
-      bv_decide
     by_cases h1 : i = 17
     · subst i
       simp
-      bv_decide
     by_cases h2 : i = 18
     · subst i
       simp
-      bv_decide
     by_cases h3 : i = 19
     · subst i
       simp
-      bv_decide
     simp [h0, h1, h2, h3]
     omega
 
@@ -458,19 +454,15 @@ theorem copy8_zero_four_eq_write32 (mem : Mem)
     by_cases h8 : i = 8
     · subst i
       simp [hb0]
-      bv_decide
     by_cases h9 : i = 9
     · subst i
       simp [hb1]
-      bv_decide
     by_cases h10 : i = 10
     · subst i
       simp [hb2]
-      bv_decide
     by_cases h11 : i = 11
     · subst i
       simp [hb3]
-      bv_decide
     simp [h8, h9, h10, h11]
     omega
 

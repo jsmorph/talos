@@ -1,5 +1,12 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 /-! ## Example: imported-global index offset in the WAT decoder
 
@@ -28,19 +35,19 @@ def importedGlobalWat : String := "
     global.get $d))
 "
 
-private def decoded : Wasm.Module :=
+def decoderImportedGlobalDecoded : Wasm.Module :=
   Wasm.Examples.decodeOrDefault importedGlobalWat
 
 /-- One imported global at index `0`, one declared global at index `1`. -/
 theorem importedGlobalWat_global_layout :
-    decoded.importedGlobals = [("spectest", "ig")] ∧
-    decoded.globals.length = 2 ∧
-    decoded.globals.getLast?.map (·.init) = some (.i32 99) := by
+    decoderImportedGlobalDecoded.importedGlobals = [("spectest", "ig")] ∧
+    decoderImportedGlobalDecoded.globals.length = 2 ∧
+    decoderImportedGlobalDecoded.globals.getLast?.map (·.init) = some (.i32 99) := by
   native_decide
 
 /-- Index baked into the first `global.get` of the first function, if any.
 Projected to `Option Nat` because `Instruction` has no `DecidableEq`. -/
-private def firstGlobalGetIdx (m : Module) : Option Nat :=
+def firstGlobalGetIdx (m : Module) : Option Nat :=
   match m.funcs.head?.map (·.body) with
   | some (Instruction.globalGet i :: _) => some i
   | _                                   => none
@@ -48,18 +55,18 @@ private def firstGlobalGetIdx (m : Module) : Option Nat :=
 /-- The crux: `global.get $d` resolves to index `1` (`importedGlobals.length
 + 0`). A double-counted import would bake in `2`, a dropped import `0`. -/
 theorem importedGlobalWat_getD_index :
-    firstGlobalGetIdx decoded = some 1 := by
+    firstGlobalGetIdx decoderImportedGlobalDecoded = some 1 := by
   native_decide
 
 def getDConfig : Config Unit :=
   { expr := .running
       { locals := {}
-        code := decoded.funcs[0]!.body
-        resultArity := decoded.funcs[0]!.results.length
+        code := decoderImportedGlobalDecoded.funcs[0]!.body
+        resultArity := decoderImportedGlobalDecoded.funcs[0]!.results.length
         callerRemainder := [] }
     store :=
-      { runtime := { instances := #[{ module := decoded, host := {} }], entry := ⟨0⟩ }
-        wasm := decoded.initialStore } }
+      { runtime := { instances := #[{ module := decoderImportedGlobalDecoded, host := {} }], entry := ⟨0⟩ }
+        wasm := decoderImportedGlobalDecoded.initialStore } }
 
 /-- End-to-end: small-step execution reads declared global index `1`. -/
 theorem importedGlobalWat_getD_returns_99 :

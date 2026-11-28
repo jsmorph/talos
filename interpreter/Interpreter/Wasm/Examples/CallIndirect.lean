@@ -1,5 +1,10 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Validate
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Validate
+public meta import Interpreter.Wasm.Validate
+
+@[expose] public section
 
 /-! ## Example: `call_indirect` through a single-entry table
 
@@ -30,12 +35,12 @@ theorem callIndirectModule_valid :
       | .error _ => false) = true := by
   native_decide
 
-private def validationAccepts (module : Module) : Bool :=
+def validationAccepts (module : Module) : Bool :=
   match module.validate with
   | .ok () => true
   | .error _ => false
 
-private def validationModuleWith (body : Program) : Module :=
+def validationModuleWith (body : Program) : Module :=
   { types := [{ params := [], results := [] }]
     funcs := [{ body }]
     tables := [{ min := 1 }] }

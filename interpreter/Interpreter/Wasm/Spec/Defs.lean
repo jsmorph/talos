@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Semantics
-import Interpreter.Wasm.Semantics.Lemmas
+module
+
+public import Interpreter.Wasm.Semantics
+public import Interpreter.Wasm.Semantics.Lemmas
+
+@[expose] public section
 
 /-!
 # Fuel-free spec predicates

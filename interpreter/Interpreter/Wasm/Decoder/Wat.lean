@@ -1,5 +1,9 @@
-import Interpreter.Wasm.Syntax
-import Std.Data.HashMap
+module
+
+public import Interpreter.Wasm.Syntax
+public import Std.Data.HashMap
+
+@[expose] public section
 
 /-!
 # WAT decoder
@@ -45,32 +49,32 @@ deriving Inhabited, Repr
 
 abbrev Err := String
 
-private def isWatSpace (c : Char) : Bool :=
+def isWatSpace (c : Char) : Bool :=
   c = ' ' || c = '\t' || c = '\n' || c = '\r'
 
-private def isAtomChar (c : Char) : Bool :=
+def isAtomChar (c : Char) : Bool :=
   ¬ (isWatSpace c || c = '(' || c = ')')
 
-private partial def dropLine : List Char → List Char
+partial def dropLine : List Char → List Char
   | [] => []
   | '\n' :: r => '\n' :: r
   | _ :: r => dropLine r
 
-private partial def dropBlock : Nat → List Char → List Char
+partial def dropBlock : Nat → List Char → List Char
   | _,         [] => []
   | depth,     '(' :: ';' :: r => dropBlock (depth + 1) r
   | 0,         ';' :: ')' :: r => r
   | depth + 1, ';' :: ')' :: r => dropBlock depth r
   | depth,     _ :: r => dropBlock depth r
 
-private partial def copyString (cs : List Char) (acc : List Char) : List Char × List Char :=
+partial def copyString (cs : List Char) (acc : List Char) : List Char × List Char :=
   match cs with
   | [] => ([], acc)
   | '"' :: rest => (rest, '"' :: acc)
   | '\\' :: c :: rest => copyString rest (c :: '\\' :: acc)
   | c :: rest => copyString rest (c :: acc)
 
-private partial def stripCommentsAux (cs : List Char) (acc : List Char) : List Char :=
+partial def stripCommentsAux (cs : List Char) (acc : List Char) : List Char :=
   match cs with
   | ';' :: ';' :: rest => stripCommentsAux (dropLine rest) acc
   | '(' :: ';' :: rest => stripCommentsAux (dropBlock 0 rest) acc
@@ -80,10 +84,10 @@ private partial def stripCommentsAux (cs : List Char) (acc : List Char) : List C
   | c :: rest => stripCommentsAux rest (c :: acc)
   | [] => acc.reverse
 
-private def stripComments (s : String) : String :=
+def stripComments (s : String) : String :=
   String.ofList (stripCommentsAux s.toList [])
 
-private partial def tokenizeAux (cs : List Char) (acc : List String) : List String :=
+partial def tokenizeAux (cs : List Char) (acc : List String) : List String :=
   match cs with
   | [] => acc.reverse
   | c :: rest =>
@@ -108,7 +112,7 @@ where
     | '\\' :: c :: rest, acc => readString rest (c :: '\\' :: acc)
     | c :: rest, acc => readString rest (c :: acc)
 
-private def tokenize (s : String) : List String :=
+def tokenize (s : String) : List String :=
   tokenizeAux (stripComments s).toList []
 
 partial def parseSexprs : List String → Except Err (List Sexpr × List String)
@@ -131,7 +135,7 @@ def parseAll (s : String) : Except Err (List Sexpr) := do
   | [] => .ok xs
   | _ => .error "unexpected ')'"
 
-private def fromHexString? (s : String) : Option Nat := Id.run do
+def fromHexString? (s : String) : Option Nat := Id.run do
   if s.isEmpty then return none
   let mut acc := 0
   for c in s.toList do
@@ -144,10 +148,10 @@ private def fromHexString? (s : String) : Option Nat := Id.run do
     | some d => acc := acc * 16 + d
   return some acc
 
-private def stripUnderscores (s : String) : String :=
+def stripUnderscores (s : String) : String :=
   String.ofList (s.toList.filter (· ≠ '_'))
 
-private def parseUnsignedNat (s : String) : Except Err Nat :=
+def parseUnsignedNat (s : String) : Except Err Nat :=
   if s.isEmpty then .error "empty integer literal"
   else if s.startsWith "0x" || s.startsWith "0X" then
     match fromHexString? (s.drop 2).toString with
@@ -163,11 +167,11 @@ def parseU32 (s : String) : Except Err UInt32 := do
   if n ≥ 2 ^ 32 then .error s!"integer out of range: {s}"
   else .ok (UInt32.ofNat n)
 
-private def parseNat (s : String) : Except Err Nat := do
+def parseNat (s : String) : Except Err Nat := do
   let v ← parseU32 s
   .ok v.toNat
 
-private def parseIntLiteral (s : String) (bits : Nat) : Except Err Nat := do
+def parseIntLiteral (s : String) (bits : Nat) : Except Err Nat := do
   let (neg, body0) :=
     if s.startsWith "-" then (true, (s.drop 1).toString)
     else if s.startsWith "+" then (false, (s.drop 1).toString)
@@ -200,17 +204,17 @@ decimal goes through `Float.ofScientific` (correctly rounded). The `f32`
 encoder rounds the `f64` magnitude to single precision — exact for every
 value `wasm-tools` prints, since those round-trip. -/
 
-private def floatMulPow2 : Float → Nat → Float
+def floatMulPow2 : Float → Nat → Float
   | x, 0 => x
   | x, n + 1 => floatMulPow2 (x * 2.0) n
-private def floatDivPow2 : Float → Nat → Float
+def floatDivPow2 : Float → Nat → Float
   | x, 0 => x
   | x, n + 1 => floatDivPow2 (x / 2.0) n
-private def floatScalePow2 (x : Float) (e : Int) : Float :=
+def floatScalePow2 (x : Float) (e : Int) : Float :=
   if e ≥ 0 then floatMulPow2 x e.toNat else floatDivPow2 x (-e).toNat
 
 /-- Exponent after an explicit `p`/`e` separator; empty is malformed (`1e`). -/
-private def parseDecExp (s : String) : Except Err Int :=
+def parseDecExp (s : String) : Except Err Int :=
   let (neg, body) :=
     if s.startsWith "-" then (true, (s.drop 1).toString)
     else if s.startsWith "+" then (false, (s.drop 1).toString)
@@ -228,7 +232,7 @@ differential runs). Hence one dot and one exponent at most — extra
 segments (`1.2.3`, `0x1p2p9`) are malformed, not silently dropped —
 an explicit exponent must be non-empty, and an unlexable mantissa is
 an error rather than 0. -/
-private def parseHexFloatMag (body : String) : Except Err Float := do
+def parseHexFloatMag (body : String) : Except Err Float := do
   let (mant, expS?) ← match (body.replace "P" "p").splitOn "p" with
     | [m]     => .ok (m, none)
     | [m, e]  => .ok (m, some e)
@@ -246,7 +250,7 @@ private def parseHexFloatMag (body : String) : Except Err Float := do
 
 /-- Magnitude of a decimal float `INT[.FRAC][e±EXP]` (no sign). Same
 strictness rules as `parseHexFloatMag`. -/
-private def parseDecFloatMag (body : String) : Except Err Float := do
+def parseDecFloatMag (body : String) : Except Err Float := do
   let (mant, expS?) ← match (body.replace "E" "e").splitOn "e" with
     | [m]     => .ok (m, none)
     | [m, e]  => .ok (m, some e)
@@ -264,12 +268,12 @@ private def parseDecFloatMag (body : String) : Except Err Float := do
   .ok (Float.ofScientific m (exp < 0) exp.natAbs)
 
 /-- Sign and width-independent body of a float literal. -/
-private inductive FloatLitBody where
+inductive FloatLitBody where
   | finite (mag : Float)
   | inf
   | nan (payload : Option Nat)
 
-private def classifyFloatLit (s : String) : Except Err (Bool × FloatLitBody) := do
+def classifyFloatLit (s : String) : Except Err (Bool × FloatLitBody) := do
   let (neg, r0) :=
     if s.startsWith "-" then (true, (s.drop 1).toString)
     else if s.startsWith "+" then (false, (s.drop 1).toString)
@@ -314,7 +318,7 @@ their own constructor; the GC abstract reference types (`anyref`,
 nullable `ValueType.ref` form over the matching `GcHeapType`.
 `nullfuncref` / `nullexternref` collapse onto `funcref` / `externref`,
 which already carry their own null. -/
-private def atomToValueType? : String → Option Wasm.ValueType
+def atomToValueType? : String → Option Wasm.ValueType
   | "i32"       => some .i32
   | "i64"       => some .i64
   | "f32"       => some .f32
@@ -333,10 +337,10 @@ private def atomToValueType? : String → Option Wasm.ValueType
   | "nullexternref" => some .externref
   | _     => none
 
-private def isNullFuncrefHeapType (ht : String) : Bool :=
+def isNullFuncrefHeapType (ht : String) : Bool :=
   ht == "func" || ht == "nofunc"
 
-private def isNullExternrefHeapType (ht : String) : Bool :=
+def isNullExternrefHeapType (ht : String) : Bool :=
   ht == "extern" || ht == "noextern"
 
 /-- Decode a heap-type atom: the `func` of `(ref func)`, the `extern` of
@@ -344,7 +348,7 @@ private def isNullExternrefHeapType (ht : String) : Bool :=
 map to their own `GcHeapType` constructor; symbolic (`$t`) and numeric
 atoms refer to the module's type table and become `.named` / `.concrete`,
 resolved to an index during validation. -/
-private def atomToHeapType (ht : String) : Wasm.GcHeapType :=
+def atomToHeapType (ht : String) : Wasm.GcHeapType :=
   if ht == "any" then .any
   else if ht == "eq" then .eq
   else if ht == "i31" then .i31
@@ -362,7 +366,7 @@ private def atomToHeapType (ht : String) : Wasm.GcHeapType :=
     | some index => .concrete index
     | none => .named ht
 
-private def listToValueType (xs : List Sexpr) : Wasm.ValueType :=
+def listToValueType (xs : List Sexpr) : Wasm.ValueType :=
   match xs with
   | [.atom "ref", .atom ht] =>
       .ref false (atomToHeapType ht)
@@ -382,7 +386,7 @@ abbrev BlockTypeResolver :=
 /-- Skip block/loop/if type annotations and collect explicit param/result
 types. `(type N)` references are resolved through the module type table so
 the structured instruction retains both exact types and cached arities. -/
-private partial def skipBlockType (resolveType : BlockTypeResolver) :
+partial def skipBlockType (resolveType : BlockTypeResolver) :
     List Wasm.ValueType → List Wasm.ValueType → List Sexpr →
     List Wasm.ValueType × List Wasm.ValueType × List Sexpr
   | ps, rs, .list (.atom "result" :: ts) :: r =>
@@ -426,7 +430,7 @@ Returns the label (if any), parameter types, result types, and the
 remaining tokens. `resolveType` looks up `(type N)` references against
 the module's type table; pass `fun _ => none` (or `Ctx.empty`'s default)
 when no type table is available. -/
-private def parseBlockHeader (resolveType : BlockTypeResolver) (xs : List Sexpr)
+def parseBlockHeader (resolveType : BlockTypeResolver) (xs : List Sexpr)
     : Option String × List Wasm.ValueType × List Wasm.ValueType × List Sexpr :=
   match xs with
   | .atom a :: r =>
@@ -444,7 +448,7 @@ private def parseBlockHeader (resolveType : BlockTypeResolver) (xs : List Sexpr)
 the signature, if it has one we can model. Pulled up before `Ctx` so the
 ctx can carry the collected type table for `call_indirect (type N)`
 resolution. -/
-private structure TypeEntry where
+structure TypeEntry where
   symId : Option String
   sig   : Option (List Wasm.ValueType × List Wasm.ValueType)
   /-- GC composite type (struct/array/func) for this entry, if recognised
@@ -500,7 +504,7 @@ def Ctx.empty : Ctx := { funcIds := {}, localIds := {} }
 def Ctx.pushLabel (ctx : Ctx) (name : Option String) : Ctx :=
   { ctx with labelNames := name :: ctx.labelNames }
 
-private def resolveNamed (table : Std.HashMap String Nat) (kind : String)
+def resolveNamed (table : Std.HashMap String Nat) (kind : String)
     (s : String) : Except Err Nat :=
   if s.startsWith "$" then
     match table[(s.drop 1).toString]? with
@@ -511,7 +515,7 @@ private def resolveNamed (table : Std.HashMap String Nat) (kind : String)
 /-- Decode a `ref.null ht` heap-type immediate into the matching null-ref
 push. Heap types from proposals we don't model decode to `unreachable`
 (consistent with their other instructions). -/
-private def refNullInstr (types : Array TypeEntry) (ht : String) : Wasm.Instruction :=
+def refNullInstr (types : Array TypeEntry) (ht : String) : Wasm.Instruction :=
   let staticType := Wasm.ValueType.ref true (atomToHeapType ht)
   if isNullFuncrefHeapType ht then .refNull staticType
   else if isNullExternrefHeapType ht then .refNullExtern staticType
@@ -534,11 +538,11 @@ private def refNullInstr (types : Array TypeEntry) (ht : String) : Wasm.Instruct
     | _ => .refNull staticType
   else .unreachable
 
-private def dropTrailingLabel : List Sexpr → List Sexpr
+def dropTrailingLabel : List Sexpr → List Sexpr
   | .atom a :: r => if a.startsWith "$" then r else .atom a :: r
   | xs => xs
 
-private def resolveLabel (ctx : Ctx) (s : String) : Except Err Nat :=
+def resolveLabel (ctx : Ctx) (s : String) : Except Err Nat :=
   if s.startsWith "$" then
     let name := (s.drop 1).toString
     match ctx.labelNames.findIdx? (fun n => n = some name) with
@@ -547,7 +551,7 @@ private def resolveLabel (ctx : Ctx) (s : String) : Except Err Nat :=
   else parseNat s
 
 /-- Parse a single bare-op atom (no immediate, no folded operands). -/
-private def parsePlainOp (rejectUnsupported : Bool) : String → Except Err Wasm.Instruction
+def parsePlainOp (rejectUnsupported : Bool) : String → Except Err Wasm.Instruction
   | "i32.add"   => .ok .add
   | "i32.sub"   => .ok .sub
   | "i32.mul"   => .ok .mul
@@ -732,7 +736,7 @@ private def parsePlainOp (rejectUnsupported : Bool) : String → Except Err Wasm
 /-- Memory ops that take an offset immediate, mapped to their natural
 alignment (byte width). `offset=`/`align=` attributes are parsed off the
 token stream; `memOpToInstruction` then emits the real load/store. -/
-private def isMemOp (op : String) : Option Nat :=
+def isMemOp (op : String) : Option Nat :=
   match op with
   | "i32.load"     => some 4
   | "i32.load8_u"  | "i32.load8_s"  => some 1
@@ -766,7 +770,7 @@ private def isMemOp (op : String) : Option Nat :=
   | "v128.load64_lane" | "v128.store64_lane" => some 8
   | _              => none
 
-private def parseEqImmediate (pref : String) (s : String) : Option Nat :=
+def parseEqImmediate (pref : String) (s : String) : Option Nat :=
   if s.startsWith pref then
     let body := stripUnderscores (s.drop pref.length).toString
     match parseUnsignedNat body with
@@ -774,12 +778,12 @@ private def parseEqImmediate (pref : String) (s : String) : Option Nat :=
     | .error _ => none
   else none
 
-private def isPowerOfTwo (n : Nat) : Bool :=
+def isPowerOfTwo (n : Nat) : Bool :=
   n ≠ 0 && n &&& (n - 1) = 0
 
 /-- Pull optional `offset=N` and `align=N` atoms off the front of `toks`.
 Returns the parsed byte offset (default 0) and the remaining tokens. -/
-private def consumeMemAttrs (natAlign : Nat) (toks : List Sexpr)
+def consumeMemAttrs (natAlign : Nat) (toks : List Sexpr)
     : Except Err (UInt32 × List Sexpr) :=
   let rec loop (offset : UInt32) (toks : List Sexpr) : Except Err (UInt32 × List Sexpr) :=
     match toks with
@@ -804,7 +808,7 @@ Shape-prefixed mnemonics (`i8x16.add`, `f64x2.pmin`, …) decode through
 `simdOp?`; the per-shape availability of an op (e.g. `mul` only on
 i16x8/i32x4/i64x2) is validation's concern, not the decoder's. -/
 
-private def simdShapeOfPrefix? : String → Option Wasm.Simd.Shape
+def simdShapeOfPrefix? : String → Option Wasm.Simd.Shape
   | "i8x16" => some .i8x16
   | "i16x8" => some .i16x8
   | "i32x4" => some .i32x4
@@ -813,11 +817,11 @@ private def simdShapeOfPrefix? : String → Option Wasm.Simd.Shape
   | "f64x2" => some .f64x2
   | _ => none
 
-private def simdShapeIsFloat : Wasm.Simd.Shape → Bool
+def simdShapeIsFloat : Wasm.Simd.Shape → Bool
   | .f32x4 | .f64x2 => true
   | _ => false
 
-private def simdICmp? : String → Option Wasm.Simd.ICmp
+def simdICmp? : String → Option Wasm.Simd.ICmp
   | "eq" => some .eq | "ne" => some .ne
   | "lt_s" => some .ltS | "lt_u" => some .ltU
   | "gt_s" => some .gtS | "gt_u" => some .gtU
@@ -825,14 +829,14 @@ private def simdICmp? : String → Option Wasm.Simd.ICmp
   | "ge_s" => some .geS | "ge_u" => some .geU
   | _ => none
 
-private def simdFCmp? : String → Option Wasm.Simd.FCmp
+def simdFCmp? : String → Option Wasm.Simd.FCmp
   | "eq" => some .eq | "ne" => some .ne
   | "lt" => some .lt | "gt" => some .gt
   | "le" => some .le | "ge" => some .ge
   | _ => none
 
 /-- Decode a no-immediate SIMD mnemonic. -/
-private def simdOp? (op : String) : Option Wasm.Instruction :=
+def simdOp? (op : String) : Option Wasm.Instruction :=
   match op with
   | "v128.not"       => some (.vUnOp .not)
   | "v128.and"       => some (.vBinOp .and)
@@ -928,7 +932,7 @@ private def simdOp? (op : String) : Option Wasm.Instruction :=
 
 /-- Parse the immediates of a `v128.const`: a shape atom followed by the
 shape's lane count of literals. -/
-private def parseV128Const (toks : List Sexpr)
+def parseV128Const (toks : List Sexpr)
     : Except Err (BitVec 128 × List Sexpr) := do
   match toks with
   | .atom shapeName :: r =>
@@ -956,7 +960,7 @@ private def parseV128Const (toks : List Sexpr)
 
 /-- Decode the lane-immediate SIMD ops (`extract_lane`, `replace_lane`):
 returns the constructor to apply to the parsed lane index. -/
-private def simdLaneOp? (op : String) : Option (Nat → Wasm.Instruction) :=
+def simdLaneOp? (op : String) : Option (Nat → Wasm.Instruction) :=
   match op.splitOn "." with
   | [pre, name] =>
     match simdShapeOfPrefix? pre with
@@ -971,7 +975,7 @@ private def simdLaneOp? (op : String) : Option (Nat → Wasm.Instruction) :=
   | _ => none
 
 /-- Map a memory op name and byte offset to the appropriate instruction. -/
-private def memOpToInstruction (op : String) (offset : UInt32) : Wasm.Instruction :=
+def memOpToInstruction (op : String) (offset : UInt32) : Wasm.Instruction :=
   match op with
   | "i32.load"     => .load32  offset
   | "i32.load8_u"  => .load8U  offset
@@ -1014,7 +1018,7 @@ private def memOpToInstruction (op : String) (offset : UInt32) : Wasm.Instructio
 
 /-- Map a lane-indexed v128 memory op (`v128.load8_lane` …) to its
 instruction. Returns `none` for non-lane ops. -/
-private def memLaneOpToInstruction (op : String) (offset : UInt32) (lane : Nat)
+def memLaneOpToInstruction (op : String) (offset : UInt32) (lane : Nat)
     : Option Wasm.Instruction :=
   match op with
   | "v128.load8_lane"   => some (.v128LoadLane  8  lane offset)
@@ -1027,7 +1031,7 @@ private def memLaneOpToInstruction (op : String) (offset : UInt32) (lane : Nat)
   | "v128.store64_lane" => some (.v128StoreLane 64 lane offset)
   | _ => none
 
-private def looksLikeLabel (s : String) : Bool :=
+def looksLikeLabel (s : String) : Bool :=
   if s.startsWith "$" then true
   else if s.isEmpty then false
   else if s.startsWith "0x" || s.startsWith "0X" then
@@ -1041,7 +1045,7 @@ private def looksLikeLabel (s : String) : Bool :=
 or a numeric literal when present and defaults to table `0` when omitted;
 we only consume a leading atom that `looksLikeLabel` (so an immediately
 following bare instruction op is left for the next parse step). -/
-private def parseOptTableIdx (ctx : Ctx) (mk : Nat → Wasm.Instruction)
+def parseOptTableIdx (ctx : Ctx) (mk : Nat → Wasm.Instruction)
     : List Sexpr → Except Err (List Wasm.Instruction × List Sexpr)
   | .atom a :: rest' =>
     if looksLikeLabel a then do
@@ -1051,7 +1055,7 @@ private def parseOptTableIdx (ctx : Ctx) (mk : Nat → Wasm.Instruction)
 
 /-- `table.copy` carries 0 or 2 table-index immediates: none for the
 default `(0, 0)` pair, or `dst src` when either table is non-default. -/
-private def parseTableCopy (ctx : Ctx)
+def parseTableCopy (ctx : Ctx)
     : List Sexpr → Except Err (List Wasm.Instruction × List Sexpr)
   | .atom a :: .atom b :: rest' =>
     if looksLikeLabel a && looksLikeLabel b then do
@@ -1063,7 +1067,7 @@ private def parseTableCopy (ctx : Ctx)
 
 /-- `table.init` carries 1 or 2 immediates: `elemIdx` alone for the
 default table, or `tableIdx elemIdx` when the table is non-default. -/
-private def parseTableInit (ctx : Ctx)
+def parseTableInit (ctx : Ctx)
     : List Sexpr → Except Err (List Wasm.Instruction × List Sexpr)
   | .atom a :: .atom b :: rest' =>
     if looksLikeLabel a && looksLikeLabel b then do
@@ -1081,7 +1085,7 @@ private def parseTableInit (ctx : Ctx)
 
 /-- Resolve a type-index immediate (`$t` or numeric) against the
 module's type table. Used by `call_ref` / `return_call_ref`. -/
-private def resolveTypeIdx (ctx : Ctx) (n : String) : Except Err Nat :=
+def resolveTypeIdx (ctx : Ctx) (n : String) : Except Err Nat :=
   if n.startsWith "$" then
     let name := (n.drop 1).toString
     match ctx.types.findIdx? (fun te => te.symId = some name) with
@@ -1092,7 +1096,7 @@ private def resolveTypeIdx (ctx : Ctx) (n : String) : Except Err Nat :=
 /-- Resolve a heap-type token (`any`/`eq`/`i31`/`struct`/`array`/`none`,
 the `func`/`extern` families, or a concrete `$t`/index) to a
 `GcHeapType`. -/
-private def heapTypeOfAtom (ctx : Ctx) (a : String) : Except Err Wasm.GcHeapType :=
+def heapTypeOfAtom (ctx : Ctx) (a : String) : Except Err Wasm.GcHeapType :=
   match a with
   | "any"      => .ok .any
   | "eq"       => .ok .eq
@@ -1109,7 +1113,7 @@ private def heapTypeOfAtom (ctx : Ctx) (a : String) : Except Err Wasm.GcHeapType
 /-- Parse a `ref.test`/`ref.cast` target reference-type immediate into its
 nullability and heap type. Accepts the `…ref` abbreviations (all nullable),
 the explicit `(ref ht)` (non-nullable), and `(ref null ht)` (nullable). -/
-private def parseRefTypeImmediate (ctx : Ctx) : Sexpr → Except Err (Bool × Wasm.GcHeapType)
+def parseRefTypeImmediate (ctx : Ctx) : Sexpr → Except Err (Bool × Wasm.GcHeapType)
   | .atom "anyref"        => .ok (true, .any)
   | .atom "eqref"         => .ok (true, .eq)
   | .atom "i31ref"        => .ok (true, .i31)
@@ -1125,13 +1129,13 @@ private def parseRefTypeImmediate (ctx : Ctx) : Sexpr → Except Err (Bool × Wa
   | _ => .error "unsupported ref-type immediate"
 
 /-- Wrap a memory instruction for a non-default memory (multi-memory). -/
-private def wrapMem (k : Nat) (i : Wasm.Instruction) : Wasm.Instruction :=
+def wrapMem (k : Nat) (i : Wasm.Instruction) : Wasm.Instruction :=
   if k = 0 then i else .memOp k i
 
 /-- Parse the optional memory-index immediate of `memory.size` /
 `memory.grow` / `memory.fill` (default 0), wrapping for non-default
 memories. -/
-private def parseOptMemIdx (ctx : Ctx) (i : Wasm.Instruction)
+def parseOptMemIdx (ctx : Ctx) (i : Wasm.Instruction)
     : List Sexpr → Except Err (List Wasm.Instruction × List Sexpr)
   | .atom a :: rest' =>
     if looksLikeLabel a then do
@@ -1141,7 +1145,7 @@ private def parseOptMemIdx (ctx : Ctx) (i : Wasm.Instruction)
 
 /-- `memory.copy` carries 0 or 2 memory-index immediates. Distinct (or
 non-default) memories decode to the cross-memory instruction. -/
-private def parseMemCopy (ctx : Ctx)
+def parseMemCopy (ctx : Ctx)
     : List Sexpr → Except Err (List Wasm.Instruction × List Sexpr)
   | .atom a :: .atom b :: rest' =>
     if looksLikeLabel a && looksLikeLabel b then do
@@ -1154,7 +1158,7 @@ private def parseMemCopy (ctx : Ctx)
 
 /-- `memory.init` carries 1 or 2 immediates: `dataIdx` alone for the
 default memory, or `memIdx dataIdx`. -/
-private def parseMemInit (ctx : Ctx)
+def parseMemInit (ctx : Ctx)
     : List Sexpr → Except Err (List Wasm.Instruction × List Sexpr)
   | .atom a :: .atom b :: rest' =>
     if looksLikeLabel a && looksLikeLabel b then do
@@ -1172,7 +1176,7 @@ private def parseMemInit (ctx : Ctx)
 
 mutual
 
-private partial def parseInstr (ctx : Ctx) (toks : List Sexpr)
+partial def parseInstr (ctx : Ctx) (toks : List Sexpr)
     : Except Err (List Wasm.Instruction × List Sexpr) :=
   match toks with
   | [] => .error "unexpected end of instruction stream"
@@ -1390,7 +1394,7 @@ private partial def parseInstr (ctx : Ctx) (toks : List Sexpr)
         -- and never fall through here.)
         | .ok i => .ok ([i], rest)
 
-private partial def parseFolded (ctx : Ctx) (xs : List Sexpr)
+partial def parseFolded (ctx : Ctx) (xs : List Sexpr)
     : Except Err (List Wasm.Instruction) :=
   match xs with
   | [] => .error "empty folded form"
@@ -1492,7 +1496,7 @@ element of `ops` must be a `(...)` form; each is parsed as a nested folded
 form and the results are concatenated in source order, yielding the operand
 prefix that precedes the folded head instruction. `what` names the form
 being parsed in the error message for a stray atom operand. -/
-private partial def foldedOperands (ctx : Ctx) (what : String)
+partial def foldedOperands (ctx : Ctx) (what : String)
     (ops : List Sexpr) : Except Err (List Wasm.Instruction) := do
   let mut acc : List Wasm.Instruction := []
   for s in ops do
@@ -1503,7 +1507,7 @@ private partial def foldedOperands (ctx : Ctx) (what : String)
     | .atom a => .error s!"{what}: unexpected atom operand '{a}'"
   .ok acc
 
-private partial def foldedStructured (ctx : Ctx)
+partial def foldedStructured (ctx : Ctx)
     (mk : List Wasm.ValueType → List Wasm.ValueType →
       List Wasm.Instruction → Wasm.Instruction)
     (xs : List Sexpr) : Except Err (List Wasm.Instruction) := do
@@ -1511,7 +1515,7 @@ private partial def foldedStructured (ctx : Ctx)
   let body ← parseInstrSeq (ctx.pushLabel label) xs'
   .ok [mk ps rs body]
 
-private partial def foldedIf (ctx : Ctx) (xs : List Sexpr)
+partial def foldedIf (ctx : Ctx) (xs : List Sexpr)
     : Except Err (List Wasm.Instruction) := do
   let (label, ps, rs, xs') := parseBlockHeader ctx.resolveBlockType xs
   let bodyCtx := ctx.pushLabel label
@@ -1541,7 +1545,7 @@ private partial def foldedIf (ctx : Ctx) (xs : List Sexpr)
     | _ => .error "folded if: trailing forms after (else …)"
   | _ => .error "folded if: missing (then …)"
 
-private partial def foldedWithImmediate (ctx : Ctx)
+partial def foldedWithImmediate (ctx : Ctx)
     (resolve : String → Except Err Nat)
     (mkInstrs : Nat → List Wasm.Instruction)
     : List Sexpr → Except Err (List Wasm.Instruction)
@@ -1553,7 +1557,7 @@ private partial def foldedWithImmediate (ctx : Ctx)
 /-- Folded form of `table.get` / `table.size`. The table-index immediate is
 optional (a leading `$name`/numeric atom, default 0); everything after it
 is the folded index-operand sub-expression(s). -/
-private partial def foldedOptTableIdx (ctx : Ctx) (mk : Nat → Wasm.Instruction)
+partial def foldedOptTableIdx (ctx : Ctx) (mk : Nat → Wasm.Instruction)
     : List Sexpr → Except Err (List Wasm.Instruction)
   | xs => do
     let (tableIdx, ops) ← match xs with
@@ -1565,7 +1569,7 @@ private partial def foldedOptTableIdx (ctx : Ctx) (mk : Nat → Wasm.Instruction
     let acc ← foldedOperands ctx "folded table op" ops
     .ok (acc ++ [mk tableIdx])
 
-private partial def parseBrTable (ctx : Ctx) (toks : List Sexpr)
+partial def parseBrTable (ctx : Ctx) (toks : List Sexpr)
     : Except Err (List Wasm.Instruction × List Sexpr) := do
   let mut labels : List Nat := []
   let mut cur := toks
@@ -1582,7 +1586,7 @@ private partial def parseBrTable (ctx : Ctx) (toks : List Sexpr)
   | [] => .error "br_table requires at least one label"
   | dflt :: revRest => .ok ([.brTable revRest.reverse dflt], cur)
 
-private partial def foldedBrTable (ctx : Ctx) (xs : List Sexpr)
+partial def foldedBrTable (ctx : Ctx) (xs : List Sexpr)
     : Except Err (List Wasm.Instruction) := do
   let mut labels : List Nat := []
   let mut cur := xs
@@ -1605,7 +1609,7 @@ private partial def foldedBrTable (ctx : Ctx) (xs : List Sexpr)
   let acc ← foldedOperands ctx "folded br_table" cur
   .ok (acc ++ [.brTable targets dflt])
 
-private partial def foldedSelect (ctx : Ctx) (xs : List Sexpr)
+partial def foldedSelect (ctx : Ctx) (xs : List Sexpr)
     : Except Err (List Wasm.Instruction) := do
   let xs' := xs.filter fun
     | .list (.atom "result" :: _) => false
@@ -1613,7 +1617,7 @@ private partial def foldedSelect (ctx : Ctx) (xs : List Sexpr)
   let acc ← foldedOperands ctx "folded select" xs'
   .ok (acc ++ [.select])
 
-private partial def parseLocalTee (ctx : Ctx) (toks : List Sexpr)
+partial def parseLocalTee (ctx : Ctx) (toks : List Sexpr)
     : Except Err (List Wasm.Instruction × List Sexpr) := do
   match toks with
   | .atom n :: rest => do
@@ -1621,13 +1625,13 @@ private partial def parseLocalTee (ctx : Ctx) (toks : List Sexpr)
     .ok ([.localTee i], rest)
   | _ => .error "local.tee expects an immediate"
 
-private partial def parseImmediateConst {α} (mk : α → Wasm.Instruction)
+partial def parseImmediateConst {α} (mk : α → Wasm.Instruction)
     (parseV : String → Except Err α) (op : String)
     : List Sexpr → Except Err (List Wasm.Instruction × List Sexpr)
   | .atom n :: rest' => do .ok ([mk (← parseV n)], rest')
   | _ => .error s!"{op} expects an immediate"
 
-private partial def parseImmediateNat (resolve : String → Except Err Nat)
+partial def parseImmediateNat (resolve : String → Except Err Nat)
     (mk : Nat → Wasm.Instruction) (op : String)
     : List Sexpr → Except Err (List Wasm.Instruction × List Sexpr)
   | .atom n :: rest' => do .ok ([mk (← resolve n)], rest')
@@ -1638,7 +1642,7 @@ are `call_indirect [$t | (table T)] (type N)`; raw `.wat` may instead
 carry an inline `(param …)* (result …)*` signature, which we resolve to
 the first matching entry of the module's type table (wasm-tools'
 canonical encoding always materialises such an entry). -/
-private partial def parseCallIndirect (ctx : Ctx)
+partial def parseCallIndirect (ctx : Ctx)
     (mk : Nat → Nat → Wasm.Instruction) (toks : List Sexpr)
     : Except Err (List Wasm.Instruction × List Sexpr) := do
   let mut rest := toks
@@ -1710,7 +1714,7 @@ depths relative to the scope *enclosing* the `try_table` (label 0 is the
 construct surrounding it), matching the binary format: a caught
 exception behaves like a branch executed at the position of the
 `try_table` instruction itself. -/
-private partial def parseCatchClauses (ctx bodyCtx : Ctx)
+partial def parseCatchClauses (ctx bodyCtx : Ctx)
     : List Sexpr → Except Err (List Wasm.CatchClause × List Sexpr)
   | .list (.atom "catch" :: .atom t :: .atom l :: _) :: r => do
     let tag ← resolveNamed ctx.tagNames "tag" t
@@ -1732,7 +1736,7 @@ private partial def parseCatchClauses (ctx bodyCtx : Ctx)
     .ok (.catchAllRef lbl :: rest, r')
   | r => .ok ([], r)
 
-private partial def parseTryTable (ctx : Ctx) (toks : List Sexpr)
+partial def parseTryTable (ctx : Ctx) (toks : List Sexpr)
     : Except Err (List Wasm.Instruction × List Sexpr) := do
   let (label, ps, rs, toks') := parseBlockHeader ctx.resolveBlockType toks
   let bodyCtx := ctx.pushLabel label
@@ -1744,7 +1748,7 @@ private partial def parseTryTable (ctx : Ctx) (toks : List Sexpr)
         dropTrailingLabel aft)
   | [] => .error "unterminated try_table"
 
-private partial def foldedTryTable (ctx : Ctx) (xs : List Sexpr)
+partial def foldedTryTable (ctx : Ctx) (xs : List Sexpr)
     : Except Err (List Wasm.Instruction) := do
   let (label, ps, rs, xs') := parseBlockHeader ctx.resolveBlockType xs
   let bodyCtx := ctx.pushLabel label
@@ -1752,7 +1756,7 @@ private partial def foldedTryTable (ctx : Ctx) (xs : List Sexpr)
   let body ← parseInstrSeq bodyCtx xs''
   .ok [.tryTable ps.length rs.length clauses body ps rs]
 
-private partial def parseStructured (ctx : Ctx)
+partial def parseStructured (ctx : Ctx)
     (mk : List Wasm.ValueType → List Wasm.ValueType →
       List Wasm.Instruction → Wasm.Instruction)
     (stops : Array String) (toks : List Sexpr)
@@ -1763,7 +1767,7 @@ private partial def parseStructured (ctx : Ctx)
   | _ :: aft => .ok ([mk ps rs body], dropTrailingLabel aft)
   | [] => .error "unterminated structured instruction"
 
-private partial def parseIf (ctx : Ctx) (toks : List Sexpr)
+partial def parseIf (ctx : Ctx) (toks : List Sexpr)
     : Except Err (List Wasm.Instruction × List Sexpr) := do
   let (label, ps, rs, toks') := parseBlockHeader ctx.resolveBlockType toks
   let bodyCtx := ctx.pushLabel label
@@ -1780,7 +1784,7 @@ private partial def parseIf (ctx : Ctx) (toks : List Sexpr)
     .ok ([.iff ps.length rs.length thn [] ps rs], dropTrailingLabel aft1)
   | _ => .error "if without else/end"
 
-private partial def parseInstrsUntil (ctx : Ctx) (toks : List Sexpr)
+partial def parseInstrsUntil (ctx : Ctx) (toks : List Sexpr)
     (stops : Array String)
     : Except Err (List Wasm.Instruction × List Sexpr) := do
   let mut acc : List Wasm.Instruction := []
@@ -1800,7 +1804,7 @@ private partial def parseInstrsUntil (ctx : Ctx) (toks : List Sexpr)
       s := s'
   return (acc, s)  -- unreachable
 
-private partial def parseInstrSeq (ctx : Ctx) (toks : List Sexpr)
+partial def parseInstrSeq (ctx : Ctx) (toks : List Sexpr)
     : Except Err (List Wasm.Instruction) := do
   let mut acc : List Wasm.Instruction := []
   let mut s := toks
@@ -1812,14 +1816,14 @@ private partial def parseInstrSeq (ctx : Ctx) (toks : List Sexpr)
 
 end
 
-private structure FuncDecl where
+structure FuncDecl where
   symId         : Option String
   inlineExports : List String
   func          : Wasm.Function
 
 /-- Resolve a `(type N)` / `(type $sig)` reference to its type-table
 index. -/
-private def resolveTypeIdxRef (types : Array TypeEntry) (s : String)
+def resolveTypeIdxRef (types : Array TypeEntry) (s : String)
     : Except Err Nat :=
   if s.startsWith "$" then
     let name := (s.drop 1).toString
@@ -1829,7 +1833,7 @@ private def resolveTypeIdxRef (types : Array TypeEntry) (s : String)
   else
     parseNat s
 
-private def resolveTypeRef (types : Array TypeEntry) (s : String)
+def resolveTypeRef (types : Array TypeEntry) (s : String)
     : Except Err (List Wasm.ValueType × List Wasm.ValueType) := do
   let idx ← resolveTypeIdxRef types s
   match types[idx]? with
@@ -1840,7 +1844,7 @@ private def resolveTypeRef (types : Array TypeEntry) (s : String)
 
 /-- Parse a storage type (`i8`/`i16` packed, a numeric/value type, or a
 reference type) for a struct field or array element (GC proposal). -/
-private def parseStorageType : Sexpr → Wasm.StorageType
+def parseStorageType : Sexpr → Wasm.StorageType
   | .atom "i8"  => .packed 8
   | .atom "i16" => .packed 16
   | .atom a     => match atomToValueType? a with
@@ -1850,27 +1854,27 @@ private def parseStorageType : Sexpr → Wasm.StorageType
   | .list l                  => .val (listToValueType l)
 
 /-- Parse a field type `st` or `(mut st)` into a `FieldType`. -/
-private def parseFieldType : Sexpr → Wasm.FieldType
+def parseFieldType : Sexpr → Wasm.FieldType
   | .list [.atom "mut", st] => { storage := parseStorageType st, isMut := true }
   | st                      => { storage := parseStorageType st, isMut := false }
 
 /-- Parse a `(field …)` form into its declared fields, each paired with its
 optional name. A `(field $x st)` is one named field; `(field st …)` is one
 anonymous field per storage type. -/
-private def parseFieldDecl : Sexpr → List (Option String × Wasm.FieldType)
+def parseFieldDecl : Sexpr → List (Option String × Wasm.FieldType)
   | .list (.atom "field" :: .atom name :: [ft]) =>
     if name.startsWith "$" then [(some (name.drop 1).toString, parseFieldType ft)]
     else [(none, parseFieldType (.atom name)), (none, parseFieldType ft)]
   | .list (.atom "field" :: fs) => fs.map (fun ft => (none, parseFieldType ft))
   | _                           => []
 
-private def parseFields (s : Sexpr) : List Wasm.FieldType :=
+def parseFields (s : Sexpr) : List Wasm.FieldType :=
   (parseFieldDecl s).map (·.2)
 
 /-- Recognise the GC composite type `(struct …)` / `(array …)` / `(func …)`
 and, for `(sub $super …)`, peel the supertype reference. Returns the
 composite together with the unresolved super name. -/
-private partial def parseComposite : Sexpr → Option Wasm.CompositeType × Option String
+partial def parseComposite : Sexpr → Option Wasm.CompositeType × Option String
   | .list (.atom "struct" :: fieldForms) =>
     (some (.struct (fieldForms.flatMap parseFields)), none)
   | .list [.atom "array", ft] =>
@@ -1888,7 +1892,7 @@ private partial def parseComposite : Sexpr → Option Wasm.CompositeType × Opti
 /-- The `(func …)` signature forms of a type body, peeling a `(sub …)`
 wrapper. In GC modules `wasm-tools print` wraps function types as
 `(sub final (func …))`, so a bare-`(func …)` match alone misses them. -/
-private partial def funcSigForms? : Sexpr → Option (List Sexpr)
+partial def funcSigForms? : Sexpr → Option (List Sexpr)
   | .list (.atom "func" :: sigForms) => some sigForms
   | .list (.atom "sub" :: rest) =>
     let rest := match rest with | .atom "final" :: r => r | r => r
@@ -1899,7 +1903,7 @@ private partial def funcSigForms? : Sexpr → Option (List Sexpr)
   | _ => none
 
 /-- Positional field names of a struct composite (peeling any `(sub …)`). -/
-private partial def compositeFieldNames : Sexpr → List (Option String)
+partial def compositeFieldNames : Sexpr → List (Option String)
   | .list (.atom "struct" :: fieldForms) =>
     fieldForms.flatMap (fun f => (parseFieldDecl f).map (·.1))
   | .list (.atom "sub" :: rest) =>
@@ -1910,7 +1914,7 @@ private partial def compositeFieldNames : Sexpr → List (Option String)
     | _         => []
   | _ => []
 
-private def parseTypeField (xs : List Sexpr) : TypeEntry := Id.run do
+def parseTypeField (xs : List Sexpr) : TypeEntry := Id.run do
   let mut symId : Option String := none
   let mut rest := xs
   match rest with
@@ -1967,19 +1971,19 @@ private def parseTypeField (xs : List Sexpr) : TypeEntry := Id.run do
     | none => none
   return { symId, sig, comp, superRef, fieldNames, isFinal }
 
-private def stripQuotes (s : String) : String :=
+def stripQuotes (s : String) : String :=
   if s.length ≥ 2 && s.startsWith "\"" && s.endsWith "\"" then
     ((s.drop 1).dropEnd 1).toString
   else s
 
-private def hexDigitVal (c : Char) : Option Nat :=
+def hexDigitVal (c : Char) : Option Nat :=
   if c.isDigit then some (c.toNat - '0'.toNat)
   else if 'a' ≤ c && c ≤ 'f' then some (10 + c.toNat - 'a'.toNat)
   else if 'A' ≤ c && c ≤ 'F' then some (10 + c.toNat - 'A'.toNat)
   else none
 
 -- decode WAT string escapes to a String (for export/import names)
-private partial def decodeWatStringChars : List Char → String
+partial def decodeWatStringChars : List Char → String
   | []                       => ""
   | '\\' :: 'n'  :: r       => "\n" ++ decodeWatStringChars r
   | '\\' :: 't'  :: r       => "\t" ++ decodeWatStringChars r
@@ -2003,12 +2007,12 @@ private partial def decodeWatStringChars : List Char → String
   | '\\' :: c :: r           => "\\" ++ String.singleton c ++ decodeWatStringChars r
   | c :: r                   => String.singleton c ++ decodeWatStringChars r
 
-private def decodeWatString (s : String) : String :=
+def decodeWatString (s : String) : String :=
   if s.length ≥ 2 && s.startsWith "\"" && s.endsWith "\"" then
     decodeWatStringChars ((s.drop 1).dropEnd 1).toString.toList
   else s
 
-private def parseFunc (funcIds : Std.HashMap String Nat)
+def parseFunc (funcIds : Std.HashMap String Nat)
     (globalIds : Std.HashMap String Nat)
     (tableNames : Std.HashMap String Nat)
     (elemNames : Std.HashMap String Nat)
@@ -2143,7 +2147,7 @@ private def parseFunc (funcIds : Std.HashMap String Nat)
              typeIdx := declaredTypeIdx
            } }
 
-private def resolveFuncRef (idOf : Std.HashMap String Nat) (s : String)
+def resolveFuncRef (idOf : Std.HashMap String Nat) (s : String)
     : Except Err Nat := do
   if s.startsWith "$" then
     match idOf[(s.drop 1).toString]? with
@@ -2152,7 +2156,7 @@ private def resolveFuncRef (idOf : Std.HashMap String Nat) (s : String)
   else
     parseNat s
 
-private def collectFuncNames (fields : List Sexpr)
+def collectFuncNames (fields : List Sexpr)
     : Except Err (Std.HashMap String Nat) := do
   let mut idOf : Std.HashMap String Nat := {}
   let mut i := 0
@@ -2168,7 +2172,7 @@ private def collectFuncNames (fields : List Sexpr)
     | _ => pure ()
   return idOf
 
-private def collectGlobalNames (fields : List Sexpr)
+def collectGlobalNames (fields : List Sexpr)
     : Except Err (Std.HashMap String Nat) := do
   let mut idOf : Std.HashMap String Nat := {}
   let mut i := 0
@@ -2195,7 +2199,7 @@ private def collectGlobalNames (fields : List Sexpr)
     | _ => pure ()
   return idOf
 
-private partial def decodeWatBytes : List Char → Except Err (List UInt8)
+partial def decodeWatBytes : List Char → Except Err (List UInt8)
   | []                   => .ok []
   | '\\' :: 'n'  :: r   => (0x0A :: ·) <$> decodeWatBytes r
   | '\\' :: 't'  :: r   => (0x09 :: ·) <$> decodeWatBytes r
@@ -2210,7 +2214,7 @@ private partial def decodeWatBytes : List Char → Except Err (List UInt8)
   | '\\' :: c :: _ => .error s!"invalid escape '\\{c}' in data string"
   | c :: r               => (c.toNat.toUInt8 :: ·) <$> decodeWatBytes r
 
-private def parseWatString (s : String) : Except Err (List UInt8) :=
+def parseWatString (s : String) : Except Err (List UInt8) :=
   if !s.startsWith "\"" then .error s!"expected string literal, got: {s}"
   else decodeWatBytes (stripQuotes s).toList
 
@@ -2248,7 +2252,7 @@ def initExprAllocates : Sexpr → Bool :=
           "array.new", "array.new_default", "array.new_fixed",
           "array.new_data", "array.new_elem"]
 
-private def parseGlobalDecl (ctx : Ctx) (xs : List Sexpr) :
+def parseGlobalDecl (ctx : Ctx) (xs : List Sexpr) :
     Except Err Wasm.GlobalDecl := do
   let xs := match xs with
     | .atom a :: r => if a.startsWith "$" then r else xs
@@ -2349,7 +2353,7 @@ private def parseGlobalDecl (ctx : Ctx) (xs : List Sexpr) :
         isMut := isMut
         sourceInit := some sourceInit }
 
-private def parseMemDecl (xs : List Sexpr) : Except Err Wasm.MemDecl := do
+def parseMemDecl (xs : List Sexpr) : Except Err Wasm.MemDecl := do
   let xs := match xs with
     | .atom a :: r => if a.startsWith "$" then r else xs
     | _ => xs
@@ -2383,7 +2387,7 @@ private def parseMemDecl (xs : List Sexpr) : Except Err Wasm.MemDecl := do
 
 /-- Parse a `(data ...)` body. Active segments produce `offset := some n`;
 passive segments (no offset expression) produce `offset := none`. -/
-private def parseDataSegment (ctx : Ctx)
+def parseDataSegment (ctx : Ctx)
     (xs : List Sexpr) : Except Err Wasm.DataSegment := do
   let memNames := ctx.memNames
   -- Strip an optional segment id ($name).
@@ -2452,7 +2456,7 @@ private def parseDataSegment (ctx : Ctx)
 
 /-- Collect names declared by `(table $name ...)` forms in source order.
 Same pattern as `collectFuncNames` / `collectGlobalNames`. -/
-private def collectTableNames (fields : List Sexpr) : Std.HashMap String Nat := Id.run do
+def collectTableNames (fields : List Sexpr) : Std.HashMap String Nat := Id.run do
   let mut idOf : Std.HashMap String Nat := {}
   let mut i := 0
   -- Imported tables occupy the low indices, in import order.
@@ -2480,7 +2484,7 @@ private def collectTableNames (fields : List Sexpr) : Std.HashMap String Nat := 
 
 /-- Collect names declared by `(memory $name ...)` forms in source order
 (multi-memory). -/
-private def collectMemNames (fields : List Sexpr) : Std.HashMap String Nat := Id.run do
+def collectMemNames (fields : List Sexpr) : Std.HashMap String Nat := Id.run do
   let mut idOf : Std.HashMap String Nat := {}
   let mut i := 0
   -- Imported memorys occupy the low indices, in import order.
@@ -2511,7 +2515,7 @@ way `parseModule` numbers element segments: an inline `(table … (elem …))`
 initializer occupies one (anonymous) slot in the element index space at
 the table's source position, exactly as the spec's inline-elem
 abbreviation expands to a leading active segment. -/
-private def collectElemNames (fields : List Sexpr) : Std.HashMap String Nat := Id.run do
+def collectElemNames (fields : List Sexpr) : Std.HashMap String Nat := Id.run do
   let mut idOf : Std.HashMap String Nat := {}
   let mut i := 0
   for f in fields do
@@ -2545,7 +2549,7 @@ The second value returned is an inline element segment (for the third
 form) or `none`. Non-funcref element types are accepted lexically with
 a zero-size declaration so unrelated modules still decode; nothing
 references those tables. -/
-private def parseTableDecl (funcIds : Std.HashMap String Nat) (tableIdx : Nat)
+def parseTableDecl (funcIds : Std.HashMap String Nat) (tableIdx : Nat)
     (xs : List Sexpr) : Except Err (Wasm.TableDecl × Option Wasm.ElementSegment) := do
   let xs := match xs with
     | .atom a :: r => if a.startsWith "$" then r else xs
@@ -2632,7 +2636,7 @@ element types keep the funcref/externref `funcs` path; every other ref
 type (GC abstract heap types and concrete `$t` typed references) takes the
 const-expr path, whose evaluator handles `ref.func`/`ref.i31`/`struct.new`
 uniformly. -/
-private def elemRefIsGc (inner : List Sexpr) : Bool :=
+def elemRefIsGc (inner : List Sexpr) : Bool :=
   match inner with
   | [.atom ht] | [.atom "null", .atom ht] =>
     !(isNullFuncrefHeapType ht || isNullExternrefHeapType ht)
@@ -2648,7 +2652,7 @@ Inside the function-ref list each entry is one of:
 * `(ref.null func)` — null entry
 * `(item …)` — canonical wrapper; we look one level inside
 -/
-private def parseElemSegment (ctx : Ctx)
+def parseElemSegment (ctx : Ctx)
     (xs : List Sexpr) : Except Err Wasm.ElementSegment := do
   let funcIds := ctx.funcIds
   let tableNames := ctx.tableNames
@@ -2782,7 +2786,7 @@ import, so resolving it here is the difference between a typed import
 and a `params := [], results := []` stub. Named param/local ids inside
 an import are ignored (they're never referenced by id from the wasm
 body — imports have no body). -/
-private def parseImportSig (types : Array TypeEntry) (xs : List Sexpr)
+def parseImportSig (types : Array TypeEntry) (xs : List Sexpr)
     : Except Err (List Wasm.ValueType × List Wasm.ValueType) := do
   let mut params : List Wasm.ValueType := []
   let mut results : List Wasm.ValueType := []
@@ -2817,7 +2821,7 @@ private def parseImportSig (types : Array TypeEntry) (xs : List Sexpr)
   return (params, results)
 
 /-- Collect `$name → tag index` (imports first, then declarations). -/
-private def collectTagNames (fields : List Sexpr) : Std.HashMap String Nat := Id.run do
+def collectTagNames (fields : List Sexpr) : Std.HashMap String Nat := Id.run do
   let mut idOf : Std.HashMap String Nat := {}
   let mut i := 0
   for f in fields do
@@ -2842,7 +2846,7 @@ private def collectTagNames (fields : List Sexpr) : Std.HashMap String Nat := Id
 
 /-- Parse a tag's signature: `(tag $id? (type N))` or inline
 `(param …)*` forms (tags have no results). -/
-private def parseTagSig (types : Array TypeEntry) (xs : List Sexpr)
+def parseTagSig (types : Array TypeEntry) (xs : List Sexpr)
     : Except Err Wasm.FuncType := do
   let xs := match xs with
     | .atom a :: r => if a.startsWith "$" then r else xs
@@ -2870,7 +2874,7 @@ private def parseTagSig (types : Array TypeEntry) (xs : List Sexpr)
 
 /-- Parse the type body of an imported global (`(global $id? <gt>)`) into
 a zero-initialised `GlobalDecl`. -/
-private def parseImportedGlobal (xs : List Sexpr) : Wasm.GlobalDecl :=
+def parseImportedGlobal (xs : List Sexpr) : Wasm.GlobalDecl :=
   let xs := match xs with
     | .atom a :: r => if a.startsWith "$" then r else xs
     | _ => xs
@@ -2888,7 +2892,7 @@ private def parseImportedGlobal (xs : List Sexpr) : Wasm.GlobalDecl :=
 /-- Collect imported non-function entities, in import order: zero-content
 decl slots for the low indices of each index space, plus the
 (module, name) pairs the harness uses to substitute real values. -/
-private def collectEntityImports (funcIds : Std.HashMap String Nat)
+def collectEntityImports (funcIds : Std.HashMap String Nat)
     (fields : List Sexpr)
     : Except Err (List ((String × String) × Wasm.GlobalDecl)
                 × List ((String × String) × Wasm.TableDecl)
@@ -2914,7 +2918,7 @@ private def collectEntityImports (funcIds : Std.HashMap String Nat)
 forms. Each function import gets a positional unified-index `0 … N-1`
 and is recorded in `idOf` if it carries a `$name`. Imports of memory,
 global, and table are silently dropped (unsupported). -/
-private def collectImports (types : Array TypeEntry) (fields : List Sexpr)
+def collectImports (types : Array TypeEntry) (fields : List Sexpr)
     : Except Err (List Wasm.ImportDecl × Std.HashMap String Nat) := do
   let mut imports : List Wasm.ImportDecl := []
   let mut idOf : Std.HashMap String Nat := {}
@@ -2954,7 +2958,7 @@ Function imports occupy the low end of the unified function index space
 are collected by `collectEntityImports` into placeholder decls at the low
 end of the global/table/memory index spaces and recorded in
 `importedGlobals`/`importedTables`/`importedMemories`. -/
-private def parseModuleWith (rejectUnsupported : Bool)
+def parseModuleWith (rejectUnsupported : Bool)
     (xs : List Sexpr) : Except Err Wasm.Module := do
   let mut rest := xs
   match rest with
@@ -3213,7 +3217,7 @@ private def parseModuleWith (rejectUnsupported : Bool)
 def parseModule (xs : List Sexpr) : Except Err Wasm.Module :=
   parseModuleWith false xs
 
-private def decodeWith (rejectUnsupported : Bool) (s : String) : Except Err Wasm.Module := do
+def decodeWith (rejectUnsupported : Bool) (s : String) : Except Err Wasm.Module := do
   let xs ← parseAll s
   match xs with
   | [.list (.atom "module" :: body)] => parseModuleWith rejectUnsupported body

@@ -1,5 +1,12 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 /-! ## Example: const-expression data/element segment offsets
 
@@ -28,28 +35,28 @@ def segmentOffsetWat : String := "
     (call_indirect (type $ri) (i32.const 2))))
 "
 
-private def decoded : Wasm.Module :=
+def segmentOffsetExprDecoded : Wasm.Module :=
   Wasm.Examples.decodeOrDefault segmentOffsetWat
 
 theorem decoded_segments_keep_offsetExpr :
-    ((decoded.memory.bind (·.data[0]?)).map (·.offsetExpr.isEmpty)).getD true = false
-    ∧ (decoded.elements[0]?.map (·.offsetExpr.isEmpty)).getD true = false := by
+    ((segmentOffsetExprDecoded.memory.bind (·.data[0]?)).map (·.offsetExpr.isEmpty)).getD true = false
+    ∧ (segmentOffsetExprDecoded.elements[0]?.map (·.offsetExpr.isEmpty)).getD true = false := by
   constructor <;> native_decide
 
-private def store0 : Store Unit :=
-  let module := decoded
+def store0 : Store Unit :=
+  let module := segmentOffsetExprDecoded
   module.runActiveSegments 64
     (module.runConstGlobals 64 (module.initialStore (α := Unit)) {}) {}
 
 def segmentMachineStore : MachineStore Unit :=
-  { runtime := { instances := #[{ module := decoded, host := {} }], entry := ⟨0⟩ }
+  { runtime := { instances := #[{ module := segmentOffsetExprDecoded, host := {} }], entry := ⟨0⟩ }
     wasm := store0 }
 
-private def functionConfig (index : Nat) : Config Unit :=
+def functionConfig (index : Nat) : Config Unit :=
   { expr := .running
       { locals := {}
-        code := decoded.funcs[index]!.body
-        resultArity := decoded.funcs[index]!.results.length
+        code := segmentOffsetExprDecoded.funcs[index]!.body
+        resultArity := segmentOffsetExprDecoded.funcs[index]!.results.length
         callerRemainder := [] }
     store := segmentMachineStore }
 

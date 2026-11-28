@@ -1,4 +1,8 @@
-import CodeLib.RustStd.U64.Basic
+module
+
+public import CodeLib.RustStd.U64.Basic
+
+@[expose] public section
 
 /-! `u64::shl` (`a << b`, `b : u32`) — inlined as the shared mask-extend-shift
 prefix followed by `shlI64`, a shift by `b % 64`. The `b % 64` normalisation is

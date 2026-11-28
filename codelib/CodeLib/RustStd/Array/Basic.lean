@@ -1,4 +1,8 @@
-import CodeLib.RustStd.UInt
+module
+
+public import CodeLib.RustStd.UInt
+
+@[expose] public section
 
 /-!
 # Rust slice ABI

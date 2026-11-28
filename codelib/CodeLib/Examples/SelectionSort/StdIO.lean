@@ -1,8 +1,14 @@
-import CodeLib.Examples.SelectionSort.TotalProof
-import CodeLib.RustStd.MemArray
-import CodeLib.WordCodec
-import Interpreter.Wasm.Host.StdIO
-import Mathlib.Data.List.Sort
+module
+
+public import CodeLib.Examples.SelectionSort.TotalProof
+public import CodeLib.RustStd.MemArray
+public import CodeLib.WordCodec
+public import Interpreter.Wasm.Host.StdIO
+public import Mathlib.Data.List.Sort
+public meta import CodeLib.Examples.SelectionSort
+public meta import CodeLib.WordCodec
+
+@[expose] public section
 
 /-!
 # Selection sort as a `StdIO` program

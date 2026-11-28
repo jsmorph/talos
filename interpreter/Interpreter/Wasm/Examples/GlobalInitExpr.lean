@@ -1,5 +1,12 @@
-import Interpreter.Wasm.SmallStep
-import Interpreter.Wasm.Examples.Harness
+module
+
+public import Interpreter.Wasm.SmallStep
+public import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.Syntax
+public meta import Interpreter.Wasm.Examples.Harness
+public meta import Interpreter.Wasm.SmallStep
+
+@[expose] public section
 
 /-! ## Example: constant-expression global initializers
 
@@ -12,10 +19,10 @@ namespace Wasm
 open SmallStep
 namespace GlobalInitExpr
 
-private def initializedStore (module : Module) : Store Unit :=
+def initializedStore (module : Module) : Store Unit :=
   module.runConstGlobals 64 (module.initialStore (α := Unit)) {}
 
-private def initializedConfig (module : Module) : Config Unit :=
+def initializedConfig (module : Module) : Config Unit :=
   { expr := .running
       { locals := {}
         code := module.funcs[0]!.body
@@ -32,18 +39,18 @@ def globalInitExprWat : String := "
     global.get $g))
 "
 
-private def decoded : Wasm.Module :=
+def globalInitExprDecoded : Wasm.Module :=
   Wasm.Examples.decodeOrDefault globalInitExprWat
 
 theorem decoded_global_keeps_initExpr :
-    (decoded.globals[0]?.map (·.initExpr.isEmpty)).getD true = false := by
+    (globalInitExprDecoded.globals[0]?.map (·.initExpr.isEmpty)).getD true = false := by
   native_decide
 
 theorem runConstGlobals_evaluates_initExpr :
-    (initializedStore decoded).globals.globals[0]? = some (.i32 42) := by
+    (initializedStore globalInitExprDecoded).globals.globals[0]? = some (.i32 42) := by
   native_decide
 
-def getGConfig : Config Unit := initializedConfig decoded
+def getGConfig : Config Unit := initializedConfig globalInitExprDecoded
 
 theorem getG_returns_42 :
     (runSteps 2 getGConfig).result.values? = some [.i32 42] := by
@@ -75,9 +82,9 @@ def structGlobalArithWat : String := "
     (struct.get $s 0 (global.get $g))))
 "
 
-private def decodedLeaf : Wasm.Module :=
+def decodedLeaf : Wasm.Module :=
   Wasm.Examples.decodeOrDefault structGlobalLeafWat
-private def decodedArith : Wasm.Module :=
+def decodedArith : Wasm.Module :=
   Wasm.Examples.decodeOrDefault structGlobalArithWat
 
 theorem leaf_struct_new_keeps_initExpr :
